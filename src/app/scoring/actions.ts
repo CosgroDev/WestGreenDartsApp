@@ -201,7 +201,6 @@ export async function recordVisitAction(gameId: string, score: number, dartsOver
         status: "completed",
         winner: "west_green",
         darts_thrown: totalDarts,
-        high_finish: supabase.rpc ? undefined : undefined, // placeholder to avoid missing column if not present
         completed_at: new Date().toISOString()
       })
       .eq("id", gameId);
