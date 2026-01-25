@@ -1,4 +1,4 @@
-import Link from "next/link";
+﻿import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getFixtureById } from "@/data/fixtures";
 import { getPlayers } from "@/data/players";
@@ -29,8 +29,9 @@ export default async function FixtureDetailPage({ params }: Props) {
   const [fixture, players, games] = await Promise.all([
     getFixtureById(params.id),
     getPlayers(),
-    getGamesForFixture(params.id),
+    getGamesForFixture(params.id)
   ]);
+
   if (!fixture) return notFound();
 
   const grouped: MatchGroup[] = Array.from(
@@ -41,29 +42,29 @@ export default async function FixtureDetailPage({ params }: Props) {
       list.push(g);
       map.set(key, list);
       return map;
-    }, new Map<string, Game[]>()),
+    }, new Map<string, Game[]>())
   ).map(([key, list]) => {
-    const sorted = [...list].sort((a, b) =>
-      a.created_at.localeCompare(b.created_at),
-    );
+    const sorted = [...list].sort((a, b) => a.created_at.localeCompare(b.created_at));
     const westWins = sorted.filter((g) => g.winner === "west_green").length;
     const oppWins = sorted.filter((g) => g.winner === "opponent").length;
     const latestInProgress = sorted.find((g) => g.status === "in_progress");
     const latest = latestInProgress ?? sorted[sorted.length - 1];
-    const isDrawMatch =
-      latest?.status === "completed" && latest.winner === null;
+    const isDrawMatch = latest?.status === "completed" && latest.winner === null;
     const displayWestWins = isDrawMatch ? 1 : westWins;
     const displayOppWins = isDrawMatch ? 1 : oppWins;
+
     const leastDarts = sorted.reduce<number | null>((min, g) => {
       if (g.darts_thrown == null) return min;
       if (min === null) return g.darts_thrown;
       return Math.min(min, g.darts_thrown);
     }, null);
+
     const highFinish = sorted.reduce<number | null>((max, g) => {
       if (g.high_finish == null) return max;
       if (max === null) return g.high_finish;
       return Math.max(max, g.high_finish);
     }, null);
+
     const agg = sorted.reduce(
       (acc, g) => {
         if (g.three_dart_avg != null) {
@@ -77,25 +78,19 @@ export default async function FixtureDetailPage({ params }: Props) {
         acc.t26 += g.twenty_six ?? 0;
         return acc;
       },
-      {
-        threeDaTotal: 0,
-        threeDaCount: 0,
-        first9Total: 0,
-        first9Count: 0,
-        t26: 0,
-      },
+      { threeDaTotal: 0, threeDaCount: 0, first9Total: 0, first9Count: 0, t26: 0 }
     );
-    const threeDA =
-      agg.threeDaCount > 0 ? agg.threeDaTotal / agg.threeDaCount : null;
-    const firstNine =
-      agg.first9Count > 0 ? agg.first9Total / agg.first9Count : null;
+
+    const threeDA = agg.threeDaCount > 0 ? agg.threeDaTotal / agg.threeDaCount : null;
+    const firstNine = agg.first9Count > 0 ? agg.first9Total / agg.first9Count : null;
     const twentySix = agg.t26;
+
     const resultLabel =
       isDrawMatch || displayWestWins === displayOppWins
         ? "Draw"
         : displayWestWins > displayOppWins
-          ? "West Green win"
-          : `${fixture.opponent} win`;
+        ? "West Green win"
+        : `${fixture.opponent} win`;
 
     return {
       matchKey: key,
@@ -111,7 +106,7 @@ export default async function FixtureDetailPage({ params }: Props) {
       highFinish,
       threeDA,
       firstNine,
-      twentySix,
+      twentySix
     };
   });
 
@@ -125,14 +120,9 @@ export default async function FixtureDetailPage({ params }: Props) {
     westLegsTotal > oppLegsTotal
       ? "West Green win"
       : oppLegsTotal > westLegsTotal
-        ? `${fixture.opponent} win`
-        : "Draw";
-  const resultTone =
-    westLegsTotal > oppLegsTotal
-      ? "emerald"
-      : oppLegsTotal > westLegsTotal
-        ? "red"
-        : "amber";
+      ? `${fixture.opponent} win`
+      : "Draw";
+  const resultTone = westLegsTotal > oppLegsTotal ? "emerald" : oppLegsTotal > westLegsTotal ? "red" : "amber";
 
   const leastDartsOverall = games.reduce<number | null>((min, g) => {
     if (g.darts_thrown == null) return min;
@@ -144,35 +134,123 @@ export default async function FixtureDetailPage({ params }: Props) {
     if (max === null) return g.high_finish;
     return Math.max(max, g.high_finish);
   }, null);
-  const totalTwentySix = games.reduce<number>(
-    (sum, g) => sum + (g.twenty_six ?? 0),
-    0,
-  );
+  const totalTwentySix = games.reduce<number>((sum, g) => sum + (g.twenty_six ?? 0), 0);
 
   return (
     <main className="flex flex-col gap-4">
-      {/* header omitted for brevity — keep your existing markup */}
-      {/* ... */}
+      <header className="card flex flex-col gap-3">
+        <div className="flex items-center gap-2">
+          <a
+            href="/fixtures"
+            className="inline-flex items-center justify-center rounded-full bg-slate-100 px-3 py-2 text-sm font-semibold text-slate-800 hover:bg-slate-200"
+            aria-label="Back to fixtures"
+            title="Back to fixtures"
+          >
+            {"<"}
+          </a>
+        </div>
+        <p className="text-sm text-slate-600 mt-1">{fixture.season}</p>
+        <h1 className="text-2xl font-semibold">
+          {fixture.home ? "Home vs" : "Away @"} {fixture.opponent}
+        </h1>
+        {fixture.venue && <p className="text-sm text-slate-700 mt-1">{fixture.venue}</p>}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div
+            className={`rounded-lg border px-4 py-3 shadow-sm ${
+              resultTone === "emerald"
+                ? "border-emerald-200 bg-emerald-50"
+                : resultTone === "red"
+                ? "border-red-200 bg-red-50"
+                : "border-amber-200 bg-amber-50"
+            }`}
+          >
+            <p
+              className={`text-xs uppercase tracking-wide ${
+                resultTone === "emerald"
+                  ? "text-emerald-700"
+                  : resultTone === "red"
+                  ? "text-red-700"
+                  : "text-amber-700"
+              }`}
+            >
+              Result
+            </p>
+            <p
+              className={`text-xl font-semibold mt-1 ${
+                resultTone === "emerald"
+                  ? "text-emerald-900"
+                  : resultTone === "red"
+                  ? "text-red-900"
+                  : "text-amber-900"
+              }`}
+            >
+              {resultLabel}
+            </p>
+          </div>
+          <div className="rounded-lg border border-slate-200 bg-white px-4 py-3 shadow-sm">
+            <p className="text-xs uppercase tracking-wide text-slate-500">Legs</p>
+            <p className="text-xl font-semibold text-slate-900 mt-1">
+              {westLegsTotal} - {oppLegsTotal}
+            </p>
+            <p className="text-xs text-slate-500">Total legs across all games</p>
+          </div>
+          <div className="rounded-lg border border-slate-200 bg-white px-4 py-3 shadow-sm">
+            <p className="text-xs uppercase tracking-wide text-slate-500">+/− Legs</p>
+            <p
+              className={`text-xl font-semibold mt-1 ${
+                legDiff > 0 ? "text-emerald-700" : legDiff < 0 ? "text-red-700" : "text-slate-900"
+              }`}
+            >
+              {legDiff >= 0 ? "+" : ""}
+              {legDiff}
+            </p>
+            <p className="text-xs text-slate-500">Difference (West Green - {fixture.opponent})</p>
+          </div>
+        </div>
+      </header>
 
-      {/* Fixture summary (keep your existing markup) */}
+      <section className="card">
+        <h3 className="text-lg font-semibold mb-3">Fixture summary</h3>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div className="rounded-lg border border-slate-200 bg-white px-4 py-3 shadow-sm">
+            <p className="text-xs uppercase tracking-wide text-slate-500">Games played</p>
+            <p className="text-xl font-semibold text-slate-900 mt-1">
+              {grouped.length}{" "}
+              <span className="text-sm font-normal text-slate-500">
+                ({grouped.filter((g) => g.status !== "in_progress").length} completed)
+              </span>
+            </p>
+          </div>
+          <div className="rounded-lg border border-slate-200 bg-white px-4 py-3 shadow-sm">
+            <p className="text-xs uppercase tracking-wide text-slate-500">W / D / L</p>
+            <p className="text-xl font-semibold text-slate-900 mt-1">
+              {grouped.filter((g) => g.westWins > g.oppWins).length} / {grouped.filter((g) => g.westWins === g.oppWins).length} / {grouped.filter((g) => g.westWins < g.oppWins).length}
+            </p>
+          </div>
+          <div className="rounded-lg border border-slate-200 bg-white px-4 py-3 shadow-sm sm:col-span-1">
+            <p className="text-xs uppercase tracking-wide text-slate-500">Finishes</p>
+            <p className="text-sm text-slate-700 mt-1">
+              Least darts: <strong>{leastDartsOverall ?? "—"}</strong>
+            </p>
+            <p className="text-sm text-slate-700">
+              Highest finish: <strong>{highFinishOverall ?? "—"}</strong>
+            </p>
+            <p className="text-sm text-slate-700">
+              26s hit: <strong>{totalTwentySix}</strong>
+            </p>
+          </div>
+        </div>
+      </section>
 
-<<<<<<< HEAD
       <section className="card">
         <h3 className="text-lg font-semibold mb-3">
           Create game {grouped.length}/{maxGames}
         </h3>
         {disableCreate && (
-          <p className="text-sm text-red-600 mb-2">
-            Maximum of 6 games per fixture reached.
-          </p>
-=======
-<section className="card">
-  <h3 className="text-lg font-semibold mb-3">
-    Create game {grouped.length}/{maxGames}
-  </h3>
-  {disableCreate && <p className="text-sm text-red-600 mb-2">Maximum of 6 games per fixture reached.</p>}
-  <CreateGameForm fixtureId={fixture.id} disable={disableCreate} players={players} />
-</section>
+          <p className="text-sm text-red-600 mb-2">Maximum of 6 games per fixture reached.</p>
+        )}
+        <CreateGameForm fixtureId={fixture.id} disable={disableCreate} players={players} />
+      </section>
 
       <section className="card">
         <h2 className="text-lg font-semibold mb-2">Games</h2>
@@ -199,7 +277,7 @@ export default async function FixtureDetailPage({ params }: Props) {
                           {match.westPlayerName} vs {match.opponentPlayer}
                         </span>
                         <span className="text-sm text-slate-600">Result: In progress</span>
-                        {match.leastDarts !== null && match.leastDarts !== undefined && (
+                        {match.leastDarts != null && (
                           <span className="text-xs text-slate-500">Least darts: {match.leastDarts}</span>
                         )}
                         <span className="text-xs text-slate-500">High checkout: —</span>
@@ -279,19 +357,14 @@ export default async function FixtureDetailPage({ params }: Props) {
                             </span>
                           </div>
                           <div className="text-xs text-slate-600 space-x-3 mt-1">
-                            {match.leastDarts !== null && match.leastDarts !== undefined && (
-                              <span>Least darts: {match.leastDarts}</span>
-                            )}
+                            {match.leastDarts != null && <span>Least darts: {match.leastDarts}</span>}
                             <span>
-                              High checkout:{" "}
-                              {match.highFinish !== null && match.highFinish !== undefined && match.highFinish > 0
-                                ? match.highFinish
-                                : "—"}
+                              High checkout: {match.highFinish != null && match.highFinish > 0 ? match.highFinish : "—"}
                             </span>
                           </div>
                           <div className="text-xs text-slate-600 space-x-3">
-                            <span>3DA: {match.threeDA !== null ? match.threeDA.toFixed(1) : "—"}</span>
-                            <span>First9: {match.firstNine !== null ? match.firstNine.toFixed(1) : "—"}</span>
+                            <span>3DA: {match.threeDA != null ? match.threeDA.toFixed(1) : "—"}</span>
+                            <span>First9: {match.firstNine != null ? match.firstNine.toFixed(1) : "—"}</span>
                             <span>26s: {match.twentySix}</span>
                           </div>
                         </div>
@@ -312,16 +385,8 @@ export default async function FixtureDetailPage({ params }: Props) {
               </div>
             </details>
           </>
->>>>>>> 39f60660b9e3433661e89397dcc697ec8ede7b89
         )}
-        <CreateGameForm
-          fixtureId={fixture.id}
-          disable={disableCreate}
-          players={players}
-        />
       </section>
-
-      {/* Games list (keep your existing markup, unchanged) */}
     </main>
   );
 }
