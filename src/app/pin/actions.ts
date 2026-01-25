@@ -20,9 +20,12 @@ export async function enterPinAction(formData: FormData) {
   // Preferred path: call Supabase RPC for PIN auth.
   const supabase = supabaseServer();
   if (supabase) {
-    const { data, error } = await supabase.rpc("auth_pin", { pin_input: pin }).single();
-    if (!error && data?.token) {
-      setSessionCookie(data.token);
+    const { data, error } = await supabase
+      .rpc("auth_pin", { pin_input: pin })
+      .single<{ token: string | null }>();
+    const token = data?.token ?? null;
+    if (!error && token) {
+      setSessionCookie(token);
       revalidatePath("/");
       return { ok: true };
     }
