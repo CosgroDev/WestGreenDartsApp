@@ -378,6 +378,21 @@ export default async function FixtureDetailPage({ params }: Props) {
                               🔍
                             </Link>
                           )}
+                          <form action={deleteMatchAction}>
+                            <input type="hidden" name="fixtureId" value={fixture.id} />
+                            <input type="hidden" name="opponent" value={match.opponentPlayer} />
+                            <input
+                              type="hidden"
+                              name="westId"
+                              value={match.matchKey.split("|")[0] === "none" ? "" : match.matchKey.split("|")[0]}
+                            />
+                            <button
+                              title="Delete game"
+                              className="flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 text-slate-500 hover:border-red-200 hover:text-red-600"
+                            >
+                              🗑️
+                            </button>
+                          </form>
                         </div>
                       </div>
                     </div>
