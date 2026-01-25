@@ -76,20 +76,20 @@ export default async function DashboardPage() {
           {players.slice(0, 4).map((p) => (
             <div
               key={p.player_id}
-              className="flex items-center justify-between rounded-md border border-slate-200 px-3 py-3 text-sm"
+              className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 rounded-md border border-slate-200 px-3 py-3 text-sm"
             >
-              <div>
+              <div className="w-full sm:w-auto">
                 <p className="font-semibold">{p.name}</p>
-                <div className="mt-1 grid grid-cols-2 gap-2">
+                <div className="mt-1 grid grid-cols-1 sm:grid-cols-2 gap-2">
                   <StatBar label="3DA" value={p.three_dart_avg} max={80} />
                   <StatBar label="First 9" value={p.first_nine_avg} max={100} />
                 </div>
               </div>
-              <div className="flex items-center gap-2">
-                <span className="rounded-full bg-emerald-50 text-emerald-700 px-5 py-2 text-sm font-semibold">
+              <div className="flex flex-wrap gap-2 sm:gap-3 w-full sm:w-auto">
+                <span className="rounded-full bg-emerald-50 text-emerald-700 px-4 py-1.5 text-sm font-semibold">
                   Won {p.legs_won}
                 </span>
-                <span className="rounded-full bg-slate-100 text-slate-700 px-5 py-2 text-sm font-semibold">
+                <span className="rounded-full bg-slate-100 text-slate-700 px-4 py-1.5 text-sm font-semibold">
                   Played {p.legs_played}
                 </span>
                 {(() => {
@@ -98,7 +98,7 @@ export default async function DashboardPage() {
                     diff > 0 ? "bg-emerald-50 text-emerald-700" : diff < 0 ? "bg-red-50 text-red-700" : "bg-slate-100 text-slate-700";
                   const label = diff > 0 ? `+${diff}` : diff < 0 ? `${diff}` : "0";
                   return (
-                    <span className={`rounded-full px-5 py-2 text-sm font-semibold ${color}`}>
+                    <span className={`rounded-full px-4 py-1.5 text-sm font-semibold ${color}`}>
                       {label}
                     </span>
                   );
