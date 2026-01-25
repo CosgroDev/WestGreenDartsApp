@@ -1,83 +1,52 @@
-"use server";
-
-import { revalidatePath } from "next/cache";
+﻿import { revalidatePath } from "next/cache";
 import { supabaseServer } from "@/lib/supabaseServer";
 
 const TEAM_ID = process.env.TEAM_ID;
 
-export async function createGameAction(formData: FormData) {
+export async function createGameAction(prevState: any, formData: FormData) {
   const fixtureId = formData.get("fixtureId") as string | null;
   const playerId = formData.get("playerId") as string | null;
   const opponent = (formData.get("opponent") as string | null)?.trim();
 
-  if (!fixtureId || !opponent) {
-    return { ok: false, message: "Fixture and opponent required." };
-  }
+  if (!fixtureId || !opponent) return { ok: false, message: "Fixture and opponent are required" };
 
   const supabase = supabaseServer();
-  if (!supabase) return { ok: false, message: "Supabase env not configured." };
+  if (!supabase) return { ok: false, message: "Supabase not configured" };
 
-  const { data, error } = await supabase
-    .from("games")
-    .insert({
-      fixture_id: fixtureId,
-      team_id: TEAM_ID,
-      west_green_player_id: playerId || null,
-      opponent_player: opponent,
-      west_green_starts: false
-    })
-    .select("id")
-    .single();
+  const { error } = await supabase.from("games").insert({
+    team_id: TEAM_ID,
+    fixture_id: fixtureId,
+    west_green_player_id: playerId || null,
+    opponent_player: opponent,
+    west_green_starts: false
+  });
 
-  if (error || !data) {
-    return { ok: false, message: error?.message || "Could not create game" };
-  }
-
-  revalidatePath(`/fixtures/${fixtureId}`);
-  return { ok: true, gameId: data.id };
-}
-
-export async function setGameResultAction(
-  fixtureId: string,
-  gameId: string,
-  result: "west_green" | "opponent" | "void"
-) {
-  const supabase = supabaseServer();
-  if (!supabase) return { ok: false, message: "Supabase env not configured." };
-
-  const payload =
-    result === "void"
-      ? { status: "void", winner: null, completed_at: new Date().toISOString() }
-      : { status: "completed", winner: result, completed_at: new Date().toISOString() };
-
-  const { error } = await supabase.from("games").update(payload).eq("id", gameId);
   if (error) return { ok: false, message: error.message };
+
   revalidatePath(`/fixtures/${fixtureId}`);
   return { ok: true };
 }
 
 export async function deleteMatchAction(formData: FormData) {
-  const supabase = supabaseServer();
-  if (!supabase) return { ok: false, message: "Supabase env not configured." };
-
   const fixtureId = formData.get("fixtureId") as string | null;
-  const westPlayerIdRaw = formData.get("westId") as string | null;
   const opponent = formData.get("opponent") as string | null;
+  const westId = (formData.get("westId") as string | null) || null;
 
-  if (!fixtureId || !opponent) return { ok: false, message: "Missing fixture or opponent" };
+  if (!fixtureId || !opponent) return { ok: false, message: "Missing ids" };
 
-  const westPlayerId = westPlayerIdRaw && westPlayerIdRaw.length ? westPlayerIdRaw : null;
+  const supabase = supabaseServer();
+  if (!supabase) return { ok: false, message: "Supabase not configured" };
 
-  let query = supabase
+  const { error } = await supabase
     .from("games")
-    .update({ deleted: true, status: "void" })
+    .update({ deleted: true })
     .eq("fixture_id", fixtureId)
-    .eq("opponent_player", opponent);
+    .eq("opponent_player", opponent)
+    .eq("west_green_player_id", westId)
+    .is("deleted", false);
 
-  query = westPlayerId ? query.eq("west_green_player_id", westPlayerId) : query.is("west_green_player_id", null);
-
-  const { error } = await query;
   if (error) return { ok: false, message: error.message };
+
   revalidatePath(`/fixtures/${fixtureId}`);
   return { ok: true };
 }
