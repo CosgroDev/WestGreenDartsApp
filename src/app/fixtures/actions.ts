@@ -36,11 +36,11 @@ export async function createFixtureAction(_prevState: any, formData: FormData) {
   return { ok: true };
 }
 
-export async function deleteFixtureAction(formData: FormData) {
+export async function deleteFixtureAction(formData: FormData): Promise<void> {
   const fixtureId = formData.get("fixtureId") as string | null;
-  if (!fixtureId) return { ok: false, message: "Fixture id missing" };
+  if (!fixtureId) return;
   const supabase = supabaseServer();
-  if (!supabase) return { ok: false, message: "Supabase not configured" };
+  if (!supabase) return;
 
   // Only delete if no games exist for this fixture
   const { data: games, error: gamesErr } = await supabase
@@ -50,14 +50,11 @@ export async function deleteFixtureAction(formData: FormData) {
     .eq("deleted", false)
     .limit(1);
 
-  if (gamesErr) return { ok: false, message: gamesErr.message };
-  if (games && games.length > 0) {
-    return { ok: false, message: "Cannot delete: games already exist for this fixture." };
-  }
+  if (gamesErr) return;
+  if (games && games.length > 0) return;
 
   const { error } = await supabase.from("fixtures").delete().eq("id", fixtureId);
-  if (error) return { ok: false, message: error.message };
+  if (error) return;
 
   revalidatePath("/fixtures");
-  return { ok: true };
 }
