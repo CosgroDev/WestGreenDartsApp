@@ -38,9 +38,11 @@ export async function getFixtures(): Promise<Fixture[]> {
 
   if (error || !data) return [];
 
-  return data.map((f: any) => ({
-    id: f.id,
-    season: f.seasons?.name || "",
+  return data.map((f: any) => {
+    const seasonName = Array.isArray(f.seasons) ? f.seasons[0]?.name ?? "" : f.seasons?.name ?? "";
+    return {
+      id: f.id,
+      season: seasonName,
     starts_at: f.starts_at,
     opponent: f.opponent,
     venue: f.venue,
@@ -57,7 +59,8 @@ export async function getFixtures(): Promise<Fixture[]> {
       if (losses > wins) return "loss";
       return "draw";
     })()
-  }));
+    };
+  });
 }
 
 export async function getFixtureById(id: string): Promise<FixtureDetail | null> {
@@ -72,9 +75,11 @@ export async function getFixtureById(id: string): Promise<FixtureDetail | null> 
 
   if (error || !data) return null;
 
+  const seasonName = Array.isArray(data.seasons) ? data.seasons[0]?.name ?? "" : data.seasons?.name ?? "";
+
   return {
     id: data.id,
-    season: data.seasons?.name || "",
+    season: seasonName,
     starts_at: data.starts_at,
     opponent: data.opponent,
     venue: data.venue,
