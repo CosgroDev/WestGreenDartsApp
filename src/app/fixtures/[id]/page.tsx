@@ -247,53 +247,6 @@ export default async function FixtureDetailPage({ params }: Props) {
   {disableCreate && <p className="text-sm text-red-600 mb-2">Maximum of 6 games per fixture reached.</p>}
   <CreateGameForm fixtureId={fixture.id} disable={disableCreate} players={players} />
 </section>
-          <input type="hidden" name="fixtureId" value={fixture.id} />
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div className="flex flex-col gap-1">
-              <label className="text-sm text-slate-700" htmlFor="playerId">
-                West Green player
-              </label>
-              <select
-                id="playerId"
-                name="playerId"
-                className="rounded-md border border-slate-300 px-3 py-2"
-                defaultValue=""
-                disabled={disableCreate}
-              >
-                <option value="">Select player</option>
-                {players.map((p) => (
-                  <option key={p.id} value={p.id}>
-                    {p.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div className="flex flex-col gap-1">
-              <label className="text-sm text-slate-700" htmlFor="opponent">
-                Opponent player
-              </label>
-              <input
-                id="opponent"
-                name="opponent"
-                type="text"
-                required
-                className="rounded-md border border-slate-300 px-3 py-2"
-                placeholder="Opponent name"
-                disabled={disableCreate}
-              />
-            </div>
-          </div>
-
-          <button
-            type="submit"
-            disabled={disableCreate}
-            className="self-start rounded-md bg-emerald-600 px-4 py-2 text-white font-semibold hover:bg-emerald-700 disabled:opacity-60"
-          >
-            Create game
-          </button>
-        </form>
-      </section>
 
       <section className="card">
         <h2 className="text-lg font-semibold mb-2">Games</h2>
