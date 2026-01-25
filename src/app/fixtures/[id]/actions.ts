@@ -30,15 +30,15 @@ export async function createGameAction(prevState: any, formData: FormData) {
   return { ok: true };
 }
 
-export async function deleteMatchAction(formData: FormData) {
+export async function deleteMatchAction(formData: FormData): Promise<void> {
   const fixtureId = formData.get("fixtureId") as string | null;
   const opponent = formData.get("opponent") as string | null;
   const westId = (formData.get("westId") as string | null) || null;
 
-  if (!fixtureId || !opponent) return { ok: false, message: "Missing ids" };
+  if (!fixtureId || !opponent) return;
 
   const supabase = supabaseServer();
-  if (!supabase) return { ok: false, message: "Supabase not configured" };
+  if (!supabase) return;
 
   const { error } = await supabase
     .from("games")
@@ -48,8 +48,7 @@ export async function deleteMatchAction(formData: FormData) {
     .eq("west_green_player_id", westId)
     .is("deleted", false);
 
-  if (error) return { ok: false, message: error.message };
+  if (error) return;
 
   revalidatePath(`/fixtures/${fixtureId}`);
-  return { ok: true };
 }
