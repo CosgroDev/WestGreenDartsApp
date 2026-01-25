@@ -42,7 +42,7 @@ export async function deleteFixtureAction(formData: FormData): Promise<void> {
   const supabase = supabaseServer();
   if (!supabase) return;
 
-  // Only delete if no games exist for this fixture
+  // Only delete if no non-deleted games exist for this fixture
   const { data: games, error: gamesErr } = await supabase
     .from("games")
     .select("id")
