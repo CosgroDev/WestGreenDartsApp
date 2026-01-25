@@ -3,7 +3,8 @@ import { notFound } from "next/navigation";
 import { getFixtureById } from "@/data/fixtures";
 import { getPlayers } from "@/data/players";
 import { getGamesForFixture, type Game } from "@/data/games";
-import { createGameAction, deleteMatchAction } from "./actions";
+import { deleteMatchAction } from "./actions";
+import { CreateGameForm } from "./CreateGameClient";
 
 type Props = { params: { id: string } };
 
@@ -239,12 +240,13 @@ export default async function FixtureDetailPage({ params }: Props) {
         </div>
       </section>
 
-      <section className="card">
-        <h3 className="text-lg font-semibold mb-3">
-          Create game {grouped.length}/{maxGames}
-        </h3>
-        {disableCreate && <p className="text-sm text-red-600 mb-2">Maximum of 6 games per fixture reached.</p>}
-        <form action={createGameAction} className="flex flex-col gap-3" method="post">
+<section className="card">
+  <h3 className="text-lg font-semibold mb-3">
+    Create game {grouped.length}/{maxGames}
+  </h3>
+  {disableCreate && <p className="text-sm text-red-600 mb-2">Maximum of 6 games per fixture reached.</p>}
+  <CreateGameForm fixtureId={fixture.id} disable={disableCreate} players={players} />
+</section>
           <input type="hidden" name="fixtureId" value={fixture.id} />
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div className="flex flex-col gap-1">
