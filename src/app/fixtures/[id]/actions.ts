@@ -40,13 +40,22 @@ export async function deleteMatchAction(formData: FormData): Promise<void> {
   const supabase = supabaseServer();
   if (!supabase) return;
 
-  const { error } = await supabase
+  // Find leg IDs for this matchup
+  const { data: games, error: fetchErr } = await supabase
     .from("games")
-    .update({ deleted: true })
+    .select("id")
     .eq("fixture_id", fixtureId)
     .eq("opponent_player", opponent)
     .eq("west_green_player_id", westId)
-    .is("deleted", false);
+    .eq("deleted", false);
+  if (fetchErr || !games || games.length === 0) return;
+
+  const gameIds = games.map((g: any) => g.id);
+
+  // Soft-delete scoring events for those legs
+  await supabase.from("scoring_events").update({ is_deleted: true }).in("game_id", gameIds);
+
+  const { error } = await supabase.from("games").update({ deleted: true }).in("id", gameIds);
 
   if (error) return;
 

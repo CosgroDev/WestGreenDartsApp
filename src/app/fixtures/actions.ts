@@ -42,16 +42,26 @@ export async function deleteFixtureAction(formData: FormData): Promise<void> {
   const supabase = supabaseServer();
   if (!supabase) return;
 
-  // Only delete if no non-deleted games exist for this fixture
+  // Fetch all games (deleted or not) for this fixture
   const { data: games, error: gamesErr } = await supabase
     .from("games")
-    .select("id")
-    .eq("fixture_id", fixtureId)
-    .eq("deleted", false)
-    .limit(1);
+    .select("id, deleted")
+    .eq("fixture_id", fixtureId);
 
   if (gamesErr) return;
-  if (games && games.length > 0) return;
+
+  const gameIds = (games ?? []).map((g: any) => g.id);
+  const activeGames = (games ?? []).filter((g: any) => g.deleted === false);
+
+  // If any active (non-deleted) games remain, block deletion
+  if (activeGames.length > 0) return;
+
+  if (gameIds.length > 0) {
+    // Soft-delete scoring events for all games in this fixture
+    await supabase.from("scoring_events").update({ is_deleted: true }).in("game_id", gameIds);
+    // Hard-delete the games themselves
+    await supabase.from("games").delete().in("id", gameIds);
+  }
 
   const { error } = await supabase.from("fixtures").delete().eq("id", fixtureId);
   if (error) return;
