@@ -1,4 +1,7 @@
-﻿import { revalidatePath } from "next/cache";
+﻿
+"use server";
+
+import { revalidatePath } from "next/cache";
 import { supabaseServer } from "@/lib/supabaseServer";
 
 const TEAM_ID = process.env.TEAM_ID;
