@@ -75,7 +75,9 @@ export async function getFixtureById(id: string): Promise<FixtureDetail | null> 
 
   if (error || !data) return null;
 
-  const seasonName = Array.isArray(data.seasons) ? data.seasons[0]?.name ?? "" : data.seasons?.name ?? "";
+  const seasonName = Array.isArray(data.seasons)
+    ? (data.seasons[0] as any)?.name ?? ""
+    : (data.seasons as any)?.name ?? "";
 
   return {
     id: data.id,
