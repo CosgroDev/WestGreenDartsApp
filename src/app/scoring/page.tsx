@@ -45,7 +45,14 @@ export default function ScoringPage() {
   const [visits, setVisits] = useState<Visit[]>([]);
   const [pending, startTransition] = useTransition();
   const [alert, setAlert] = useState<string | null>(null);
-  const [gameMeta, setGameMeta] = useState<{ status: string; winner: string | null; darts_thrown?: number | null } | null>(null);
+  const [gameMeta, setGameMeta] = useState<{
+    status: string;
+    winner: string | null;
+    darts_thrown?: number | null;
+    players?: { name?: string | null };
+    opponent_player?: string | null;
+    legs?: { west?: number; opp?: number };
+  } | null>(null);
   const [activeSide, setActiveSide] = useState<"west" | "opponent">("west");
   const [inputScore, setInputScore] = useState("");
   const [oppRemaining, setOppRemaining] = useState(START_SCORE);
@@ -58,8 +65,8 @@ export default function ScoringPage() {
   const [throwLog, setThrowLog] = useState<("west" | "opponent")[]>([]);
   const [oppRemainingStack, setOppRemainingStack] = useState<number[]>([]);
   const remaining = visits.length ? visits[visits.length - 1].remainingAfter : START_SCORE;
-  const wgdName = gameMeta?.players?.name || "West Green";
-  const oppName = gameMeta?.opponent_player || "Opponent";
+  const wgdName = gameMeta?.players?.name ?? "West Green";
+  const oppName = gameMeta?.opponent_player ?? "Opponent";
   const isHome = searchParams.get("home") === "1";
   const isCompleted = matchComplete || gameMeta?.status === "completed";
   const displayLegs = (() => {
