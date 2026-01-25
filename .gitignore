@@ -1,0 +1,25 @@
+﻿# Node/Next build artifacts
+node_modules/
+.next/
+
+# Env
+.env.local
+.env.*
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Temp scripts
+/tmp-check*.js
+
+# Supabase local cache
+supabase/.temp
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Vercel
+.vercel
