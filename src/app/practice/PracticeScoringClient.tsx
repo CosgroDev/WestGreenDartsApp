@@ -16,7 +16,8 @@ export default function PracticeScoringClient() {
   const router = useRouter();
   const gameId = searchParams.get("game");
   const [visits, setVisits] = useState<any[]>([]);
-  const [remaining, setRemaining] = useState<number>(START_FALLBACK);
+  const [remainingA, setRemainingA] = useState<number>(START_FALLBACK);
+  const [remainingB, setRemainingB] = useState<number>(START_FALLBACK);
   const [inputScore, setInputScore] = useState(0);
   const [activeSide, setActiveSide] = useState<"a" | "b">("a");
   const [finishHint, setFinishHint] = useState<string | null>(null);
@@ -38,7 +39,8 @@ export default function PracticeScoringClient() {
             isCheckout: v.is_checkout
           }))
         );
-        setRemaining(res.remaining ?? START_FALLBACK);
+        setRemainingA(res.remainingA ?? START_FALLBACK);
+        setRemainingB(res.remainingB ?? START_FALLBACK);
         setFinishHint(res.finishHint ?? null);
         setMeta(res.meta ?? null);
       }
@@ -80,7 +82,8 @@ export default function PracticeScoringClient() {
             isCheckout: v.is_checkout
           }))
         );
-        setRemaining(reload.remaining ?? startScore);
+        setRemainingA(reload.remainingA ?? startScore);
+        setRemainingB(reload.remainingB ?? startScore);
         setFinishHint(reload.finishHint ?? null);
         setMeta(reload.meta ?? null);
         setActiveSide(activeSide === "a" ? "b" : "a");
@@ -103,7 +106,8 @@ export default function PracticeScoringClient() {
             isCheckout: v.is_checkout
           }))
         );
-        setRemaining(reload.remaining ?? startScore);
+        setRemainingA(reload.remainingA ?? startScore);
+        setRemainingB(reload.remainingB ?? startScore);
         setFinishHint(reload.finishHint ?? null);
         setMeta(reload.meta ?? null);
         setActiveSide(activeSide === "a" ? "b" : "a");
@@ -173,17 +177,13 @@ export default function PracticeScoringClient() {
       </div>
 
       <div className="flex gap-2 text-sm">
-        <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2">
+        <div className={`rounded-lg border px-3 py-2 ${activeSide === "a" ? "border-emerald-200 bg-emerald-50" : "border-slate-200 bg-white"}`}>
           <p className="text-xs uppercase text-emerald-700">{playerAName} remaining</p>
-          <p className="text-2xl font-semibold text-emerald-900">
-            {activeSide === "a" ? remaining : meta?.practice_sessions?.start_score ?? START_FALLBACK}
-          </p>
+          <p className="text-2xl font-semibold text-emerald-900">{remainingA}</p>
         </div>
-        <div className="rounded-lg border border-slate-200 bg-white px-3 py-2">
+        <div className={`rounded-lg border px-3 py-2 ${activeSide === "b" ? "border-emerald-200 bg-emerald-50" : "border-slate-200 bg-white"}`}>
           <p className="text-xs uppercase text-slate-600">{playerBName} remaining</p>
-          <p className="text-2xl font-semibold text-slate-900">
-            {activeSide === "b" ? remaining : meta?.practice_sessions?.start_score ?? START_FALLBACK}
-          </p>
+          <p className="text-2xl font-semibold text-slate-900">{remainingB}</p>
         </div>
       </div>
 

@@ -12,7 +12,7 @@ async function fetchEvents(gameId: string) {
   if (!supabase) return [] as any[];
   const { data } = await supabase
     .from("practice_events")
-    .select("id, score, darts, remaining_after, is_bust, is_checkout")
+    .select("id, score, darts, remaining_after, is_bust, is_checkout, thrower")
     .eq("game_id", gameId)
     .eq("is_deleted", false)
     .order("throw_index", { ascending: true });
@@ -21,16 +21,12 @@ async function fetchEvents(gameId: string) {
 
 export async function loadPracticeStateAction(gameId: string) {
   const visits = await fetchEvents(gameId);
-  const remaining = computeRemaining(visits.map((v) => ({
-    score: v.score,
-    darts: v.darts,
-    remaining_after: v.remaining_after,
-    is_bust: v.is_bust,
-    is_checkout: v.is_checkout
-  })) as any);
-
+  // derive remaining per side from last event per thrower
+  const lastA = [...visits].reverse().find((v) => v.thrower === "player_a");
+  const lastB = [...visits].reverse().find((v) => v.thrower === "player_b");
   const supabase = supabaseServer();
   let meta: any = null;
+  let startScore = START_FALLBACK;
   if (supabase) {
     const { data: game } = await supabase
       .from("practice_games")
@@ -39,10 +35,16 @@ export async function loadPracticeStateAction(gameId: string) {
       )
       .eq("id", gameId)
       .single();
-    if (game) meta = game;
+    if (game) {
+      meta = game;
+      startScore = game.practice_sessions?.start_score ?? START_FALLBACK;
+    }
   }
-  const finishHint = remaining >= 2 && remaining <= 170 ? finishRoutes[remaining] ?? null : null;
-  return { ok: true, visits, remaining, finishHint, meta };
+  const remainingA = lastA ? lastA.remaining_after : startScore;
+  const remainingB = lastB ? lastB.remaining_after : startScore;
+
+  const finishHint = remainingA >= 2 && remainingA <= 170 ? finishRoutes[remainingA] ?? null : null;
+  return { ok: true, visits, remainingA, remainingB, finishHint, meta };
 }
 
 export async function recordPracticeVisitAction(
@@ -81,6 +83,7 @@ export async function recordPracticeVisitAction(
     team_id: TEAM_ID,
     game_id: gameId,
     session_id: gameSession?.session_id ?? null,
+    thrower: side === "a" ? "player_a" : "player_b",
     throw_index: visits.length + 1,
     score,
     darts: dartsUsed,
