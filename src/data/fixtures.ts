@@ -10,7 +10,7 @@ export type Fixture = {
   home: boolean;
   games_count: number;
   status?: "win" | "loss" | "draw" | "in_progress";
-  games?: { winner: string | null; status: string }[];
+  games?: { winner: string | null; status: string; deleted?: boolean | null }[];
 };
 
 export type FixtureDetail = {
@@ -32,7 +32,7 @@ export async function getFixtures(): Promise<Fixture[]> {
     .select(
       `id, starts_at, opponent, venue, notes, home,
        seasons(name),
-       games:games(status,winner)`
+       games:games(status,winner,deleted)`
     )
     .order("starts_at", { ascending: true });
 
@@ -40,23 +40,24 @@ export async function getFixtures(): Promise<Fixture[]> {
 
   return data.map((f: any) => {
     const seasonName = Array.isArray(f.seasons) ? f.seasons[0]?.name ?? "" : f.seasons?.name ?? "";
+    const activeGames = (f.games || []).filter((g: any) => g.deleted === false || g.deleted == null);
     return {
       id: f.id,
       season: seasonName,
-    starts_at: f.starts_at,
-    opponent: f.opponent,
-    venue: f.venue,
-    notes: f.notes,
-    home: f.home,
-    games_count: f.games?.length ?? 0,
-    games: f.games || [],
-    status: (() => {
-      const completed = (f.games || []).filter((g: any) => g.status === "completed");
-      const wins = completed.filter((g: any) => g.winner === "west_green").length;
-      const losses = completed.filter((g: any) => g.winner === "opponent").length;
-      if (completed.length === 0) return "in_progress";
-      if (wins > losses) return "win";
-      if (losses > wins) return "loss";
+      starts_at: f.starts_at,
+      opponent: f.opponent,
+      venue: f.venue,
+      notes: f.notes,
+      home: f.home,
+      games_count: activeGames.length,
+      games: f.games || [],
+      status: (() => {
+        const completed = activeGames.filter((g: any) => g.status === "completed");
+        const wins = completed.filter((g: any) => g.winner === "west_green").length;
+        const losses = completed.filter((g: any) => g.winner === "opponent").length;
+        if (completed.length === 0) return "in_progress";
+        if (wins > losses) return "win";
+        if (losses > wins) return "loss";
       return "draw";
     })()
     };
