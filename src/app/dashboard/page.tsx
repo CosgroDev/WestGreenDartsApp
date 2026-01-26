@@ -70,6 +70,12 @@ export default async function DashboardPage() {
           >
             Players
           </Link>
+          <Link
+            href="/practice"
+            className="rounded-md bg-purple-200 px-4 py-3 text-center text-purple-900 font-semibold hover:bg-purple-300 col-span-2 sm:col-span-1"
+          >
+            Practice arena
+          </Link>
         </div>
       </section>
 
