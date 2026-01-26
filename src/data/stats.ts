@@ -9,6 +9,7 @@ export type PlayerCard = {
   checkout_pct: number | null;
   first_nine_avg: number | null;
   twenty_six: number;
+  one_eighty: number;
   high_finish: number | null;
 };
 
@@ -53,6 +54,7 @@ export async function getPlayerCards(): Promise<PlayerCard[]> {
       first9Score: number;
       first9Darts: number;
       t26: number;
+      t180: number;
       gameIds: string[];
     }
   >();
@@ -69,6 +71,7 @@ export async function getPlayerCards(): Promise<PlayerCard[]> {
         first9Score: 0,
         first9Darts: 0,
         t26: 0,
+        t180: 0,
         gameIds: []
       };
     entry.played += 1;
@@ -104,6 +107,7 @@ export async function getPlayerCards(): Promise<PlayerCard[]> {
       if (typeof e.score === "number") entry.totalScore += e.score;
       if (typeof e.darts === "number") entry.totalDarts += e.darts;
       if (e.score === 26) entry.t26 += 1;
+      if (e.score === 180) entry.t180 += 1;
       const arr = first3ByGame.get(e.game_id) || [];
       if (arr.length < 3) {
         arr.push(e);
@@ -151,6 +155,7 @@ export async function getPlayerCards(): Promise<PlayerCard[]> {
       checkout_pct: null,
       first_nine_avg,
       twenty_six: val.t26,
+      one_eighty: val.t180,
       high_finish: val.high_finish
     });
   }

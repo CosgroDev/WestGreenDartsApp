@@ -20,6 +20,9 @@ export default async function DashboardPage() {
   const playersBy3da = [...players].sort((a, b) => (b.three_dart_avg ?? 0) - (a.three_dart_avg ?? 0));
   const playersByFirst9 = [...players].sort((a, b) => (b.first_nine_avg ?? 0) - (a.first_nine_avg ?? 0));
   const playersBy26 = [...players].sort((a, b) => (b.twenty_six ?? 0) - (a.twenty_six ?? 0));
+  const playersBy180 = [...players]
+    .filter((p) => (p.one_eighty ?? 0) > 0)
+    .sort((a, b) => (b.one_eighty ?? 0) - (a.one_eighty ?? 0));
   const chartData = playersBy3da.slice(0, 6).map((p) => ({ label: p.name || "—", value: p.three_dart_avg ?? 0 }));
   const first9Data = playersByFirst9
     .slice(0, 6)
@@ -108,6 +111,25 @@ export default async function DashboardPage() {
           ))}
         </div>
       </section>
+
+      {!!playersBy180.length && (
+        <section className="card">
+          <h2 className="text-lg font-semibold mb-2">180s hit</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+            {playersBy180.slice(0, 6).map((p) => (
+              <div
+                key={p.player_id}
+                className="flex items-center justify-between rounded-md border border-slate-200 px-3 py-2 text-sm"
+              >
+                <span className="font-semibold">{p.name}</span>
+                <span className="rounded-full bg-purple-50 text-purple-700 px-3 py-1 text-sm font-semibold">
+                  {p.one_eighty} × 180
+                </span>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
 
       <section className="grid grid-cols-1 gap-3">
         <ChartCard title="3-Dart Average (by player)" data={chartData} color="#2f8f6d" />
