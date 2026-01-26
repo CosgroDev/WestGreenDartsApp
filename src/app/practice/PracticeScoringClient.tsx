@@ -46,6 +46,8 @@ export default function PracticeScoringClient() {
   }, [gameId]);
 
   const startScore = meta?.practice_sessions?.start_score ?? START_FALLBACK;
+  const playerAName = meta?.practice_sessions?.player_a?.name ?? "Player A";
+  const playerBName = meta?.practice_sessions?.player_b?.name ?? "Player B";
 
   const handleKey = (n: number) => {
     setInputScore((prev) => {
@@ -172,12 +174,16 @@ export default function PracticeScoringClient() {
 
       <div className="flex gap-2 text-sm">
         <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2">
-          <p className="text-xs uppercase text-emerald-700">Player A remaining</p>
-          <p className="text-2xl font-semibold text-emerald-900">{activeSide === "a" ? remaining : "—"}</p>
+          <p className="text-xs uppercase text-emerald-700">{playerAName} remaining</p>
+          <p className="text-2xl font-semibold text-emerald-900">
+            {activeSide === "a" ? remaining : meta?.practice_sessions?.start_score ?? START_FALLBACK}
+          </p>
         </div>
         <div className="rounded-lg border border-slate-200 bg-white px-3 py-2">
-          <p className="text-xs uppercase text-slate-600">Player B remaining</p>
-          <p className="text-2xl font-semibold text-slate-900">{activeSide === "b" ? remaining : "—"}</p>
+          <p className="text-xs uppercase text-slate-600">{playerBName} remaining</p>
+          <p className="text-2xl font-semibold text-slate-900">
+            {activeSide === "b" ? remaining : meta?.practice_sessions?.start_score ?? START_FALLBACK}
+          </p>
         </div>
       </div>
 

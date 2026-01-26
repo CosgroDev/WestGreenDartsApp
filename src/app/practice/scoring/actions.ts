@@ -71,10 +71,16 @@ export async function recordPracticeVisitAction(
   const remainingAfter = isBust ? remaining : next;
   const dartsUsed = isCheckout ? dartsOverride ?? 3 : 3;
 
+  const { data: gameSession } = await supabase
+    .from("practice_games")
+    .select("session_id")
+    .eq("id", gameId)
+    .single();
+
   const { error } = await supabase.from("practice_events").insert({
     team_id: TEAM_ID,
     game_id: gameId,
-    session_id: null,
+    session_id: gameSession?.session_id ?? null,
     throw_index: visits.length + 1,
     score,
     darts: dartsUsed,
