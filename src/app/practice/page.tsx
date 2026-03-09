@@ -30,6 +30,21 @@ export default async function PracticePage() {
         <h1 className="text-2xl font-semibold">Practice sessions</h1>
       </header>
 
+      {/* Quick links to other practice games */}
+      <section className="card">
+        <h2 className="text-base font-semibold mb-2 text-slate-700">Practice games</h2>
+        <Link
+          href="/practice/121"
+          className="flex items-center justify-between rounded-md border border-purple-200 bg-purple-50 px-4 py-3 hover:bg-purple-100"
+        >
+          <div>
+            <p className="font-semibold text-purple-900">121 Challenge</p>
+            <p className="text-xs text-purple-600 mt-0.5">Progress from checkout 121 → 170</p>
+          </div>
+          <span className="text-purple-700 font-semibold text-sm">Play →</span>
+        </Link>
+      </section>
+
       <section className="card">
         <h2 className="text-lg font-semibold mb-3">Start a session</h2>
         <form action={createPracticeSessionAction} className="grid grid-cols-1 sm:grid-cols-2 gap-3">
