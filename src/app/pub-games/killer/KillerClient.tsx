@@ -529,7 +529,7 @@ function SegmentSettingScreen({ game, onUpdate }: { game: KillerGame; onUpdate: 
 
 function FinalProofScreen({ game, onUpdate }: { game: KillerGame; onUpdate: (g: KillerGame) => void }) {
   const owner = game.players.find((p) => p.id === game.segment_owner_id);
-  const allowedDarts = owner?.lives ?? 1;
+  const allowedDarts = (owner?.lives ?? 1) * 3;
   const dartsLeft = allowedDarts - game.darts_thrown_this_turn;
 
   return (

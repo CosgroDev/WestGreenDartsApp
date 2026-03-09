@@ -201,7 +201,7 @@ export function finalProofHit(game: KillerGame): KillerGame {
 export function finalProofMiss(game: KillerGame): KillerGame {
   if (game.state !== "final_proof") return game;
   const owner = game.players.find((p) => p.id === game.segment_owner_id);
-  const allowedDarts = owner?.lives ?? 1;
+  const allowedDarts = (owner?.lives ?? 1) * 3;
   const newDartsThrown = game.darts_thrown_this_turn + 1;
   if (newDartsThrown < allowedDarts) {
     return { ...game, darts_thrown_this_turn: newDartsThrown };
