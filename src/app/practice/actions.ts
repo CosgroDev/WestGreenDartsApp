@@ -5,16 +5,14 @@ import { redirect } from "next/navigation";
 import { supabaseServer } from "@/lib/supabaseServer";
 import { createPracticeSession } from "@/data/practice";
 
-export async function createPracticeSessionAction(formData: FormData) {
+export async function createPracticeSessionAction(formData: FormData): Promise<void> {
   const playerA = (formData.get("playerA") as string | null) || null;
   const playerB = (formData.get("playerB") as string | null) || null;
   const startScore = parseInt((formData.get("startScore") as string) || "501", 10);
-  const legsToPlay = parseInt((formData.get("legs") as string) || "1", 10);
+  const legsToPlay = parseInt((formData.get("legs") as string) || "3", 10);
 
   const res = await createPracticeSession({ playerA, playerB, startScore, legsToPlay });
-  if (!res.ok || !res.sessionId || !res.gameId) {
-    return { ok: false, message: res.message ?? "Could not create practice session" };
-  }
+  if (!res.ok || !res.sessionId || !res.gameId) return;
   redirect(`/practice/scoring?session=${res.sessionId}&game=${res.gameId}`);
 }
 
