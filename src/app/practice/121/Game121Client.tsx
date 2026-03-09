@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { load121StateAction, record121TurnAction, delete121SessionAction } from "./actions";
+import { load121StateAction, record121TurnAction, abandon121SessionAction } from "./actions";
 
 type Turn = {
   id: number;
@@ -73,7 +73,7 @@ export default function Game121Client({ sessionId }: { sessionId: string }) {
 
   const abandon = () => {
     startTransition(async () => {
-      await delete121SessionAction(sessionId);
+      await abandon121SessionAction(sessionId);
       router.push("/practice/121");
     });
   };
@@ -272,13 +272,13 @@ export default function Game121Client({ sessionId }: { sessionId: string }) {
       <div className="border-t border-slate-100 pt-2">
         {confirmAbandon ? (
           <div className="flex items-center gap-2">
-            <span className="text-sm text-slate-600 flex-1">Abandon this game?</span>
+            <span className="text-sm text-slate-600 flex-1">End game and save progress?</span>
             <button
               onClick={abandon}
               disabled={pending}
-              className="rounded-md bg-red-600 px-3 py-1.5 text-sm font-semibold text-white hover:bg-red-700 disabled:opacity-50"
+              className="rounded-md bg-slate-700 px-3 py-1.5 text-sm font-semibold text-white hover:bg-slate-800 disabled:opacity-50"
             >
-              Yes, abandon
+              Yes, end game
             </button>
             <button
               onClick={() => setConfirmAbandon(false)}
@@ -290,9 +290,9 @@ export default function Game121Client({ sessionId }: { sessionId: string }) {
         ) : (
           <button
             onClick={() => setConfirmAbandon(true)}
-            className="rounded-md border border-red-200 px-3 py-1.5 text-xs font-semibold text-red-600 hover:bg-red-50"
+            className="rounded-md border border-slate-300 px-3 py-1.5 text-xs font-semibold text-slate-600 hover:border-slate-400"
           >
-            Abandon game
+            End game
           </button>
         )}
       </div>

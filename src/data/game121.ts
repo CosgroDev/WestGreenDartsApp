@@ -13,9 +13,11 @@ export async function get121PlayerStats(): Promise<Game121PlayerStat[]> {
   const supabase = supabaseServer();
   if (!supabase) return [];
 
+  // Only count finished games (won or abandoned) — not in_progress
   const { data: sessions } = await supabase
     .from("game_121_sessions")
-    .select("id, player_id, status, player:player_id(name)");
+    .select("id, player_id, status, player:player_id(name)")
+    .in("status", ["won", "abandoned"]);
   if (!sessions?.length) return [];
 
   const { data: turns } = await supabase

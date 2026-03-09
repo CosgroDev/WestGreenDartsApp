@@ -140,10 +140,13 @@ export async function record121TurnAction(sessionId: string, score: number) {
   return { ok: true, result };
 }
 
-export async function delete121SessionAction(sessionId: string) {
+export async function abandon121SessionAction(sessionId: string) {
   const supabase = supabaseServer();
   if (!supabase) return { ok: false };
-  await supabase.from("game_121_sessions").delete().eq("id", sessionId);
+  await supabase
+    .from("game_121_sessions")
+    .update({ status: "abandoned", completed_at: new Date().toISOString() })
+    .eq("id", sessionId);
   revalidatePath("/practice/121");
   return { ok: true };
 }
