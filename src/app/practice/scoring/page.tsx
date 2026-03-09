@@ -8,7 +8,9 @@ export const revalidate = false;
 async function getLatestGame(sessionId: string) {
   const supabase = supabaseServer();
   if (!supabase) return null;
-  const { data } = await supabase
+
+  // Prefer the active in_progress leg, fall back to most recent completed leg
+  const { data: inProgress } = await supabase
     .from("practice_games")
     .select("id")
     .eq("session_id", sessionId)
@@ -16,7 +18,17 @@ async function getLatestGame(sessionId: string) {
     .order("created_at", { ascending: true })
     .limit(1)
     .maybeSingle();
-  return data?.id ?? null;
+  if (inProgress?.id) return inProgress.id;
+
+  const { data: completed } = await supabase
+    .from("practice_games")
+    .select("id")
+    .eq("session_id", sessionId)
+    .eq("status", "completed")
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  return completed?.id ?? null;
 }
 
 export default async function PracticeScoringPage({ searchParams }: { searchParams: { session?: string; game?: string } }) {
