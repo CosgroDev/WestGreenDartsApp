@@ -16,7 +16,7 @@ export default async function PracticePage() {
         <div className="flex items-center justify-between mb-1">
           <p className="text-sm text-slate-600">Practice arena</p>
           <Link
-            href="/"
+            href="/dashboard"
             className="rounded-md border border-slate-300 px-2 py-1 text-xs font-semibold text-slate-600 hover:border-slate-400 hover:text-slate-800"
           >
             ← Dashboard
