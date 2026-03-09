@@ -80,10 +80,17 @@ function DartIndicator({ thrown, total }: { thrown: number; total: number }) {
 
 // ── Segment Keypad ────────────────────────────────────────────────────────────
 
-function SegmentKeypad({ onSelect, label }: { onSelect: (seg: string) => void; label: string }) {
-  const [multiplier, setMultiplier] = useState<"S" | "D" | "T" | null>(null);
+type Multiplier = "SO" | "SI" | "D" | "T";
 
-  const handleMultiplier = (m: "S" | "D" | "T") => setMultiplier(m);
+const MULTIPLIER_OPTIONS: { value: Multiplier; label: string; sub: string; style: string; activeStyle: string }[] = [
+  { value: "SO", label: "S", sub: "big",   style: "bg-slate-100 text-slate-800 border-2 border-slate-200", activeStyle: "bg-emerald-600 text-white border-2 border-emerald-700" },
+  { value: "SI", label: "S", sub: "small", style: "bg-slate-100 text-slate-800 border-2 border-slate-200", activeStyle: "bg-emerald-600 text-white border-2 border-emerald-700" },
+  { value: "D",  label: "D", sub: "double", style: "bg-blue-50 text-blue-800 border-2 border-blue-200",   activeStyle: "bg-blue-600 text-white border-2 border-blue-700" },
+  { value: "T",  label: "T", sub: "treble", style: "bg-purple-50 text-purple-800 border-2 border-purple-200", activeStyle: "bg-purple-600 text-white border-2 border-purple-700" },
+];
+
+function SegmentKeypad({ onSelect, label }: { onSelect: (seg: string) => void; label: string }) {
+  const [multiplier, setMultiplier] = useState<Multiplier | null>(null);
 
   const handleNumber = (n: number | "25" | "BULL") => {
     if (n === "25") { onSelect("25"); setMultiplier(null); return; }
@@ -94,38 +101,39 @@ function SegmentKeypad({ onSelect, label }: { onSelect: (seg: string) => void; l
   };
 
   const btnBase =
-    "flex items-center justify-center rounded-lg font-bold text-lg active:scale-95 transition-transform select-none touch-manipulation";
+    "flex items-center justify-center rounded-lg font-bold active:scale-95 transition-transform select-none touch-manipulation";
 
   return (
     <div className="flex flex-col gap-3">
       <p className="text-center text-sm text-slate-500 font-medium">{label}</p>
 
-      {/* Step 1: Multiplier */}
-      <div className="flex gap-2">
-        {(["S", "D", "T"] as const).map((m) => (
+      {/* Step 1: Multiplier row */}
+      <div className="grid grid-cols-3 gap-2">
+        {MULTIPLIER_OPTIONS.map((opt) => (
           <button
-            key={m}
-            onClick={() => handleMultiplier(m)}
-            className={`${btnBase} flex-1 h-14 text-xl ${
-              multiplier === m
-                ? "bg-emerald-600 text-white border-2 border-emerald-700"
-                : "bg-slate-100 text-slate-800 border-2 border-slate-200"
+            key={opt.value}
+            onClick={() => setMultiplier(opt.value)}
+            className={`${btnBase} flex-col h-14 text-lg leading-none ${
+              multiplier === opt.value ? opt.activeStyle : opt.style
             }`}
           >
-            {m}
+            <span className="text-xl font-black">{opt.label}</span>
+            <span className="text-[10px] font-medium opacity-70">{opt.sub}</span>
           </button>
         ))}
         <button
           onClick={() => handleNumber("25")}
-          className={`${btnBase} flex-1 h-14 bg-amber-100 text-amber-800 border-2 border-amber-200`}
+          className={`${btnBase} flex-col h-14 bg-amber-100 text-amber-800 border-2 border-amber-200`}
         >
-          25
+          <span className="text-xl font-black">25</span>
+          <span className="text-[10px] font-medium opacity-70">outer bull</span>
         </button>
         <button
           onClick={() => handleNumber("BULL")}
-          className={`${btnBase} flex-1 h-14 bg-red-100 text-red-800 border-2 border-red-200`}
+          className={`${btnBase} flex-col h-14 bg-red-100 text-red-800 border-2 border-red-200`}
         >
-          BULL
+          <span className="text-xl font-black">BULL</span>
+          <span className="text-[10px] font-medium opacity-70">bullseye</span>
         </button>
       </div>
 
@@ -136,7 +144,7 @@ function SegmentKeypad({ onSelect, label }: { onSelect: (seg: string) => void; l
             <button
               key={n}
               onClick={() => handleNumber(n)}
-              className={`${btnBase} h-12 bg-white border-2 border-slate-200 text-slate-800 hover:bg-slate-50`}
+              className={`${btnBase} h-12 text-base bg-white border-2 border-slate-200 text-slate-800 hover:bg-slate-50`}
             >
               {n}
             </button>
@@ -145,7 +153,7 @@ function SegmentKeypad({ onSelect, label }: { onSelect: (seg: string) => void; l
       )}
 
       {!multiplier && (
-        <p className="text-center text-sm text-slate-400 italic">Select a multiplier above, or tap 25 / BULL directly</p>
+        <p className="text-center text-sm text-slate-400 italic">Select a segment type above</p>
       )}
     </div>
   );
