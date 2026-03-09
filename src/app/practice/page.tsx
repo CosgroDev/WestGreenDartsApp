@@ -1,14 +1,19 @@
 ﻿import Link from "next/link";
 import { notFound } from "next/navigation";
-import { getPracticeSessions } from "@/data/practice";
+import { getPracticeSessions, getPracticePlayerStats } from "@/data/practice";
 import { getPlayers } from "@/data/players";
+import { StatBar } from "@/components/StatBar";
 import { createPracticeSessionAction } from "./actions";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 export default async function PracticePage() {
-  const [sessions, players] = await Promise.all([getPracticeSessions(), getPlayers()]);
+  const [sessions, players, practiceStats] = await Promise.all([
+    getPracticeSessions(),
+    getPlayers(),
+    getPracticePlayerStats(),
+  ]);
 
   return (
     <main className="flex flex-col gap-4">
@@ -97,6 +102,66 @@ export default async function PracticePage() {
           </button>
         </form>
       </section>
+
+      {practiceStats.length > 0 && (
+        <>
+          <section className="card">
+            <h2 className="text-lg font-semibold mb-3">Player stats</h2>
+            <div className="flex flex-col gap-2">
+              {practiceStats.map((p) => {
+                const diff = p.legs_won - (p.legs_played - p.legs_won);
+                const diffColor = diff > 0 ? "bg-emerald-50 text-emerald-700" : diff < 0 ? "bg-red-50 text-red-700" : "bg-slate-100 text-slate-700";
+                const diffLabel = diff > 0 ? `+${diff}` : `${diff}`;
+                return (
+                  <div key={p.player_id} className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 rounded-md border border-slate-200 px-3 py-3 text-sm">
+                    <div className="w-full sm:w-auto">
+                      <p className="font-semibold">{p.name}</p>
+                      <div className="mt-1 grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        <StatBar label="3DA" value={p.three_dart_avg} max={80} />
+                        <StatBar label="First 9" value={p.first_nine_avg} max={100} />
+                      </div>
+                      <div className="mt-1 flex gap-3 text-xs text-slate-500">
+                        {p.high_finish && <span>High finish: <strong className="text-slate-700">{p.high_finish}</strong></span>}
+                        {p.twenty_six > 0 && <span>26s: <strong className="text-slate-700">{p.twenty_six}</strong></span>}
+                        {p.one_eighty > 0 && <span className="text-purple-700">180s: <strong>{p.one_eighty}</strong></span>}
+                      </div>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      <span className="rounded-full bg-emerald-50 text-emerald-700 px-4 py-1.5 text-sm font-semibold">
+                        Won {p.legs_won}
+                      </span>
+                      <span className="rounded-full bg-slate-100 text-slate-700 px-4 py-1.5 text-sm font-semibold">
+                        Played {p.legs_played}
+                      </span>
+                      <span className={`rounded-full px-4 py-1.5 text-sm font-semibold ${diffColor}`}>
+                        {diffLabel}
+                      </span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </section>
+
+          {practiceStats.some((p) => p.one_eighty > 0) && (
+            <section className="card">
+              <h2 className="text-lg font-semibold mb-2">180s hit</h2>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                {practiceStats
+                  .filter((p) => p.one_eighty > 0)
+                  .map((p) => (
+                    <div key={p.player_id} className="flex items-center justify-between rounded-md border border-slate-200 px-3 py-2 text-sm">
+                      <span className="font-semibold">{p.name}</span>
+                      <span className="rounded-full bg-purple-50 text-purple-700 px-3 py-1 text-sm font-semibold">
+                        {p.one_eighty} × 180
+                      </span>
+                    </div>
+                  ))}
+              </div>
+            </section>
+          )}
+        </>
+      )}
 
       <section className="card">
         <h2 className="text-lg font-semibold mb-3">Recent sessions</h2>
