@@ -16,13 +16,16 @@ export async function get121PlayerStats(): Promise<Game121PlayerStat[]> {
   // Only count finished games (won or abandoned) — not in_progress
   const { data: sessions } = await supabase
     .from("game_121_sessions")
-    .select("id, player_id, status, player:player_id(name)")
+    .select("id, player_id, status, current_checkout, player:player_id(name)")
     .in("status", ["won", "abandoned"]);
   if (!sessions?.length) return [];
 
+  // Fetch turns only for these sessions (for lock rate calculation)
+  const sessionIds = (sessions as any[]).map((s: any) => s.id);
   const { data: turns } = await supabase
     .from("game_121_turns")
-    .select("session_id, checkout, turn_number, result")
+    .select("session_id, turn_number, result")
+    .in("session_id", sessionIds)
     .in("result", ["locked", "progressed", "won"]);
 
   type Acc = {
@@ -50,6 +53,8 @@ export async function get121PlayerStats(): Promise<Game121PlayerStat[]> {
     const a = map.get(s.player_id)!;
     a.played += 1;
     if (s.status === "won") a.won += 1;
+    // current_checkout = where they were when the game ended (mid-attempt or at 170)
+    if ((s.current_checkout ?? 0) > a.bestCheckout) a.bestCheckout = s.current_checkout;
   }
 
   if (turns) {
@@ -60,7 +65,6 @@ export async function get121PlayerStats(): Promise<Game121PlayerStat[]> {
       const a = map.get(s.player_id);
       if (!a) continue;
       a.completed += 1;
-      if (t.checkout > a.bestCheckout) a.bestCheckout = t.checkout;
       if (t.turn_number === 1) a.t1Finishes += 1;
     }
   }

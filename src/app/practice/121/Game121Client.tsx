@@ -148,21 +148,36 @@ export default function Game121Client({ sessionId }: { sessionId: string }) {
   // ── In-progress game screen ─────────────────────────────────────
   return (
     <div className="card flex flex-col gap-3">
-      {/* Nav */}
-      <div className="flex items-center gap-2 border-b border-slate-100 pb-2">
-        <a
-          href="/dashboard"
-          className="rounded-md border border-slate-300 px-2 py-1 text-xs font-semibold text-slate-600 hover:border-slate-400"
-        >
-          ← Dashboard
-        </a>
-        <a
-          href="/practice/121"
-          className="rounded-md border border-purple-200 bg-purple-50 px-2 py-1 text-xs font-semibold text-purple-700 hover:bg-purple-100"
-        >
-          121
-        </a>
-        <span className="ml-auto text-xs text-slate-500 font-semibold">{playerName}</span>
+      {/* Nav — no links away from game; must use End game to exit */}
+      <div className="flex items-center justify-between border-b border-slate-100 pb-2">
+        <div>
+          <p className="text-xs text-slate-500">121 Challenge</p>
+          <p className="text-sm font-semibold text-slate-800">{playerName}</p>
+        </div>
+        {confirmAbandon ? (
+          <div className="flex items-center gap-2">
+            <button
+              onClick={abandon}
+              disabled={pending}
+              className="rounded-md bg-slate-700 px-3 py-1.5 text-xs font-semibold text-white hover:bg-slate-800 disabled:opacity-50"
+            >
+              Yes, end game
+            </button>
+            <button
+              onClick={() => setConfirmAbandon(false)}
+              className="rounded-md border border-slate-300 px-3 py-1.5 text-xs font-semibold text-slate-700"
+            >
+              Cancel
+            </button>
+          </div>
+        ) : (
+          <button
+            onClick={() => setConfirmAbandon(true)}
+            className="rounded-md border border-slate-300 px-3 py-1.5 text-xs font-semibold text-slate-600 hover:border-slate-400"
+          >
+            End game
+          </button>
+        )}
       </div>
 
       {/* Progress bar */}
@@ -268,34 +283,6 @@ export default function Game121Client({ sessionId }: { sessionId: string }) {
         </div>
       )}
 
-      {/* Abandon */}
-      <div className="border-t border-slate-100 pt-2">
-        {confirmAbandon ? (
-          <div className="flex items-center gap-2">
-            <span className="text-sm text-slate-600 flex-1">End game and save progress?</span>
-            <button
-              onClick={abandon}
-              disabled={pending}
-              className="rounded-md bg-slate-700 px-3 py-1.5 text-sm font-semibold text-white hover:bg-slate-800 disabled:opacity-50"
-            >
-              Yes, end game
-            </button>
-            <button
-              onClick={() => setConfirmAbandon(false)}
-              className="rounded-md border border-slate-300 px-3 py-1.5 text-sm font-semibold text-slate-700"
-            >
-              Cancel
-            </button>
-          </div>
-        ) : (
-          <button
-            onClick={() => setConfirmAbandon(true)}
-            className="rounded-md border border-slate-300 px-3 py-1.5 text-xs font-semibold text-slate-600 hover:border-slate-400"
-          >
-            End game
-          </button>
-        )}
-      </div>
     </div>
   );
 }
