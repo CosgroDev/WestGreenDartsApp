@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { Button } from "@/components/ui/button";
 
 type Season = { id: string; name: string; is_current: boolean };
 type Fixture = { id: string; season: string; opponent: string };
@@ -79,15 +80,15 @@ export function ExportLinks({ seasons, fixtures, currentSeasonId }: Props) {
       </div>
 
       <div className="flex flex-col gap-2">
-        <a className="text-emerald-700 underline" href={eventsUrl}>
-          Download scoring events
-        </a>
-        <a className="text-emerald-700 underline" href={fixturesUrl}>
-          Download fixtures
-        </a>
-        <a className="text-emerald-700 underline" href={playerStatsUrl}>
-          Download player stats
-        </a>
+        <Button variant="link" className="justify-start px-0" asChild>
+          <a href={eventsUrl}>Download scoring events</a>
+        </Button>
+        <Button variant="link" className="justify-start px-0" asChild>
+          <a href={fixturesUrl}>Download fixtures</a>
+        </Button>
+        <Button variant="link" className="justify-start px-0" asChild>
+          <a href={playerStatsUrl}>Download player stats</a>
+        </Button>
       </div>
     </div>
   );

@@ -3,6 +3,8 @@ import { getFixtures } from "@/data/fixtures";
 import { getSeasons } from "@/data/seasons";
 import { deleteFixtureAction } from "./actions";
 import { CreateFixtureForm } from "./CreateFixtureForm";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 
 function formatDate(date: string) {
   return new Intl.DateTimeFormat("en-GB", {
@@ -58,22 +60,12 @@ export default async function FixturesPage({
     <main className="flex flex-col gap-4">
       <header className="card">
         <div className="mb-2 flex gap-2">
-          <a
-            href="/dashboard"
-            className="inline-flex items-center justify-center rounded-full bg-slate-100 px-3 py-2 text-sm font-semibold text-slate-800 hover:bg-slate-200"
-            aria-label="Back"
-            title="Back"
-          >
-            ←
-          </a>
-          <a
-            href="/seasons"
-            className="inline-flex items-center justify-center rounded-full bg-slate-100 px-3 py-2 text-sm font-semibold text-slate-800 hover:bg-slate-200"
-            aria-label="Seasons"
-            title="Seasons"
-          >
-            📅
-          </a>
+          <Button variant="secondary" size="sm" asChild className="rounded-full">
+            <a href="/dashboard" aria-label="Back" title="Back">←</a>
+          </Button>
+          <Button variant="secondary" size="sm" asChild className="rounded-full">
+            <a href="/seasons" aria-label="Seasons" title="Seasons">📅</a>
+          </Button>
         </div>
         <p className="text-sm text-slate-600">Season fixtures</p>
         <h1 className="text-2xl font-semibold">Fixtures</h1>
@@ -97,12 +89,7 @@ export default async function FixturesPage({
               </option>
             ))}
           </select>
-          <button
-            type="submit"
-            className="rounded-md bg-emerald-600 px-3 py-2 text-white text-sm font-semibold hover:bg-emerald-700"
-          >
-            Apply
-          </button>
+          <Button type="submit" size="sm">Apply</Button>
         </form>
         <div className="mt-2 grid grid-cols-2 sm:grid-cols-4 gap-2">
           <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2">
@@ -149,19 +136,16 @@ export default async function FixturesPage({
               <p className="text-sm text-slate-700">{formatDate(upcoming.starts_at)}</p>
               {upcoming.venue && <p className="text-sm text-slate-600">{upcoming.venue}</p>}
             </div>
-            <Link
-              href={`/fixtures/${upcoming.id}`}
-              className="inline-flex items-center rounded-md bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700"
-            >
-              Open fixture
-            </Link>
+            <Button asChild>
+              <Link href={`/fixtures/${upcoming.id}`}>Open fixture</Link>
+            </Button>
           </div>
         </section>
       )}
 
       <details className="card">
         <summary className="text-lg font-semibold cursor-pointer select-none flex items-center gap-2">
-          <span className="inline-flex items-center justify-center rounded-full bg-slate-100 px-3 py-2 text-sm font-semibold text-slate-800 hover:bg-slate-200">
+          <span className="inline-flex items-center justify-center rounded-full bg-slate-100 px-3 py-2 text-sm font-semibold text-slate-800">
             ☰
           </span>
           <span>Add fixture</span>
@@ -181,29 +165,21 @@ export default async function FixturesPage({
                 <div className="flex flex-col gap-1">
                   <div className="flex items-center gap-2">
                     <span className="text-xs text-slate-500">{fixture.season}</span>
-                    <span className="rounded-full bg-emerald-50 text-emerald-700 px-2 py-0.5 text-xs">
-                      {fixture.home ? "Home" : "Away"}
-                    </span>
+                    <Badge variant="win">{fixture.home ? "Home" : "Away"}</Badge>
                     {fixture.status && (
-                      <span
-                        className={`rounded-full px-2 py-0.5 text-xs font-semibold ${
-                          fixture.status === "win"
-                            ? "bg-emerald-50 text-emerald-700"
-                            : fixture.status === "loss"
-                            ? "bg-red-50 text-red-700"
-                            : fixture.status === "draw"
-                            ? "bg-amber-50 text-amber-700"
-                            : "bg-slate-100 text-slate-700"
-                        }`}
+                      <Badge
+                        variant={
+                          fixture.status === "win" ? "win"
+                          : fixture.status === "loss" ? "loss"
+                          : fixture.status === "draw" ? "draw"
+                          : "neutral"
+                        }
                       >
-                        {fixture.status === "win"
-                          ? "Win"
-                          : fixture.status === "loss"
-                          ? "Loss"
-                          : fixture.status === "draw"
-                          ? "Draw"
+                        {fixture.status === "win" ? "Win"
+                          : fixture.status === "loss" ? "Loss"
+                          : fixture.status === "draw" ? "Draw"
                           : "In progress"}
-                      </span>
+                      </Badge>
                     )}
                   </div>
                   <div className="flex items-center gap-2">
@@ -216,23 +192,21 @@ export default async function FixturesPage({
                   {fixture.notes && <p className="text-xs text-slate-500 line-clamp-2">{fixture.notes}</p>}
                 </div>
                 <div className="flex items-start gap-2">
-                  <Link
-                    href={`/fixtures/${fixture.id}`}
-                    className="flex h-8 w-8 items-center justify-center rounded-full border border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100"
-                    title="Open fixture"
-                  >
-                    ↗
-                  </Link>
+                  <Button variant="outline" size="icon" asChild className="rounded-full h-8 w-8 border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100">
+                    <Link href={`/fixtures/${fixture.id}`} title="Open fixture">↗</Link>
+                  </Button>
                   {fixture.games_count === 0 && (
                     <form action={deleteFixtureAction}>
                       <input type="hidden" name="fixtureId" value={fixture.id} />
-                      <button
+                      <Button
                         type="submit"
-                        className="rounded-full border border-slate-300 w-7 h-7 flex items-center justify-center text-slate-500 hover:border-red-200 hover:text-red-600 text-xs"
+                        variant="outline"
+                        size="icon"
+                        className="rounded-full h-7 w-7 text-slate-500 hover:border-red-200 hover:text-red-600 text-xs"
                         title="Delete fixture (only if no games)"
                       >
                         x
-                      </button>
+                      </Button>
                     </form>
                   )}
                 </div>

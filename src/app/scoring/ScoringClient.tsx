@@ -15,6 +15,8 @@ import {
   getLegSummariesAction,
   LegSummaryWire
 } from "./actions";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 
 type Visit = {
   score: number;
@@ -384,29 +386,19 @@ export default function ScoringPage() {
         <h1 className="text-2xl font-semibold">501 Double-Out</h1>
         {fixtureId && <p className="text-sm text-slate-700 mt-1">Fixture: {fixtureId}</p>}
         {gameId && (
-          <p className="text-sm">
-            <span
-              className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold ${
-                isCompleted ? "bg-emerald-100 text-emerald-800" : "bg-slate-100 text-slate-700"
-              }`}
-            >
+          <p className="text-sm mt-1">
+            <Badge variant={isCompleted ? "win" : "neutral"}>
               {isCompleted ? "Completed" : "In progress"}
-            </span>
+            </Badge>
           </p>
         )}
         <div className="mt-2 flex gap-2">
-          <a
-            className="inline-flex items-center rounded-md bg-emerald-600 px-3 py-2 text-sm font-semibold text-white hover:bg-emerald-700"
-            href={fixtureId ? `/fixtures/${fixtureId}` : "/fixtures"}
-          >
-            ← Back to fixture
-          </a>
-          <a
-            className="inline-flex items-center rounded-md bg-slate-200 px-3 py-2 text-sm font-semibold text-slate-800 hover:bg-slate-300"
-            href="/dashboard"
-          >
-            Dashboard
-          </a>
+          <Button size="sm" asChild>
+            <a href={fixtureId ? `/fixtures/${fixtureId}` : "/fixtures"}>← Back to fixture</a>
+          </Button>
+          <Button size="sm" variant="secondary" asChild>
+            <a href="/dashboard">Dashboard</a>
+          </Button>
         </div>
         <div className="mt-3 grid grid-cols-1 sm:grid-cols-3 gap-3">
           <div
@@ -439,13 +431,11 @@ export default function ScoringPage() {
           </p>
         )}
         {alert && <p className="mt-2 text-emerald-700 font-semibold">{alert}</p>}
-        {isCompleted && (
+        {isCompleted && fixtureId && (
           <div className="mt-3 flex flex-wrap gap-3">
-            {fixtureId && (
-              <a className="text-sm text-emerald-700 underline font-semibold" href={`/fixtures/${fixtureId}`}>
-                Back to fixture
-              </a>
-            )}
+            <Button variant="link" size="sm" asChild>
+              <a href={`/fixtures/${fixtureId}`}>Back to fixture</a>
+            </Button>
           </div>
         )}
       </header>
@@ -454,20 +444,22 @@ export default function ScoringPage() {
       <section className="card flex flex-col gap-3" id="summary">
         <h2 className="text-lg font-semibold">Enter score</h2>
         <div className="flex gap-2 items-center">
-        <button
-          className={`rounded-md px-4 py-2 text-sm font-semibold ${activeSide === "west" ? "bg-emerald-600 text-white" : "bg-slate-200 text-slate-800"}`}
+        <Button
+          size="sm"
+          variant={activeSide === "west" ? "default" : "secondary"}
           onClick={() => setActiveSide("west")}
-            disabled={finishPrompt !== null || isCompleted}
+          disabled={finishPrompt !== null || isCompleted}
         >
           {wgdName}
-        </button>
-        <button
-          className={`rounded-md px-4 py-2 text-sm font-semibold ${activeSide === "opponent" ? "bg-emerald-600 text-white" : "bg-slate-200 text-slate-800"}`}
+        </Button>
+        <Button
+          size="sm"
+          variant={activeSide === "opponent" ? "default" : "secondary"}
           onClick={() => setActiveSide("opponent")}
-            disabled={finishPrompt !== null || isCompleted}
+          disabled={finishPrompt !== null || isCompleted}
         >
           {oppName}
-        </button>
+        </Button>
           <span className="ml-auto text-sm text-slate-600">Input:</span>
           <span className="text-3xl font-semibold text-slate-900">{inputScore || "0"}</span>
         </div>
@@ -476,43 +468,46 @@ export default function ScoringPage() {
           <>
             <div className="grid grid-cols-3 gap-2">
               {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((n) => (
-                <button
+                <Button
                   key={n}
-                  className="rounded-md bg-slate-100 px-4 py-4 text-2xl font-semibold hover:bg-slate-200"
+                  variant="secondary"
+                  className="py-4 h-auto text-2xl"
                   onClick={() => appendDigit(n)}
                 >
                   {n}
-                </button>
+                </Button>
               ))}
-              <button
-                className="rounded-md bg-slate-100 px-4 py-4 text-2xl font-semibold hover:bg-slate-200"
+              <Button
+                variant="secondary"
+                className="py-4 h-auto text-2xl"
                 onClick={() => appendDigit(0)}
               >
                 0
-              </button>
-              <button
-                className="rounded-md bg-red-50 text-red-700 px-4 py-4 font-semibold hover:bg-red-100"
+              </Button>
+              <Button
+                className="bg-red-50 text-red-700 hover:bg-red-100 py-4 h-auto"
                 onClick={() => setInputScore("")}
               >
                 Clear
-              </button>
-              <button
-                className="rounded-md bg-emerald-600 text-white px-4 py-4 font-semibold hover:bg-emerald-700"
+              </Button>
+              <Button
+                className="py-4 h-auto"
                 onClick={() => addScore(parseInt(inputScore || "0", 10))}
                 disabled={pending}
               >
                 Enter
-              </button>
+              </Button>
             </div>
 
             <div className="flex gap-2 flex-wrap">
-              <button
-                className="rounded-md border border-slate-300 px-3 py-2 text-sm font-semibold hover:border-emerald-200"
+              <Button
+                variant="outline"
+                size="sm"
                 onClick={undo}
                 disabled={pending}
               >
                 Undo last score
-              </button>
+              </Button>
             </div>
           </>
         )}
@@ -522,9 +517,10 @@ export default function ScoringPage() {
             <p className="text-sm font-semibold">Checkout darts used?</p>
             <div className="flex gap-2">
               {[1, 2, 3].map((d) => (
-                <button
+                <Button
                   key={d}
-                  className="rounded-md border border-slate-300 px-3 py-2 text-sm font-semibold hover:border-emerald-200"
+                  variant="outline"
+                  size="sm"
                   onClick={() => {
                     if (!gameId) return;
                     startTransition(async () => {
@@ -547,14 +543,16 @@ export default function ScoringPage() {
                   }}
                 >
                   {d} dart{d > 1 ? "s" : ""}
-                </button>
+                </Button>
               ))}
-              <button
-                className="rounded-md border border-slate-300 px-3 py-2 text-sm font-semibold hover:border-red-200 text-red-700"
+              <Button
+                variant="outline"
+                size="sm"
+                className="text-red-700 hover:border-red-200"
                 onClick={() => setFinishPrompt(null)}
               >
                 Cancel
-              </button>
+              </Button>
             </div>
           </div>
         )}

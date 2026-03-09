@@ -5,6 +5,8 @@ import { getPlayers } from "@/data/players";
 import { getGamesForFixture, type Game } from "@/data/games";
 import { deleteMatchAction } from "./actions";
 import { CreateGameForm } from "./CreateGameClient";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 
 type Props = { params: { id: string } };
 
@@ -140,14 +142,9 @@ export default async function FixtureDetailPage({ params }: Props) {
     <main className="flex flex-col gap-4">
       <header className="card flex flex-col gap-3">
         <div className="flex items-center gap-2">
-          <a
-            href="/fixtures"
-            className="inline-flex items-center justify-center rounded-full bg-slate-100 px-3 py-2 text-sm font-semibold text-slate-800 hover:bg-slate-200"
-            aria-label="Back to fixtures"
-            title="Back to fixtures"
-          >
-            {"<"}
-          </a>
+          <Button variant="secondary" size="sm" asChild className="rounded-full">
+            <a href="/fixtures" aria-label="Back to fixtures" title="Back to fixtures">{"<"}</a>
+          </Button>
         </div>
         <p className="text-sm text-slate-600 mt-1">{fixture.season}</p>
         <h1 className="text-2xl font-semibold">
@@ -283,20 +280,18 @@ export default async function FixtureDetailPage({ params }: Props) {
                         <span className="text-xs text-slate-500">High checkout: —</span>
                         <div className="flex gap-3 mt-1">
                           {match.latestGameId && (
-                            <Link
-                              href={`/scoring?game=${match.latestGameId}&fixture=${fixture.id}&home=${fixture.home ? "1" : "0"}`}
-                              className="text-sm text-emerald-700 underline"
-                            >
-                              Open scoring
-                            </Link>
+                            <Button variant="link" size="sm" asChild className="h-auto p-0">
+                              <Link href={`/scoring?game=${match.latestGameId}&fixture=${fixture.id}&home=${fixture.home ? "1" : "0"}`}>
+                                Open scoring
+                              </Link>
+                            </Button>
                           )}
                           {match.latestGameId && (
-                            <Link
-                              href={`/scoring?game=${match.latestGameId}&fixture=${fixture.id}&home=${fixture.home ? "1" : "0"}#summary`}
-                              className="text-sm text-slate-600 underline"
-                            >
-                              View summary
-                            </Link>
+                            <Button variant="link" size="sm" asChild className="h-auto p-0 text-slate-600">
+                              <Link href={`/scoring?game=${match.latestGameId}&fixture=${fixture.id}&home=${fixture.home ? "1" : "0"}#summary`}>
+                                View summary
+                              </Link>
+                            </Button>
                           )}
                         </div>
                       </div>
@@ -304,17 +299,10 @@ export default async function FixtureDetailPage({ params }: Props) {
                         <form action={deleteMatchAction}>
                           <input type="hidden" name="fixtureId" value={fixture.id} />
                           <input type="hidden" name="opponent" value={match.opponentPlayer} />
-                          <input
-                            type="hidden"
-                            name="westId"
-                            value={match.matchKey.split("|")[0] === "none" ? "" : match.matchKey.split("|")[0]}
-                          />
-                          <button
-                            title="Delete game"
-                            className="rounded-full border border-slate-300 w-8 h-8 flex items-center justify-center text-slate-500 hover:border-red-200 hover:text-red-600"
-                          >
+                          <input type="hidden" name="westId" value={match.matchKey.split("|")[0] === "none" ? "" : match.matchKey.split("|")[0]} />
+                          <Button variant="outline" size="icon" title="Delete game" className="rounded-full h-8 w-8 text-slate-500 hover:border-red-200 hover:text-red-600">
                             x
-                          </button>
+                          </Button>
                         </form>
                       </div>
                     </div>
@@ -341,17 +329,9 @@ export default async function FixtureDetailPage({ params }: Props) {
                             {match.westPlayerName} vs {match.opponentPlayer}
                           </span>
                           <div className="flex items-center gap-2">
-                            <span
-                              className={`px-3 py-1 rounded-full text-sm font-semibold ${
-                                match.westWins > match.oppWins
-                                  ? "bg-emerald-100 text-emerald-800"
-                                  : match.westWins < match.oppWins
-                                  ? "bg-red-100 text-red-800"
-                                  : "bg-amber-100 text-amber-800"
-                              }`}
-                            >
+                            <Badge variant={match.westWins > match.oppWins ? "win" : match.westWins < match.oppWins ? "loss" : "draw"}>
                               {match.westWins > match.oppWins ? "W" : match.westWins < match.oppWins ? "L" : "D"}
-                            </span>
+                            </Badge>
                             <span className="text-sm text-slate-700">
                               {match.resultLabel} ({match.westWins}-{match.oppWins})
                             </span>
@@ -370,28 +350,19 @@ export default async function FixtureDetailPage({ params }: Props) {
                         </div>
                         <div className="flex items-start gap-2">
                           {match.latestGameId && (
-                            <Link
-                              href={`/scoring?game=${match.latestGameId}&fixture=${fixture.id}&home=${fixture.home ? "1" : "0"}#summary`}
-                              className="flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 text-slate-600 hover:border-emerald-200 hover:text-emerald-700"
-                              title="View summary"
-                            >
-                              🔍
-                            </Link>
+                            <Button variant="outline" size="icon" asChild className="rounded-full h-9 w-9 text-slate-600 hover:border-emerald-200 hover:text-emerald-700">
+                              <Link href={`/scoring?game=${match.latestGameId}&fixture=${fixture.id}&home=${fixture.home ? "1" : "0"}#summary`} title="View summary">
+                                🔍
+                              </Link>
+                            </Button>
                           )}
                           <form action={deleteMatchAction}>
                             <input type="hidden" name="fixtureId" value={fixture.id} />
                             <input type="hidden" name="opponent" value={match.opponentPlayer} />
-                            <input
-                              type="hidden"
-                              name="westId"
-                              value={match.matchKey.split("|")[0] === "none" ? "" : match.matchKey.split("|")[0]}
-                            />
-                            <button
-                              title="Delete game"
-                              className="flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 text-slate-500 hover:border-red-200 hover:text-red-600"
-                            >
+                            <input type="hidden" name="westId" value={match.matchKey.split("|")[0] === "none" ? "" : match.matchKey.split("|")[0]} />
+                            <Button variant="outline" size="icon" title="Delete game" className="rounded-full h-9 w-9 text-slate-500 hover:border-red-200 hover:text-red-600">
                               🗑️
-                            </button>
+                            </Button>
                           </form>
                         </div>
                       </div>

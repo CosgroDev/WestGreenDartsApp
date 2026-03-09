@@ -9,6 +9,7 @@ import {
   undoLastPracticeVisitAction,
   deletePracticeSessionFromScoringAction,
 } from "./scoring/actions";
+import { Button } from "@/components/ui/button";
 
 const START_FALLBACK = 501;
 
@@ -209,63 +210,55 @@ export default function PracticeScoringClient() {
             <>
               <p className="text-sm font-semibold text-slate-700">Session complete</p>
               <p className="text-xs text-slate-600">{legsToPlay} leg{legsToPlay !== 1 ? "s" : ""} played</p>
-              <a
-                href="/dashboard"
-                className="rounded-md bg-emerald-600 px-4 py-3 text-center text-white font-semibold hover:bg-emerald-700"
-              >
-                Dashboard
-              </a>
-              <a
-                href="/practice"
-                className="rounded-md border border-slate-300 px-4 py-2 text-center text-sm text-slate-700 hover:border-slate-400"
-              >
-                Back to sessions
-              </a>
+              <Button size="lg" asChild>
+                <a href="/dashboard">Dashboard</a>
+              </Button>
+              <Button variant="outline" asChild>
+                <a href="/practice">Back to sessions</a>
+              </Button>
             </>
           ) : (
             <>
               <p className="text-sm text-slate-600">
                 Leg {legIndex + 1} of {legsToPlay} ready
               </p>
-              <button
-                onClick={goToNextLeg}
-                className="rounded-md bg-emerald-600 px-4 py-3 text-white font-semibold hover:bg-emerald-700"
-              >
+              <Button size="lg" onClick={goToNextLeg}>
                 Start leg {legIndex + 1}
-              </button>
-              <a
-                href="/practice"
-                className="rounded-md border border-slate-300 px-4 py-2 text-center text-sm text-slate-700 hover:border-slate-400"
-              >
-                Back to sessions
-              </a>
+              </Button>
+              <Button variant="outline" asChild>
+                <a href="/practice">Back to sessions</a>
+              </Button>
             </>
           )}
           <div className="border-t border-slate-100 pt-2">
             {confirmDelete ? (
               <div className="flex items-center gap-2">
                 <span className="text-sm text-slate-600 flex-1">Delete this session?</span>
-                <button
-                  className="rounded-md bg-red-600 px-3 py-1.5 text-sm font-semibold text-white hover:bg-red-700 disabled:opacity-50"
+                <Button
+                  variant="destructive"
+                  size="sm"
                   onClick={deleteSession}
                   disabled={pending}
                 >
                   Yes, delete
-                </button>
-                <button
-                  className="rounded-md border border-slate-300 px-3 py-1.5 text-sm font-semibold text-slate-700 hover:border-slate-400"
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
                   onClick={() => setConfirmDelete(false)}
                 >
                   Cancel
-                </button>
+                </Button>
               </div>
             ) : (
-              <button
-                className="rounded-md border border-red-200 px-3 py-1.5 text-xs font-semibold text-red-600 hover:bg-red-50"
+              <Button
+                variant="outline"
+                size="sm"
+                className="text-red-600 border-red-200 hover:bg-red-50"
                 onClick={() => setConfirmDelete(true)}
               >
                 Delete session
-              </button>
+              </Button>
             )}
           </div>
         </div>
@@ -279,18 +272,12 @@ export default function PracticeScoringClient() {
       {/* Navigation + leg progress */}
       <div className="flex items-center justify-between gap-2 border-b border-slate-100 pb-2">
         <div className="flex items-center gap-2">
-          <a
-            href="/dashboard"
-            className="rounded-md border border-slate-300 px-2 py-1 text-xs font-semibold text-slate-600 hover:border-slate-400 hover:text-slate-800"
-          >
-            ← Dashboard
-          </a>
-          <a
-            href="/practice"
-            className="rounded-md border border-emerald-200 bg-emerald-50 px-2 py-1 text-xs font-semibold text-emerald-700 hover:bg-emerald-100"
-          >
-            Sessions
-          </a>
+          <Button variant="outline" size="xs" asChild>
+            <a href="/dashboard">← Dashboard</a>
+          </Button>
+          <Button size="xs" variant="secondary" className="border border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100" asChild>
+            <a href="/practice">Sessions</a>
+          </Button>
         </div>
         {meta && (
           <span className="text-sm font-semibold text-slate-800">Leg {legIndex} of {legsToPlay}</span>
@@ -300,22 +287,20 @@ export default function PracticeScoringClient() {
       {/* Player toggle + input display */}
       <div className="flex items-center justify-between">
         <div className="flex gap-2">
-          <button
-            className={`px-3 py-1 rounded-md text-sm font-semibold ${
-              activeSide === "a" ? "bg-emerald-600 text-white" : "bg-slate-200 text-slate-800"
-            }`}
+          <Button
+            size="sm"
+            variant={activeSide === "a" ? "default" : "secondary"}
             onClick={() => setActiveSide("a")}
           >
             {playerAName}
-          </button>
-          <button
-            className={`px-3 py-1 rounded-md text-sm font-semibold ${
-              activeSide === "b" ? "bg-emerald-600 text-white" : "bg-slate-200 text-slate-800"
-            }`}
+          </Button>
+          <Button
+            size="sm"
+            variant={activeSide === "b" ? "default" : "secondary"}
             onClick={() => setActiveSide("b")}
           >
             {playerBName}
-          </button>
+          </Button>
         </div>
         <div className="text-xl font-bold text-slate-800">{inputScore || "–"}</div>
       </div>
@@ -351,36 +336,38 @@ export default function PracticeScoringClient() {
       {/* Numpad */}
       <div className="grid grid-cols-3 gap-2">
         {[1, 2, 3, 4, 5, 6, 7, 8, 9, 0].map((n) => (
-          <button
+          <Button
             key={n}
-            className="rounded-md border border-slate-300 bg-white py-4 text-lg font-semibold hover:bg-slate-50 active:bg-slate-100"
+            variant="outline"
+            className="py-4 h-auto text-lg"
             onClick={() => handleKey(n)}
             disabled={pending}
           >
             {n}
-          </button>
+          </Button>
         ))}
-        <button
-          className="rounded-md bg-emerald-600 text-white py-3 font-semibold hover:bg-emerald-700 disabled:opacity-50"
+        <Button
+          className="py-3 h-auto"
           onClick={submitScore}
           disabled={pending}
         >
           Enter
-        </button>
-        <button
-          className="rounded-md bg-slate-100 text-slate-800 py-3 font-semibold hover:bg-slate-200 disabled:opacity-50"
+        </Button>
+        <Button
+          variant="secondary"
+          className="py-3 h-auto"
           onClick={clearInput}
           disabled={pending}
         >
           Clear
-        </button>
-        <button
-          className="rounded-md bg-red-50 text-red-700 py-3 font-semibold hover:bg-red-100 disabled:opacity-50"
+        </Button>
+        <Button
+          className="bg-red-50 text-red-700 hover:bg-red-100 py-3 h-auto"
           onClick={undo}
           disabled={pending}
         >
           Undo
-        </button>
+        </Button>
       </div>
 
       {/* Live per-player stats */}
@@ -396,27 +383,31 @@ export default function PracticeScoringClient() {
         {confirmDelete ? (
           <div className="flex items-center gap-2">
             <span className="text-sm text-slate-600 flex-1">Delete this session?</span>
-            <button
-              className="rounded-md bg-red-600 px-3 py-1.5 text-sm font-semibold text-white hover:bg-red-700 disabled:opacity-50"
+            <Button
+              variant="destructive"
+              size="sm"
               onClick={deleteSession}
               disabled={pending}
             >
               Yes, delete
-            </button>
-            <button
-              className="rounded-md border border-slate-300 px-3 py-1.5 text-sm font-semibold text-slate-700 hover:border-slate-400"
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
               onClick={() => setConfirmDelete(false)}
             >
               Cancel
-            </button>
+            </Button>
           </div>
         ) : (
-          <button
-            className="rounded-md border border-red-200 px-3 py-1.5 text-xs font-semibold text-red-600 hover:bg-red-50"
+          <Button
+            variant="outline"
+            size="sm"
+            className="text-red-600 border-red-200 hover:bg-red-50"
             onClick={() => setConfirmDelete(true)}
           >
             Delete session
-          </button>
+          </Button>
         )}
       </div>
     </div>

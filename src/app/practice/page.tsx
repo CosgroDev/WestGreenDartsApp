@@ -1,9 +1,11 @@
 ﻿import Link from "next/link";
-import { notFound } from "next/navigation";
 import { getPracticeSessions, getPracticePlayerStats } from "@/data/practice";
 import { getPlayers } from "@/data/players";
 import { StatBar } from "@/components/StatBar";
 import { createPracticeSessionAction } from "./actions";
+import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -20,12 +22,9 @@ export default async function PracticePage() {
       <header className="card">
         <div className="flex items-center justify-between mb-1">
           <p className="text-sm text-slate-600">Practice arena</p>
-          <Link
-            href="/dashboard"
-            className="rounded-md border border-slate-300 px-2 py-1 text-xs font-semibold text-slate-600 hover:border-slate-400 hover:text-slate-800"
-          >
-            ← Dashboard
-          </Link>
+          <Button variant="outline" size="xs" asChild>
+            <Link href="/dashboard">← Dashboard</Link>
+          </Button>
         </div>
         <h1 className="text-2xl font-semibold">Practice sessions</h1>
       </header>
@@ -49,36 +48,26 @@ export default async function PracticePage() {
         <h2 className="text-lg font-semibold mb-3">Start a session</h2>
         <form action={createPracticeSessionAction} className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div className="flex flex-col gap-1">
-            <label className="text-sm text-slate-700" htmlFor="playerA">
-              Player A (WGD)
-            </label>
-            <select id="playerA" name="playerA" className="rounded-md border border-slate-300 px-3 py-2">
+            <Label htmlFor="playerA">Player A (WGD)</Label>
+            <select id="playerA" name="playerA" className="flex h-10 w-full rounded-md border border-slate-300 bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
               <option value="">Select player</option>
               {players.map((p) => (
-                <option key={p.id} value={p.id}>
-                  {p.name}
-                </option>
+                <option key={p.id} value={p.id}>{p.name}</option>
               ))}
             </select>
           </div>
           <div className="flex flex-col gap-1">
-            <label className="text-sm text-slate-700" htmlFor="playerB">
-              Player B (WGD)
-            </label>
-            <select id="playerB" name="playerB" className="rounded-md border border-slate-300 px-3 py-2">
+            <Label htmlFor="playerB">Player B (WGD)</Label>
+            <select id="playerB" name="playerB" className="flex h-10 w-full rounded-md border border-slate-300 bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
               <option value="">Select player</option>
               {players.map((p) => (
-                <option key={p.id} value={p.id}>
-                  {p.name}
-                </option>
+                <option key={p.id} value={p.id}>{p.name}</option>
               ))}
             </select>
           </div>
           <div className="flex flex-col gap-1">
-            <label className="text-sm text-slate-700" htmlFor="startScore">
-              Start score
-            </label>
-            <select id="startScore" name="startScore" className="rounded-md border border-slate-300 px-3 py-2" defaultValue="501">
+            <Label htmlFor="startScore">Start score</Label>
+            <select id="startScore" name="startScore" defaultValue="501" className="flex h-10 w-full rounded-md border border-slate-300 bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
               <option value="301">301</option>
               <option value="501">501</option>
               <option value="701">701</option>
@@ -109,12 +98,9 @@ export default async function PracticePage() {
               ))}
             </div>
           </div>
-          <button
-            type="submit"
-            className="rounded-md bg-emerald-600 px-4 py-3 text-white font-semibold hover:bg-emerald-700 w-full sm:col-span-2"
-          >
+          <Button type="submit" size="lg" className="w-full sm:col-span-2">
             Start practice
-          </button>
+          </Button>
         </form>
       </section>
 
@@ -142,15 +128,11 @@ export default async function PracticePage() {
                       </div>
                     </div>
                     <div className="flex flex-wrap gap-2">
-                      <span className="rounded-full bg-emerald-50 text-emerald-700 px-4 py-1.5 text-sm font-semibold">
-                        Won {p.legs_won}
-                      </span>
-                      <span className="rounded-full bg-slate-100 text-slate-700 px-4 py-1.5 text-sm font-semibold">
-                        Played {p.legs_played}
-                      </span>
-                      <span className={`rounded-full px-4 py-1.5 text-sm font-semibold ${diffColor}`}>
+                      <Badge variant="win" className="px-4 py-1.5 text-sm">Won {p.legs_won}</Badge>
+                      <Badge variant="neutral" className="px-4 py-1.5 text-sm">Played {p.legs_played}</Badge>
+                      <Badge variant={diff > 0 ? "win" : diff < 0 ? "loss" : "neutral"} className="px-4 py-1.5 text-sm">
                         {diffLabel}
-                      </span>
+                      </Badge>
                     </div>
                   </div>
                 );
@@ -167,9 +149,7 @@ export default async function PracticePage() {
                   .map((p) => (
                     <div key={p.player_id} className="flex items-center justify-between rounded-md border border-slate-200 px-3 py-2 text-sm">
                       <span className="font-semibold">{p.name}</span>
-                      <span className="rounded-full bg-purple-50 text-purple-700 px-3 py-1 text-sm font-semibold">
-                        {p.one_eighty} × 180
-                      </span>
+                      <Badge variant="practice">{p.one_eighty} × 180</Badge>
                     </div>
                   ))}
               </div>

@@ -3,23 +3,25 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
+import { toast } from "sonner";
 import { enterPinAction } from "./actions";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
 export default function PinPage() {
   const router = useRouter();
   const [pin, setPin] = useState("");
-  const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
 
   const onSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    setError(null);
     startTransition(async () => {
       const formData = new FormData();
       formData.append("pin", pin);
       const res = await enterPinAction(formData);
       if (!res.ok) {
-        setError(res.message || "Could not sign in");
+        toast.error(res.message || "Could not sign in");
         return;
       }
       router.replace("/dashboard");
@@ -38,10 +40,8 @@ export default function PinPage() {
       </div>
 
       <form onSubmit={onSubmit} className="flex flex-col gap-3">
-        <label className="text-sm font-medium text-slate-700" htmlFor="pin">
-          PIN
-        </label>
-        <input
+        <Label htmlFor="pin">PIN</Label>
+        <Input
           id="pin"
           name="pin"
           type="password"
@@ -49,19 +49,13 @@ export default function PinPage() {
           pattern="[0-9]*"
           value={pin}
           onChange={(e) => setPin(e.target.value)}
-          className="rounded-md border border-slate-300 px-3 py-2 text-lg tracking-widest"
+          className="text-lg tracking-widest"
           placeholder="••••"
           required
         />
-        {error && <p className="text-sm text-red-600">{error}</p>}
-
-        <button
-          type="submit"
-          disabled={pending}
-          className="inline-flex justify-center rounded-md bg-emerald-600 px-4 py-2 text-white font-semibold hover:bg-emerald-700 disabled:opacity-60"
-        >
+        <Button type="submit" disabled={pending} className="w-full">
           {pending ? "Checking..." : "Unlock"}
-        </button>
+        </Button>
       </form>
     </main>
   );

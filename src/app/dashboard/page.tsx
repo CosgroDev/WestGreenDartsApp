@@ -8,6 +8,8 @@ import { ChartCard } from "./ChartCard";
 import { ExportLinks } from "./ExportLinks";
 import { getSeasons } from "@/data/seasons";
 import { getFixtures } from "@/data/fixtures";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 
 export default async function DashboardPage() {
   const [players, team, seasons, fixtures] = await Promise.all([
@@ -58,24 +60,15 @@ export default async function DashboardPage() {
         </div>
 
         <div className="card grid grid-cols-2 gap-2">
-          <Link
-            href="/fixtures"
-            className="rounded-md bg-emerald-600 px-4 py-3 text-center text-white font-semibold hover:bg-emerald-700"
-          >
-            Fixtures
-          </Link>
-          <Link
-            href="/players"
-            className="rounded-md bg-slate-200 px-4 py-3 text-center text-slate-800 font-semibold hover:bg-slate-300"
-          >
-            Players
-          </Link>
-          <Link
-            href="/practice"
-            className="rounded-md bg-purple-200 px-4 py-3 text-center text-purple-900 font-semibold hover:bg-purple-300 col-span-2 sm:col-span-1"
-          >
-            Practice arena
-          </Link>
+          <Button size="lg" asChild>
+            <Link href="/fixtures">Fixtures</Link>
+          </Button>
+          <Button size="lg" variant="secondary" asChild>
+            <Link href="/players">Players</Link>
+          </Button>
+          <Button size="lg" asChild className="col-span-2 sm:col-span-1 bg-purple-200 text-purple-900 hover:bg-purple-300">
+            <Link href="/practice">Practice arena</Link>
+          </Button>
         </div>
       </section>
 
@@ -95,21 +88,15 @@ export default async function DashboardPage() {
                 </div>
               </div>
               <div className="flex flex-wrap gap-2 sm:gap-3 w-full sm:w-auto">
-                <span className="rounded-full bg-emerald-50 text-emerald-700 px-4 py-1.5 text-sm font-semibold">
-                  Won {p.legs_won}
-                </span>
-                <span className="rounded-full bg-slate-100 text-slate-700 px-4 py-1.5 text-sm font-semibold">
-                  Played {p.legs_played}
-                </span>
+                <Badge variant="win" className="px-4 py-1.5 text-sm">Won {p.legs_won}</Badge>
+                <Badge variant="neutral" className="px-4 py-1.5 text-sm">Played {p.legs_played}</Badge>
                 {(() => {
                   const diff = (p.legs_won ?? 0) - ((p.legs_played ?? 0) - (p.legs_won ?? 0));
-                  const color =
-                    diff > 0 ? "bg-emerald-50 text-emerald-700" : diff < 0 ? "bg-red-50 text-red-700" : "bg-slate-100 text-slate-700";
                   const label = diff > 0 ? `+${diff}` : diff < 0 ? `${diff}` : "0";
                   return (
-                    <span className={`rounded-full px-4 py-1.5 text-sm font-semibold ${color}`}>
+                    <Badge variant={diff > 0 ? "win" : diff < 0 ? "loss" : "neutral"} className="px-4 py-1.5 text-sm">
                       {label}
-                    </span>
+                    </Badge>
                   );
                 })()}
               </div>
@@ -128,9 +115,7 @@ export default async function DashboardPage() {
                 className="flex items-center justify-between rounded-md border border-slate-200 px-3 py-2 text-sm"
               >
                 <span className="font-semibold">{p.name}</span>
-                <span className="rounded-full bg-purple-50 text-purple-700 px-3 py-1 text-sm font-semibold">
-                  {p.one_eighty} × 180
-                </span>
+                <Badge variant="practice">{p.one_eighty} × 180</Badge>
               </div>
             ))}
           </div>

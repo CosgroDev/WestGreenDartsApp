@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import Image from "next/image";
+import { Toaster } from "sonner";
 import "../app/globals.css";
 
 export const metadata: Metadata = {
@@ -39,6 +40,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           </div>
           {children}
         </div>
+        <Toaster richColors position="top-center" />
       </body>
     </html>
   );

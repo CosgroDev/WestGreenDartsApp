@@ -2,7 +2,13 @@
 
 import { useEffect, useRef } from "react";
 import { useFormState } from "react-dom";
+import { toast } from "sonner";
 import { createFixtureAction } from "./actions";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
 
 type SeasonOption = { id: string; name: string; is_current?: boolean };
 
@@ -14,6 +20,7 @@ export function CreateFixtureForm({ seasons, defaultSeasonId }: { seasons: Seaso
 
   useEffect(() => {
     if (state?.ok) {
+      toast.success("Fixture saved");
       const form = formRef.current;
       if (!form) return;
       const seasonEl = form.elements.namedItem("seasonId") as HTMLSelectElement | null;
@@ -26,25 +33,23 @@ export function CreateFixtureForm({ seasons, defaultSeasonId }: { seasons: Seaso
       // reset startsAt to "now"
       const startsAtEl = form.elements.namedItem("startsAt") as HTMLInputElement | null;
       if (startsAtEl) startsAtEl.value = new Date().toISOString().slice(0, 16);
+    } else if (state?.message && !state.ok && state.message !== "") {
+      toast.error(state.message);
     }
-  }, [state?.ok]);
+  }, [state]);
 
   return (
     <form ref={formRef} action={formAction} className="grid grid-cols-1 gap-3">
       <div className="flex flex-col gap-1">
-        <label className="text-sm text-slate-700" htmlFor="season">
-          Season
-        </label>
+        <Label htmlFor="season">Season</Label>
         <select
           id="season"
           name="seasonId"
-          className="rounded-md border border-slate-300 px-3 py-2"
+          className="flex h-10 w-full rounded-md border border-slate-300 bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           defaultValue={defaultSeasonId}
           required
         >
-          <option value="" disabled>
-            Select season
-          </option>
+          <option value="" disabled>Select season</option>
           {seasons.map((s) => (
             <option key={s.id} value={s.id}>
               {s.name} {s.is_current ? "(current)" : ""}
@@ -54,73 +59,37 @@ export function CreateFixtureForm({ seasons, defaultSeasonId }: { seasons: Seaso
       </div>
 
       <div className="flex flex-col gap-1">
-        <label className="text-sm text-slate-700" htmlFor="startsAt">
-          Date & time
-        </label>
-        <input
+        <Label htmlFor="startsAt">Date & time</Label>
+        <Input
           id="startsAt"
           name="startsAt"
           type="datetime-local"
           required
           defaultValue={new Date().toISOString().slice(0, 16)}
-          className="rounded-md border border-slate-300 px-3 py-2"
         />
       </div>
 
       <label className="inline-flex items-center gap-2 text-sm text-slate-700">
-        <input type="checkbox" name="home" className="h-4 w-4" />
+        <Checkbox name="home" />
         Home fixture
       </label>
 
       <div className="flex flex-col gap-1">
-        <label className="text-sm text-slate-700" htmlFor="opponent">
-          Opponent
-        </label>
-        <input
-          id="opponent"
-          name="opponent"
-          type="text"
-          required
-          className="rounded-md border border-slate-300 px-3 py-2"
-          placeholder="Opponent team name"
-        />
+        <Label htmlFor="opponent">Opponent</Label>
+        <Input id="opponent" name="opponent" type="text" required placeholder="Opponent team name" />
       </div>
 
       <div className="flex flex-col gap-1">
-        <label className="text-sm text-slate-700" htmlFor="venue">
-          Venue (optional)
-        </label>
-        <input
-          id="venue"
-          name="venue"
-          type="text"
-          className="rounded-md border border-slate-300 px-3 py-2"
-          placeholder="Venue"
-        />
+        <Label htmlFor="venue">Venue (optional)</Label>
+        <Input id="venue" name="venue" type="text" placeholder="Venue" />
       </div>
 
       <div className="flex flex-col gap-1">
-        <label className="text-sm text-slate-700" htmlFor="notes">
-          Notes
-        </label>
-        <textarea
-          id="notes"
-          name="notes"
-          className="rounded-md border border-slate-300 px-3 py-2"
-          rows={2}
-          placeholder="Any extra info"
-        />
+        <Label htmlFor="notes">Notes</Label>
+        <Textarea id="notes" name="notes" rows={2} placeholder="Any extra info" />
       </div>
 
-      {state?.message && !state.ok && <p className="text-sm text-red-600">{state.message}</p>}
-      {state?.ok && <p className="text-sm text-emerald-700">Fixture saved</p>}
-
-      <button
-        type="submit"
-        className="self-start rounded-md bg-emerald-600 px-4 py-2 text-white font-semibold hover:bg-emerald-700"
-      >
-        Save fixture
-      </button>
+      <Button type="submit" className="self-start">Save fixture</Button>
     </form>
   );
 }
