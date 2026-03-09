@@ -27,7 +27,7 @@ export async function deletePracticeSessionAction(formData: FormData): Promise<v
     .select("id, status")
     .eq("session_id", sessionId);
   if (error || !games) return;
-  const active = games.filter((g: any) => g.status !== "deleted");
+  const active = games.filter((g: any) => g.status === "in_progress");
   if (active.length > 0) return;
 
   await supabase.from("practice_sessions").delete().eq("id", sessionId);

@@ -1,4 +1,4 @@
-﻿import { notFound } from "next/navigation";
+﻿import { notFound, redirect } from "next/navigation";
 import { supabaseServer } from "@/lib/supabaseServer";
 import PracticeScoringClient from "../PracticeScoringClient";
 
@@ -25,7 +25,8 @@ export default async function PracticeScoringPage({ searchParams }: { searchPara
   if (!sessionId) return notFound();
   if (!gameId) {
     gameId = await getLatestGame(sessionId);
+    if (!gameId) return notFound();
+    redirect(`/practice/scoring?session=${sessionId}&game=${gameId}`);
   }
-  if (!gameId) return notFound();
   return <PracticeScoringClient />;
 }
