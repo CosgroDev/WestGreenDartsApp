@@ -56,23 +56,34 @@ export default async function PracticePage() {
               <option value="701">701</option>
             </select>
           </div>
-          <div className="flex flex-col gap-1">
-            <label className="text-sm text-slate-700" htmlFor="legs">
-              Legs to play
-            </label>
-            <input
-              id="legs"
-              name="legs"
-              type="number"
-              min={1}
-              max={10}
-              defaultValue={1}
-              className="rounded-md border border-slate-300 px-3 py-2"
-            />
+          <div className="flex flex-col gap-1 sm:col-span-2">
+            <p className="text-sm text-slate-700">Legs to play</p>
+            <div className="grid grid-cols-4 gap-2">
+              {[
+                { value: "1", label: "1", sub: "single" },
+                { value: "3", label: "3", sub: "best of 3" },
+                { value: "5", label: "5", sub: "best of 5" },
+                { value: "7", label: "7", sub: "best of 7" },
+              ].map((opt) => (
+                <label key={opt.value} className="cursor-pointer">
+                  <input
+                    type="radio"
+                    name="legs"
+                    value={opt.value}
+                    defaultChecked={opt.value === "3"}
+                    className="peer sr-only"
+                  />
+                  <span className="flex flex-col items-center justify-center rounded-md border border-slate-300 px-2 py-3 text-center text-slate-700 hover:border-emerald-300 peer-checked:border-emerald-500 peer-checked:bg-emerald-600 peer-checked:text-white">
+                    <span className="text-xl font-bold leading-none">{opt.label}</span>
+                    <span className="text-xs mt-1 opacity-75">{opt.sub}</span>
+                  </span>
+                </label>
+              ))}
+            </div>
           </div>
           <button
             type="submit"
-            className="rounded-md bg-emerald-600 px-4 py-2 text-white font-semibold hover:bg-emerald-700 w-full sm:w-auto"
+            className="rounded-md bg-emerald-600 px-4 py-3 text-white font-semibold hover:bg-emerald-700 w-full sm:col-span-2"
           >
             Start practice
           </button>

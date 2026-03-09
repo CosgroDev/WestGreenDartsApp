@@ -233,6 +233,14 @@ export default function PracticeScoringClient() {
   // In-progress scoring
   return (
     <div className="card flex flex-col gap-3">
+      {/* Leg progress */}
+      {meta && (
+        <div className="flex items-center justify-between text-sm text-slate-600 border-b border-slate-100 pb-2">
+          <span className="font-semibold text-slate-800">Leg {legIndex} of {legsToPlay}</span>
+          <a href="/practice" className="text-xs text-slate-400 hover:text-slate-600">← sessions</a>
+        </div>
+      )}
+
       {/* Player toggle + input display */}
       <div className="flex items-center justify-between">
         <div className="flex gap-2">
