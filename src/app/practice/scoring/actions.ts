@@ -162,6 +162,26 @@ export async function recordPracticeVisitAction(
   return { ok: true };
 }
 
+export async function deletePracticeSessionFromScoringAction(sessionId: string) {
+  const supabase = supabaseServer();
+  if (!supabase) return { ok: false };
+
+  const { data: games } = await supabase
+    .from("practice_games")
+    .select("id")
+    .eq("session_id", sessionId);
+
+  if (games?.length) {
+    const gameIds = games.map((g: any) => g.id);
+    await supabase.from("practice_events").delete().in("game_id", gameIds);
+    await supabase.from("practice_games").delete().eq("session_id", sessionId);
+  }
+
+  await supabase.from("practice_sessions").delete().eq("id", sessionId);
+  revalidatePath("/practice");
+  return { ok: true };
+}
+
 export async function undoLastPracticeVisitAction(gameId: string) {
   const supabase = supabaseServer();
   if (!supabase) return { ok: false, message: "Supabase not configured" };

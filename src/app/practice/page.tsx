@@ -2,7 +2,7 @@
 import { notFound } from "next/navigation";
 import { getPracticeSessions } from "@/data/practice";
 import { getPlayers } from "@/data/players";
-import { createPracticeSessionAction, deletePracticeSessionAction } from "./actions";
+import { createPracticeSessionAction } from "./actions";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -13,7 +13,15 @@ export default async function PracticePage() {
   return (
     <main className="flex flex-col gap-4">
       <header className="card">
-        <p className="text-sm text-slate-600">Practice arena</p>
+        <div className="flex items-center justify-between mb-1">
+          <p className="text-sm text-slate-600">Practice arena</p>
+          <Link
+            href="/"
+            className="rounded-md border border-slate-300 px-2 py-1 text-xs font-semibold text-slate-600 hover:border-slate-400 hover:text-slate-800"
+          >
+            ← Dashboard
+          </Link>
+        </div>
         <h1 className="text-2xl font-semibold">Practice sessions</h1>
       </header>
 
@@ -97,32 +105,21 @@ export default async function PracticePage() {
         ) : (
           <div className="flex flex-col gap-2">
             {sessions.map((s) => (
-              <div key={s.id} className="flex items-center justify-between rounded-md border border-slate-200 px-3 py-2 text-sm">
+              <div key={s.id} className="flex items-center justify-between rounded-md border border-slate-200 px-3 py-2.5 text-sm">
                 <div className="flex flex-col">
                   <span className="font-semibold">
                     {s.player_a_name || "Player A"} vs {s.player_b_name || "Player B"}
                   </span>
-                  <span className="text-slate-600">
-                    {s.start_score} · {s.legs_to_play} leg(s) · {s.status}
+                  <span className="text-slate-500 text-xs mt-0.5">
+                    {s.start_score} · {s.legs_to_play} leg{s.legs_to_play !== 1 ? "s" : ""} · {s.status}
                   </span>
                 </div>
-                <div className="flex items-center gap-2">
-                  <Link
-                    href={`/practice/scoring?session=${s.id}`}
-                    className="rounded-md border border-emerald-200 bg-emerald-50 px-3 py-1 text-emerald-700 font-semibold"
-                  >
-                    Open
-                  </Link>
-                  <form action={deletePracticeSessionAction}>
-                    <input type="hidden" name="sessionId" value={s.id} />
-                    <button
-                      className="rounded-full border border-slate-300 w-8 h-8 flex items-center justify-center text-slate-500 hover:border-red-200 hover:text-red-600"
-                      title="Delete session (only if no active games)"
-                    >
-                      ×
-                    </button>
-                  </form>
-                </div>
+                <Link
+                  href={`/practice/scoring?session=${s.id}`}
+                  className="rounded-md bg-emerald-600 px-4 py-2 text-sm text-white font-semibold hover:bg-emerald-700"
+                >
+                  Open
+                </Link>
               </div>
             ))}
           </div>
