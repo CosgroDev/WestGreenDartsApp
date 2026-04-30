@@ -27,11 +27,15 @@ export default async function FixturesPage({
   const uniqueSeasonNames = uniqueSeasons.map((s) => s.name);
   const defaultSeasonId =
     uniqueSeasons.find((s) => s.is_current)?.id ?? uniqueSeasons[0]?.id ?? "";
+  const activeSeasonName = uniqueSeasons.find((s) => s.is_current)?.name ?? uniqueSeasons[0]?.name ?? "";
 
+  // "all" means the user explicitly chose no filter; otherwise fall back to the active season
   const seasonFilterName =
-    searchParams?.season && searchParams.season !== "all" ? searchParams.season : undefined;
-  const defaultSeasonName =
-    searchParams?.season || (uniqueSeasonNames.length ? uniqueSeasonNames[0] : "all");
+    searchParams?.season === "all"
+      ? undefined
+      : (searchParams?.season || activeSeasonName || undefined);
+
+  const defaultSeasonName = searchParams?.season || activeSeasonName || "all";
 
   const fixturesAll = await getFixtures();
   const fixtures =
