@@ -115,8 +115,8 @@ export async function getPlayerCards(seasonId?: string): Promise<PlayerCard[]> {
         t140plus: 0,
         checkoutAttempts: 0,
         checkoutHits: 0,
-        wonDarts: [],
-        gameIds: []
+        wonDarts: [] as number[],
+        gameIds: [] as string[]
       };
     entry.played += 1;
     if (g.winner === "west_green") {
