@@ -10,13 +10,14 @@ import { getSeasons } from "@/data/seasons";
 import { getFixtures } from "@/data/fixtures";
 
 export default async function DashboardPage() {
-  const [players, team, seasons, fixtures] = await Promise.all([
-    getPlayerCards(),
-    getTeamCard(),
-    getSeasons(),
-    getFixtures()
+  const [seasons, fixtures] = await Promise.all([getSeasons(), getFixtures()]);
+  const currentSeason = seasons.find((s) => s.is_current);
+  const currentSeasonId = currentSeason?.id ?? "";
+
+  const [players, team] = await Promise.all([
+    getPlayerCards(currentSeasonId || undefined),
+    getTeamCard(currentSeasonId || undefined)
   ]);
-  const currentSeasonId = seasons.find((s) => s.is_current)?.id ?? "";
   const playersBy3da = [...players].sort((a, b) => (b.three_dart_avg ?? 0) - (a.three_dart_avg ?? 0));
   const playersByFirst9 = [...players].sort((a, b) => (b.first_nine_avg ?? 0) - (a.first_nine_avg ?? 0));
   const playersBy26 = [...players].sort((a, b) => (b.twenty_six ?? 0) - (a.twenty_six ?? 0));
@@ -34,6 +35,11 @@ export default async function DashboardPage() {
       <header className="card">
         <p className="text-sm text-slate-600">Overview</p>
         <h1 className="text-2xl font-semibold">Team Dashboard</h1>
+        {currentSeason ? (
+          <p className="mt-1 text-sm text-emerald-700 font-medium">Season {currentSeason.name}</p>
+        ) : (
+          <p className="mt-1 text-sm text-amber-600">No active season set — <a href="/settings" className="underline">configure in settings</a></p>
+        )}
       </header>
 
       <section className="grid grid-cols-1 gap-3">

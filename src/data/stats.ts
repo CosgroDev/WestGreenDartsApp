@@ -20,7 +20,7 @@ export type TeamCard = {
   high_finish: number | null;
 };
 
-export async function getPlayerCards(): Promise<PlayerCard[]> {
+export async function getPlayerCards(seasonId?: string): Promise<PlayerCard[]> {
   const supabase = supabaseServer();
   if (!supabase) return [];
 
@@ -32,14 +32,24 @@ export async function getPlayerCards(): Promise<PlayerCard[]> {
   if (playersErr || !activePlayers || !activePlayers.length) return [];
   const activeIds = new Set(activePlayers.map((p: any) => p.id));
 
-  // Completed games for active players
-  const { data: games, error: gamesErr } = await supabase
+  // Completed games for active players, optionally scoped to a season via fixture join
+  let gamesQuery = supabase
     .from("games")
-    .select("id, west_green_player_id, winner, status, completed_at")
+    .select(
+      seasonId
+        ? "id, west_green_player_id, winner, status, completed_at, fixtures!inner(season_id)"
+        : "id, west_green_player_id, winner, status, completed_at"
+    )
     .eq("deleted", false)
     .eq("status", "completed")
     .in("west_green_player_id", Array.from(activeIds))
     .order("completed_at", { ascending: true });
+
+  if (seasonId) {
+    gamesQuery = (gamesQuery as any).eq("fixtures.season_id", seasonId);
+  }
+
+  const { data: games, error: gamesErr } = await gamesQuery;
   if (gamesErr || !games || !games.length) return [];
 
   // Map games to players and collect game IDs
@@ -164,16 +174,26 @@ export async function getPlayerCards(): Promise<PlayerCard[]> {
   return players;
 }
 
-export async function getTeamCard(): Promise<TeamCard> {
+export async function getTeamCard(seasonId?: string): Promise<TeamCard> {
   const supabase = supabaseServer();
   if (!supabase) return { legs_played: 0, legs_won: 0, three_dart_avg: null, high_finish: null };
 
-  // Fetch completed games (ignore deleted)
-  const { data: games, error: gamesErr } = await supabase
+  // Fetch completed games (ignore deleted), optionally scoped to a season via fixture join
+  let gamesQuery = supabase
     .from("games")
-    .select("id, winner")
+    .select(
+      seasonId
+        ? "id, winner, fixtures!inner(season_id)"
+        : "id, winner"
+    )
     .eq("deleted", false)
     .eq("status", "completed");
+
+  if (seasonId) {
+    gamesQuery = (gamesQuery as any).eq("fixtures.season_id", seasonId);
+  }
+
+  const { data: games, error: gamesErr } = await gamesQuery;
 
   if (gamesErr || !games) {
     console.warn("team stats fallback", gamesErr?.message);

@@ -43,5 +43,8 @@ export async function setCurrentSeasonAction(seasonId: string): Promise<void> {
   await supabase.from("seasons").update({ is_current: false }).eq("team_id", TEAM_ID);
   const { error } = await supabase.from("seasons").update({ is_current: true }).eq("id", seasonId);
   if (error) return;
+
   revalidatePath("/seasons");
+  revalidatePath("/settings");
+  revalidatePath("/dashboard");
 }
