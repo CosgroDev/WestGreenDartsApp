@@ -11,6 +11,7 @@ export type PlayerCard = {
   twenty_six: number;
   one_eighty: number;
   high_finish: number | null;
+  sixty_plus: number;
   hundred_plus: number;
   hundred_forty_plus: number;
   darts_per_leg_won: number | null;
@@ -109,6 +110,7 @@ export async function getPlayerCards(seasonId?: string): Promise<PlayerCard[]> {
         first9Darts: 0,
         t26: 0,
         t180: 0,
+        t60plus: 0,
         t100plus: 0,
         t140plus: 0,
         checkoutAttempts: 0,
@@ -156,6 +158,7 @@ export async function getPlayerCards(seasonId?: string): Promise<PlayerCard[]> {
       if (typeof e.darts === "number") entry.totalDarts += e.darts;
       if (e.score === 26) entry.t26 += 1;
       if (e.score === 180) entry.t180 += 1;
+      if (typeof e.score === "number" && e.score >= 60) entry.t60plus += 1;
       if (typeof e.score === "number" && e.score >= 100) entry.t100plus += 1;
       if (typeof e.score === "number" && e.score >= 140) entry.t140plus += 1;
 
@@ -229,6 +232,7 @@ export async function getPlayerCards(seasonId?: string): Promise<PlayerCard[]> {
       twenty_six: val.t26,
       one_eighty: val.t180,
       high_finish: val.high_finish,
+      sixty_plus: val.t60plus,
       hundred_plus: val.t100plus,
       hundred_forty_plus: val.t140plus,
       darts_per_leg_won,

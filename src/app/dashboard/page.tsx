@@ -6,6 +6,7 @@ import { getPlayerCards, getTeamCard } from "@/data/stats";
 import { StatBar } from "@/components/StatBar";
 import { ChartCard } from "./ChartCard";
 import { ExportLinks } from "./ExportLinks";
+import { ScoringBreakdown } from "./ScoringBreakdown";
 import { getSeasons } from "@/data/seasons";
 import { getFixtures } from "@/data/fixtures";
 
@@ -114,30 +115,28 @@ export default async function DashboardPage() {
       {/* Scoring breakdown */}
       <section className="card">
         <h2 className="text-lg font-semibold mb-3">Scoring breakdown</h2>
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          <div className="flex flex-col gap-1 rounded-lg border border-slate-200 bg-slate-50 px-3 py-3">
-            <p className="text-xs text-slate-500 font-medium uppercase tracking-wide">60+ visits</p>
-            <p className="text-2xl font-bold text-slate-800">{team.sixty_plus}</p>
-          </div>
-          <div className="flex flex-col gap-1 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-3">
-            <p className="text-xs text-emerald-700 font-medium uppercase tracking-wide">100+ tons</p>
-            <p className="text-2xl font-bold text-emerald-800">{team.hundred_plus}</p>
-          </div>
-          <div className="flex flex-col gap-1 rounded-lg border border-purple-200 bg-purple-50 px-3 py-3">
-            <p className="text-xs text-purple-700 font-medium uppercase tracking-wide">140+ tons</p>
-            <p className="text-2xl font-bold text-purple-800">{team.hundred_forty_plus}</p>
-          </div>
-          <div className="flex flex-col gap-1 rounded-lg border border-amber-200 bg-amber-50 px-3 py-3">
-            <p className="text-xs text-amber-700 font-medium uppercase tracking-wide">180s</p>
-            <p className="text-2xl font-bold text-amber-800">{team.one_eighty_count}</p>
-          </div>
-        </div>
+        <ScoringBreakdown
+          team={{
+            sixty_plus: team.sixty_plus,
+            hundred_plus: team.hundred_plus,
+            hundred_forty_plus: team.hundred_forty_plus,
+            one_eighty_count: team.one_eighty_count,
+          }}
+          players={players.map((p) => ({
+            player_id: p.player_id,
+            name: p.name,
+            sixty_plus: p.sixty_plus,
+            hundred_plus: p.hundred_plus,
+            hundred_forty_plus: p.hundred_forty_plus,
+            one_eighty: p.one_eighty,
+          }))}
+        />
       </section>
 
       <section className="card">
-        <h2 className="text-lg font-semibold mb-2">Top players</h2>
-        <div className="grid grid-cols-1 gap-2">
-          {players.slice(0, 4).map((p) => {
+        <h2 className="text-lg font-semibold mb-2">Players</h2>
+        <div className="grid grid-cols-1 gap-2 max-h-[600px] overflow-y-auto pr-1">
+          {players.map((p) => {
             const winPct = p.legs_played > 0 ? (p.legs_won / p.legs_played) * 100 : null;
             const diff = (p.legs_won ?? 0) - ((p.legs_played ?? 0) - (p.legs_won ?? 0));
             const diffColor =
