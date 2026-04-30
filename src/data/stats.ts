@@ -88,6 +88,7 @@ export async function getPlayerCards(seasonId?: string): Promise<PlayerCard[]> {
       first9Darts: number;
       t26: number;
       t180: number;
+      t60plus: number;
       t100plus: number;
       t140plus: number;
       checkoutAttempts: number;
