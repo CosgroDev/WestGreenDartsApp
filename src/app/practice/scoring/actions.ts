@@ -1,11 +1,12 @@
-﻿"use server";
+"use server";
 
 import { revalidatePath } from "next/cache";
 import { supabaseServer } from "@/lib/supabaseServer";
 import { finishRoutes } from "@/lib/finishRoutes";
-import { computeRemaining } from "@/lib/scoringUtils";
+import { buildLegStats } from "@/lib/scoringUtils";
 
 const TEAM_ID = process.env.TEAM_ID;
+const START_FALLBACK = 501;
 
 async function fetchEvents(gameId: string) {
   const supabase = supabaseServer();
@@ -21,9 +22,10 @@ async function fetchEvents(gameId: string) {
 
 export async function loadPracticeStateAction(gameId: string) {
   const visits = await fetchEvents(gameId);
-  // derive remaining per side from last event per thrower
-  const lastA = [...visits].reverse().find((v) => v.thrower === "player_a");
-  const lastB = [...visits].reverse().find((v) => v.thrower === "player_b");
+
+  const visitsA = visits.filter((v: any) => v.thrower === "player_a");
+  const visitsB = visits.filter((v: any) => v.thrower === "player_b");
+
   const supabase = supabaseServer();
   let meta: any = null;
   let startScore = START_FALLBACK;
@@ -37,14 +39,27 @@ export async function loadPracticeStateAction(gameId: string) {
       .single();
     if (game) {
       meta = game;
-      startScore = game.practice_sessions?.start_score ?? START_FALLBACK;
+      startScore = (game as any).practice_sessions?.start_score ?? START_FALLBACK;
     }
   }
-  const remainingA = lastA ? lastA.remaining_after : startScore;
-  const remainingB = lastB ? lastB.remaining_after : startScore;
 
-  const finishHint = remainingA >= 2 && remainingA <= 170 ? finishRoutes[remainingA] ?? null : null;
-  return { ok: true, visits, remainingA, remainingB, finishHint, meta };
+  const remainingA = visitsA.length ? visitsA[visitsA.length - 1].remaining_after : startScore;
+  const remainingB = visitsB.length ? visitsB[visitsB.length - 1].remaining_after : startScore;
+
+  const finishHintA = remainingA >= 2 && remainingA <= 170 ? (finishRoutes[remainingA] ?? null) : null;
+  const finishHintB = remainingB >= 2 && remainingB <= 170 ? (finishRoutes[remainingB] ?? null) : null;
+
+  const toVisit = (v: any) => ({
+    score: v.score,
+    darts: v.darts,
+    remaining_after: v.remaining_after,
+    is_bust: v.is_bust,
+    is_checkout: v.is_checkout,
+  });
+  const statsA = buildLegStats(visitsA.map(toVisit));
+  const statsB = buildLegStats(visitsB.map(toVisit));
+
+  return { ok: true, visits, remainingA, remainingB, finishHintA, finishHintB, statsA, statsB, meta };
 }
 
 export async function recordPracticeVisitAction(
@@ -59,45 +74,46 @@ export async function recordPracticeVisitAction(
   const supabase = supabaseServer();
   if (!supabase) return { ok: false, message: "Supabase not configured" };
 
-  const visits = await fetchEvents(gameId);
-  const remaining = computeRemaining(visits.map((v) => ({
-    score: v.score,
-    darts: v.darts,
-    remaining_after: v.remaining_after,
-    is_bust: v.is_bust,
-    is_checkout: v.is_checkout
-  })) as any);
+  const allVisits = await fetchEvents(gameId);
+  const throwerKey = side === "a" ? "player_a" : "player_b";
+  const sideVisits = allVisits.filter((v: any) => v.thrower === throwerKey);
+
+  // Get startScore from session
+  const { data: gameData } = await supabase
+    .from("practice_games")
+    .select("session_id, practice_sessions(start_score)")
+    .eq("id", gameId)
+    .single();
+  const startScore = (gameData as any)?.practice_sessions?.start_score ?? START_FALLBACK;
+  const sessionId = (gameData as any)?.session_id ?? null;
+
+  const remaining = sideVisits.length ? sideVisits[sideVisits.length - 1].remaining_after : startScore;
   const next = remaining - score;
   const isCheckout = next === 0;
   const isBust = !isCheckout && (next < 0 || next === 1);
   const remainingAfter = isBust ? remaining : next;
-  const dartsUsed = isCheckout ? dartsOverride ?? 3 : 3;
-
-  const { data: gameSession } = await supabase
-    .from("practice_games")
-    .select("session_id")
-    .eq("id", gameId)
-    .single();
+  const dartsUsed = isCheckout ? (dartsOverride ?? 3) : 3;
 
   const { error } = await supabase.from("practice_events").insert({
     team_id: TEAM_ID,
     game_id: gameId,
-    session_id: gameSession?.session_id ?? null,
-    thrower: side === "a" ? "player_a" : "player_b",
-    throw_index: visits.length + 1,
+    session_id: sessionId,
+    thrower: throwerKey,
+    throw_index: allVisits.length + 1,
     score,
     darts: dartsUsed,
     remaining_after: remainingAfter,
     is_bust: isBust,
-    is_checkout: isCheckout
+    is_checkout: isCheckout,
   });
   if (error) return { ok: false, message: error.message };
 
-  // If checkout, mark game + possibly session
+  // If checkout, mark game complete and auto-create next leg or close session
   if (isCheckout && remainingAfter === 0) {
-    const totalVisits = await fetchEvents(gameId);
-    const totalDarts = totalVisits.reduce((s, v) => s + (v.darts ?? 0), 0);
-    const finishScore = score;
+    const updatedVisits = await fetchEvents(gameId);
+    const sideUpdated = updatedVisits.filter((v: any) => v.thrower === throwerKey);
+    const totalDarts = sideUpdated.reduce((s: number, v: any) => s + (v.darts ?? 0), 0);
+
     const { data: game } = await supabase
       .from("practice_games")
       .select("session_id, leg_index")
@@ -108,10 +124,10 @@ export async function recordPracticeVisitAction(
       .from("practice_games")
       .update({
         status: "completed",
-        winner: side === "a" ? "player_a" : "player_b",
+        winner: throwerKey,
         darts_thrown: totalDarts,
-        high_finish: finishScore,
-        completed_at: new Date().toISOString()
+        high_finish: score,
+        completed_at: new Date().toISOString(),
       })
       .eq("id", gameId);
 
@@ -130,8 +146,8 @@ export async function recordPracticeVisitAction(
       if (session && completedCount !== null && completedCount < (session.legs_to_play ?? 1)) {
         await supabase.from("practice_games").insert({
           session_id: game.session_id,
-          leg_index: (game.leg_index ?? 1) + 1,
-          status: "in_progress"
+          leg_index: ((game as any).leg_index ?? 1) + 1,
+          status: "in_progress",
         });
       } else if (session && completedCount !== null && completedCount >= (session.legs_to_play ?? 1)) {
         await supabase
@@ -146,19 +162,50 @@ export async function recordPracticeVisitAction(
   return { ok: true };
 }
 
+export async function deletePracticeSessionFromScoringAction(sessionId: string) {
+  const supabase = supabaseServer();
+  if (!supabase) return { ok: false };
+
+  const { data: games } = await supabase
+    .from("practice_games")
+    .select("id")
+    .eq("session_id", sessionId);
+
+  if (games?.length) {
+    const gameIds = games.map((g: any) => g.id);
+    await supabase.from("practice_events").delete().in("game_id", gameIds);
+    await supabase.from("practice_games").delete().eq("session_id", sessionId);
+  }
+
+  await supabase.from("practice_sessions").delete().eq("id", sessionId);
+  revalidatePath("/practice");
+  return { ok: true };
+}
+
 export async function undoLastPracticeVisitAction(gameId: string) {
   const supabase = supabaseServer();
   if (!supabase) return { ok: false, message: "Supabase not configured" };
+
   const { data: last } = await supabase
     .from("practice_events")
-    .select("id")
+    .select("id, thrower")
     .eq("game_id", gameId)
     .eq("is_deleted", false)
     .order("throw_index", { ascending: false })
     .limit(1)
     .maybeSingle();
-  if (!last) return { ok: true };
+
+  if (!last) return { ok: true, undidThrower: null };
+
   await supabase.from("practice_events").update({ is_deleted: true }).eq("id", last.id);
+
+  // If the game was completed, reopen it (e.g. undo after checkout)
+  await supabase
+    .from("practice_games")
+    .update({ status: "in_progress", winner: null, completed_at: null })
+    .eq("id", gameId)
+    .eq("status", "completed");
+
   revalidatePath(`/practice/scoring?game=${gameId}`);
-  return { ok: true };
+  return { ok: true, undidThrower: (last as any).thrower ?? null };
 }

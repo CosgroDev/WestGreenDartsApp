@@ -27,11 +27,15 @@ export default async function FixturesPage({
   const uniqueSeasonNames = uniqueSeasons.map((s) => s.name);
   const defaultSeasonId =
     uniqueSeasons.find((s) => s.is_current)?.id ?? uniqueSeasons[0]?.id ?? "";
+  const activeSeasonName = uniqueSeasons.find((s) => s.is_current)?.name ?? uniqueSeasons[0]?.name ?? "";
 
+  // "all" means the user explicitly chose no filter; otherwise fall back to the active season
   const seasonFilterName =
-    searchParams?.season && searchParams.season !== "all" ? searchParams.season : undefined;
-  const defaultSeasonName =
-    searchParams?.season || (uniqueSeasonNames.length ? uniqueSeasonNames[0] : "all");
+    searchParams?.season === "all"
+      ? undefined
+      : (searchParams?.season || activeSeasonName || undefined);
+
+  const defaultSeasonName = searchParams?.season || activeSeasonName || "all";
 
   const fixturesAll = await getFixtures();
   const fixtures =
@@ -53,6 +57,75 @@ export default async function FixturesPage({
   const upcoming = fixtures
     .filter((f) => new Date(f.starts_at) > now)
     .sort((a, b) => new Date(a.starts_at).getTime() - new Date(b.starts_at).getTime())[0];
+
+  // Split into active (no final result yet) and completed
+  const activeFixtures = fixtures.filter((f) => f.status === "in_progress");
+  const completedFixtures = fixtures.filter((f) => f.status !== "in_progress");
+
+  const renderFixture = (fixture: (typeof fixtures)[number]) => (
+    <div key={fixture.id} className="card hover:border-emerald-200 transition py-3">
+      <div className="flex justify-between items-start gap-3">
+        <div className="flex flex-col gap-1">
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-slate-500">{fixture.season}</span>
+            <span className="rounded-full bg-emerald-50 text-emerald-700 px-2 py-0.5 text-xs">
+              {fixture.home ? "Home" : "Away"}
+            </span>
+            {fixture.status && (
+              <span
+                className={`rounded-full px-2 py-0.5 text-xs font-semibold ${
+                  fixture.status === "win"
+                    ? "bg-emerald-50 text-emerald-700"
+                    : fixture.status === "loss"
+                    ? "bg-red-50 text-red-700"
+                    : fixture.status === "draw"
+                    ? "bg-amber-50 text-amber-700"
+                    : "bg-slate-100 text-slate-700"
+                }`}
+              >
+                {fixture.status === "win"
+                  ? "Win"
+                  : fixture.status === "loss"
+                  ? "Loss"
+                  : fixture.status === "draw"
+                  ? "Draw"
+                  : "In progress"}
+              </span>
+            )}
+          </div>
+          <div className="flex items-center gap-2">
+            <h2 className="text-base font-semibold">
+              {fixture.home ? "Home vs" : "Away @"} {fixture.opponent}
+            </h2>
+            <span className="text-sm text-slate-600">{formatDate(fixture.starts_at)}</span>
+          </div>
+          {fixture.venue && <p className="text-sm text-slate-600">{fixture.venue}</p>}
+          {fixture.notes && <p className="text-xs text-slate-500 line-clamp-2">{fixture.notes}</p>}
+        </div>
+        <div className="flex items-start gap-2">
+          <Link
+            href={`/fixtures/${fixture.id}`}
+            className="flex h-8 w-8 items-center justify-center rounded-full border border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100"
+            title="Open fixture"
+          >
+            ↗
+          </Link>
+          {fixture.games_count === 0 && (
+            <form action={deleteFixtureAction}>
+              <input type="hidden" name="fixtureId" value={fixture.id} />
+              <button
+                type="submit"
+                className="rounded-full border border-slate-300 w-7 h-7 flex items-center justify-center text-slate-500 hover:border-red-200 hover:text-red-600 text-xs"
+                title="Delete fixture (only if no games)"
+              >
+                x
+              </button>
+            </form>
+          )}
+        </div>
+      </div>
+    </div>
+  );
 
   return (
     <main className="flex flex-col gap-4">
@@ -173,74 +246,34 @@ export default async function FixturesPage({
       </details>
 
       <details open className="card">
-        <summary className="text-lg font-semibold cursor-pointer select-none">Fixture list (click to toggle)</summary>
+        <summary className="cursor-pointer select-none flex items-center gap-2">
+          <span className="text-lg font-semibold">Upcoming &amp; in progress</span>
+          <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-semibold text-slate-600">
+            {activeFixtures.length}
+          </span>
+        </summary>
         <div className="mt-3 flex flex-col gap-3">
-          {fixtures.map((fixture) => (
-            <div key={fixture.id} className="card hover:border-emerald-200 transition py-3">
-              <div className="flex justify-between items-start gap-3">
-                <div className="flex flex-col gap-1">
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs text-slate-500">{fixture.season}</span>
-                    <span className="rounded-full bg-emerald-50 text-emerald-700 px-2 py-0.5 text-xs">
-                      {fixture.home ? "Home" : "Away"}
-                    </span>
-                    {fixture.status && (
-                      <span
-                        className={`rounded-full px-2 py-0.5 text-xs font-semibold ${
-                          fixture.status === "win"
-                            ? "bg-emerald-50 text-emerald-700"
-                            : fixture.status === "loss"
-                            ? "bg-red-50 text-red-700"
-                            : fixture.status === "draw"
-                            ? "bg-amber-50 text-amber-700"
-                            : "bg-slate-100 text-slate-700"
-                        }`}
-                      >
-                        {fixture.status === "win"
-                          ? "Win"
-                          : fixture.status === "loss"
-                          ? "Loss"
-                          : fixture.status === "draw"
-                          ? "Draw"
-                          : "In progress"}
-                      </span>
-                    )}
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <h2 className="text-base font-semibold">
-                      {fixture.home ? "Home vs" : "Away @"} {fixture.opponent}
-                    </h2>
-                    <span className="text-sm text-slate-600">{formatDate(fixture.starts_at)}</span>
-                  </div>
-                  {fixture.venue && <p className="text-sm text-slate-600">{fixture.venue}</p>}
-                  {fixture.notes && <p className="text-xs text-slate-500 line-clamp-2">{fixture.notes}</p>}
-                </div>
-                <div className="flex items-start gap-2">
-                  <Link
-                    href={`/fixtures/${fixture.id}`}
-                    className="flex h-8 w-8 items-center justify-center rounded-full border border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100"
-                    title="Open fixture"
-                  >
-                    ↗
-                  </Link>
-                  {fixture.games_count === 0 && (
-                    <form action={deleteFixtureAction}>
-                      <input type="hidden" name="fixtureId" value={fixture.id} />
-                      <button
-                        type="submit"
-                        className="rounded-full border border-slate-300 w-7 h-7 flex items-center justify-center text-slate-500 hover:border-red-200 hover:text-red-600 text-xs"
-                        title="Delete fixture (only if no games)"
-                      >
-                        x
-                      </button>
-                    </form>
-                  )}
-                </div>
-              </div>
-            </div>
-          ))}
+          {activeFixtures.length === 0 ? (
+            <p className="text-sm text-slate-500">No upcoming fixtures.</p>
+          ) : (
+            activeFixtures.map(renderFixture)
+          )}
         </div>
       </details>
+
+      {completedFixtures.length > 0 && (
+        <details className="card">
+          <summary className="cursor-pointer select-none flex items-center gap-2">
+            <span className="text-lg font-semibold">Completed</span>
+            <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-semibold text-slate-600">
+              {completedFixtures.length}
+            </span>
+          </summary>
+          <div className="mt-3 flex flex-col gap-3">
+            {completedFixtures.map(renderFixture)}
+          </div>
+        </details>
+      )}
     </main>
   );
 }
