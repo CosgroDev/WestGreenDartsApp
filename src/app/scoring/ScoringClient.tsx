@@ -239,8 +239,7 @@ export default function ScoringPage() {
     const nextO = winner === "opponent" ? oppLegs + 1 : oppLegs;
     setWgdLegs(nextW);
     setOppLegs(nextO);
-    const totalLegs = nextW + nextO;
-    if (totalLegs >= 2) {
+    if (nextW >= 2 || nextO >= 2) {
       setMatchComplete(true);
       setGameMeta((prev) => ({
         ...(prev || {}),
