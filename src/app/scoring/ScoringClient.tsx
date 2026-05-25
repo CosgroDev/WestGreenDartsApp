@@ -127,13 +127,15 @@ export default function ScoringPage() {
             legs: res.meta.legs
           } as any);
 
+          const legsMeta = res.meta.legs;
+          if (legsMeta) {
+            setWgdLegs(legsMeta.west ?? 0);
+            setOppLegs(legsMeta.opp ?? 0);
+          }
+
           if (status !== "in_progress") {
             setMatchComplete(true);
-            const legsMeta = res.meta.legs;
-            if (legsMeta) {
-              setWgdLegs(legsMeta.west ?? 0);
-              setOppLegs(legsMeta.opp ?? 0);
-            } else {
+            if (!legsMeta) {
               if (winner === "west_green") {
                 setWgdLegs(2);
                 setOppLegs(0);
@@ -164,7 +166,9 @@ export default function ScoringPage() {
           }
         }
         if (res.visits.length === 0) {
-          setActiveSide(getStarter(wgdLegs + oppLegs));
+          const loadedLegs = res.meta?.legs;
+          const legIndex = loadedLegs ? (loadedLegs.west ?? 0) + (loadedLegs.opp ?? 0) : 0;
+          setActiveSide(getStarter(legIndex));
         }
       } else {
         // set starting side on fresh leg
@@ -239,7 +243,8 @@ export default function ScoringPage() {
     const nextO = winner === "opponent" ? oppLegs + 1 : oppLegs;
     setWgdLegs(nextW);
     setOppLegs(nextO);
-    if (nextW >= 2 || nextO >= 2) {
+    const totalLegs = nextW + nextO;
+    if (totalLegs >= 2) {
       setMatchComplete(true);
       setGameMeta((prev) => ({
         ...(prev || {}),
