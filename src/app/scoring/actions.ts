@@ -242,6 +242,22 @@ export async function newLegAction(gameId: string) {
     .single();
   if (fetchError || !game) return { ok: false, message: fetchError?.message || "Game not found" };
 
+  // Guard: never create a third leg — max 2 legs per matchup
+  const completedQuery = supabase
+    .from("games")
+    .select("id", { count: "exact", head: true })
+    .eq("fixture_id", game.fixture_id)
+    .eq("opponent_player", game.opponent_player)
+    .eq("deleted", false)
+    .eq("status", "completed");
+  const completedLegs =
+    game.west_green_player_id === null
+      ? await completedQuery.is("west_green_player_id", null)
+      : await completedQuery.eq("west_green_player_id", game.west_green_player_id);
+  if (!completedLegs.error && (completedLegs.count ?? 0) >= 2) {
+    return { ok: false, message: "Match already complete — 2 legs played" };
+  }
+
   const { data, error } = await supabase
     .from("games")
     .insert({
