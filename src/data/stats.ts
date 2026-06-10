@@ -15,6 +15,7 @@ export type PlayerCard = {
   hundred_plus: number;
   hundred_forty_plus: number;
   darts_per_leg_won: number | null;
+  total_darts: number;
 };
 
 export type TeamCard = {
@@ -237,6 +238,7 @@ export async function getPlayerCards(seasonId?: string): Promise<PlayerCard[]> {
       hundred_plus: val.t100plus,
       hundred_forty_plus: val.t140plus,
       darts_per_leg_won,
+      total_darts: val.totalDarts,
     });
   }
 

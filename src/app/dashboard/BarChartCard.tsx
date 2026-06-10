@@ -36,11 +36,14 @@ export function BarChartCard({ title, subtitle, data, color = "#12b886", suffix 
               formatter={(value) => [`${value ?? 0}${suffix}`, title]}
               contentStyle={{
                 background: "#13223b",
-                border: "1px solid #33476b",
-                borderRadius: 10,
+                border: "1px solid #4a648f",
+                borderRadius: 12,
+                padding: "10px 14px",
+                boxShadow: "0 8px 24px rgba(0,0,0,0.5)",
                 color: "#e8eef7"
               }}
-              labelStyle={{ color: "#e8eef7", fontWeight: 600 }}
+              labelStyle={{ color: "#ffffff", fontWeight: 700, fontSize: 14, marginBottom: 4 }}
+              itemStyle={{ color: "#e8eef7", fontWeight: 600, fontSize: 13, padding: 0 }}
             />
             <Bar dataKey="value" radius={[8, 8, 0, 0]}>
               {data.map((_, i) => (

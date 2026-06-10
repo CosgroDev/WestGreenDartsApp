@@ -6,7 +6,6 @@ import { getPlayerCards, getTeamCard } from "@/data/stats";
 import { getPlayerForm } from "@/data/form";
 import { StatBar } from "@/components/StatBar";
 import { FormPills } from "@/components/FormPills";
-import { ChartCard } from "./ChartCard";
 import { BarChartCard } from "./BarChartCard";
 import { ExportLinks } from "./ExportLinks";
 import { ScoringBreakdown } from "./ScoringBreakdown";
@@ -37,10 +36,12 @@ export default async function DashboardPage() {
   const playersBy180 = [...players]
     .filter((p) => (p.one_eighty ?? 0) > 0)
     .sort((a, b) => (b.one_eighty ?? 0) - (a.one_eighty ?? 0));
-  const chartData = playersBy3da.slice(0, 6).map((p) => ({ label: p.name || "—", value: p.three_dart_avg ?? 0 }));
+  const chartData = playersBy3da
+    .slice(0, 6)
+    .map((p) => ({ label: p.name || "—", value: Math.round((p.three_dart_avg ?? 0) * 10) / 10 }));
   const first9Data = playersByFirst9
     .slice(0, 6)
-    .map((p) => ({ label: p.name || "—", value: p.first_nine_avg ?? 0 }));
+    .map((p) => ({ label: p.name || "—", value: Math.round((p.first_nine_avg ?? 0) * 10) / 10 }));
   const t26Data = playersBy26.slice(0, 6).map((p) => ({ label: p.name || "—", value: p.twenty_six ?? 0 }));
   const legsWonData = playersByLegs
     .slice(0, 8)
@@ -77,7 +78,13 @@ export default async function DashboardPage() {
   const highFinishLeader = best(players, (p) => p.high_finish);
   const checkoutLeader = best(players, (p) => p.checkout_pct);
   const fastestLeader = best(players, (p) => p.darts_per_leg_won, -1);
-  const tonsLeader = best(players, (p) => (p.hundred_plus > 0 ? p.hundred_plus : null));
+  // Ton machine is rate-based so heavy schedules don't dominate:
+  // fewest darts thrown per 100+ visit (includes 140+ and 180s).
+  const tonsLeader = best(
+    players,
+    (p) => (p.hundred_plus > 0 && p.total_darts > 0 ? p.total_darts / p.hundred_plus : null),
+    -1
+  );
 
   const winRate = team.legs_played > 0 ? (team.legs_won / team.legs_played) * 100 : null;
 
@@ -222,8 +229,14 @@ export default async function DashboardPage() {
             {tonsLeader && (
               <div className="rounded-2xl border border-purple-200 bg-purple-50 px-3 py-3">
                 <p className="text-[11px] font-semibold uppercase tracking-wide text-purple-700">💯 Ton machine</p>
-                <p className="mt-1 text-2xl font-bold text-purple-700">{tonsLeader.hundred_plus}</p>
-                <p className="text-xs text-slate-600">{tonsLeader.name} · 100+ visits</p>
+                <p className="mt-1 text-2xl font-bold text-purple-700">
+                  {(tonsLeader.total_darts / tonsLeader.hundred_plus).toFixed(0)}
+                  <span className="text-sm font-semibold"> darts</span>
+                </p>
+                <p className="text-xs text-slate-600">
+                  {tonsLeader.name} · a 100+ every {(tonsLeader.total_darts / tonsLeader.hundred_plus).toFixed(0)} darts
+                  ({tonsLeader.hundred_plus} in total)
+                </p>
               </div>
             )}
           </div>
@@ -381,9 +394,9 @@ export default async function DashboardPage() {
             suffix="%"
           />
         )}
-        <ChartCard title="3-Dart Average (by player)" data={chartData} color="#12b886" />
-        <ChartCard title="First 9 Average (by player)" data={first9Data} color="#ffd43b" />
-        <ChartCard title="26s Hit (by player)" data={t26Data} color="#9775fa" />
+        <BarChartCard title="3-Dart Average" subtitle="overall scoring power" data={chartData} color="#2fc08a" />
+        <BarChartCard title="First 9 Average" subtitle="who starts a leg fastest" data={first9Data} color="#d9a52b" />
+        <BarChartCard title="26s Hit" subtitle="the wall of shame" data={t26Data} color="#9775fa" />
       </section>
 
       <section className="card">

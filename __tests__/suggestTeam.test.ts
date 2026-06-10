@@ -1,15 +1,18 @@
-import { suggestTeam, type PlayerForm } from "../src/data/form";
+import { halfPreference, suggestTeam, type MatchResult, type PlayerForm } from "../src/data/form";
+
+const match = (result: "W" | "D" | "L", i: number, half: 1 | 2 = 1): MatchResult => ({
+  result,
+  date: `2026-06-${String(20 - i).padStart(2, "0")}`,
+  opponent: "Opp",
+  fixture_id: `f${i}`,
+  half
+});
 
 const player = (id: string, results: ("W" | "D" | "L")[]): PlayerForm => ({
   player_id: id,
   name: id,
   // most recent first; dates descend to match
-  matches: results.map((result, i) => ({
-    result,
-    date: `2026-06-${String(20 - i).padStart(2, "0")}`,
-    opponent: "Opp",
-    fixture_id: `f${i}`
-  }))
+  matches: results.map((result, i) => match(result, i))
 });
 
 describe("suggestTeam", () => {
@@ -44,5 +47,25 @@ describe("suggestTeam", () => {
     const res = suggestTeam([player("cold", ["L", "L"])]);
     expect(res.picks).toHaveLength(0);
     expect(res.openSpots).toBe(6);
+  });
+});
+
+describe("halfPreference", () => {
+  it("suggests the half with the better win rate", () => {
+    const matches = [match("W", 0, 1), match("W", 1, 1), match("L", 2, 2), match("W", 3, 2)];
+    expect(halfPreference(matches)).toEqual({ half: 1, note: "wins 2/2 early" });
+  });
+
+  it("suggests late when the second half record is stronger", () => {
+    const matches = [match("L", 0, 1), match("W", 1, 2), match("W", 2, 2)];
+    expect(halfPreference(matches)).toEqual({ half: 2, note: "wins 2/2 late" });
+  });
+
+  it("returns null without data in both halves", () => {
+    expect(halfPreference([match("W", 0, 1), match("W", 1, 1)])).toBeNull();
+  });
+
+  it("returns null when the halves are level", () => {
+    expect(halfPreference([match("W", 0, 1), match("W", 1, 2)])).toBeNull();
   });
 });

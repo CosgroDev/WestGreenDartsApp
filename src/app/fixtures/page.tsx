@@ -61,9 +61,21 @@ export default async function FixturesPage({
     .filter((f) => new Date(f.starts_at) > now)
     .sort((a, b) => new Date(a.starts_at).getTime() - new Date(b.starts_at).getTime())[0];
 
-  // Split into active (no final result yet) and completed
-  const activeFixtures = fixtures.filter((f) => f.status === "in_progress");
-  const completedFixtures = fixtures.filter((f) => f.status !== "in_progress");
+  // Split into active (no final result yet) and completed.
+  // Upcoming list leads with the next game: future fixtures soonest-first,
+  // then any older in-progress ones. Completed shows most recent first.
+  const time = (f: (typeof fixtures)[number]) => new Date(f.starts_at).getTime();
+  const activeFixtures = fixtures
+    .filter((f) => f.status === "in_progress")
+    .sort((a, b) => {
+      const aFuture = time(a) >= now.getTime();
+      const bFuture = time(b) >= now.getTime();
+      if (aFuture !== bFuture) return aFuture ? -1 : 1;
+      return aFuture ? time(a) - time(b) : time(b) - time(a);
+    });
+  const completedFixtures = fixtures
+    .filter((f) => f.status !== "in_progress")
+    .sort((a, b) => time(b) - time(a));
 
   // Suggested team for the next fixture, from recent form
   const suggestion = upcoming ? suggestTeam(await getPlayerForm()) : null;
@@ -219,7 +231,8 @@ export default async function FixturesPage({
             <div>
               <h2 className="text-lg font-semibold">Suggested team</h2>
               <p className="text-xs text-slate-500">
-                vs {upcoming.opponent} · win your last match, or draw just 1 of your last 2, and you keep your spot
+                vs {upcoming.opponent} · win your last match, or draw just 1 of your last 2, and you keep your spot.
+                Half tags show where a player&apos;s record is strongest (games 1–3 vs 4–6).
               </p>
             </div>
             <span className="chip border border-slate-200 bg-slate-50 text-slate-500">Just a suggestion</span>
@@ -235,7 +248,21 @@ export default async function FixturesPage({
                   <span className="truncate font-semibold">{p.name}</span>
                   <span className="hidden sm:inline text-xs text-slate-500">{p.reason}</span>
                 </div>
-                <FormPills form={p.form} max={2} />
+                <div className="flex items-center gap-2">
+                  {p.halfPreference && (
+                    <span
+                      className={`chip ${
+                        p.halfPreference.half === 1
+                          ? "border border-blue-200 bg-blue-50 text-blue-700"
+                          : "border border-purple-200 bg-purple-50 text-purple-700"
+                      }`}
+                      title={p.halfPreference.note}
+                    >
+                      {p.halfPreference.half === 1 ? "1st half" : "2nd half"}
+                    </span>
+                  )}
+                  <FormPills form={p.form} max={2} />
+                </div>
               </div>
             ))}
             {Array.from({ length: suggestion.openSpots }).map((_, i) => (

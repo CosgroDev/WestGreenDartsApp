@@ -5,6 +5,8 @@ export type MatchResult = {
   date: string;
   opponent: string;
   fixture_id: string;
+  /** Position in the fixture: games 1-3 are the first half, 4-6 the second. */
+  half: 1 | 2;
 };
 
 export type PlayerForm = {
@@ -45,6 +47,7 @@ export async function getPlayerForm(): Promise<PlayerForm[]> {
     westWins: number;
     oppWins: number;
     drawFlag: boolean;
+    firstDate: string;
     lastDate: string;
   };
   const groups = new Map<string, Group>();
@@ -60,15 +63,31 @@ export async function getPlayerForm(): Promise<PlayerForm[]> {
         westWins: 0,
         oppWins: 0,
         drawFlag: false,
+        firstDate: g.created_at,
         lastDate: g.created_at
       } as Group);
     if (g.winner === "west_green") entry.westWins += 1;
     else if (g.winner === "opponent") entry.oppWins += 1;
     // a single completed record with no winner is the legacy draw representation
     else entry.drawFlag = true;
+    if (g.created_at < entry.firstDate) entry.firstDate = g.created_at;
     const date = g.completed_at || g.created_at;
     if (date > entry.lastDate) entry.lastDate = date;
     groups.set(key, entry);
+  });
+
+  // Order matches within each fixture to derive halves: games 1-3 vs 4-6
+  const byFixture = new Map<string, Group[]>();
+  groups.forEach((m) => {
+    const list = byFixture.get(m.fixture_id) || [];
+    list.push(m);
+    byFixture.set(m.fixture_id, list);
+  });
+  const halfByGroup = new Map<Group, 1 | 2>();
+  byFixture.forEach((list) => {
+    list
+      .sort((a, b) => a.firstDate.localeCompare(b.firstDate))
+      .forEach((m, idx) => halfByGroup.set(m, idx < 3 ? 1 : 2));
   });
 
   const perPlayer = new Map<string, MatchResult[]>();
@@ -76,7 +95,13 @@ export async function getPlayerForm(): Promise<PlayerForm[]> {
     const result: "W" | "D" | "L" =
       m.drawFlag || m.westWins === m.oppWins ? "D" : m.westWins > m.oppWins ? "W" : "L";
     const list = perPlayer.get(m.player_id) || [];
-    list.push({ result, date: m.lastDate, opponent: m.opponent, fixture_id: m.fixture_id });
+    list.push({
+      result,
+      date: m.lastDate,
+      opponent: m.opponent,
+      fixture_id: m.fixture_id,
+      half: halfByGroup.get(m) ?? 1
+    });
     perPlayer.set(m.player_id, list);
   });
 
@@ -89,12 +114,45 @@ export async function getPlayerForm(): Promise<PlayerForm[]> {
     .filter((p) => p.matches.length > 0);
 }
 
+export type HalfPreference = {
+  half: 1 | 2;
+  note: string;
+} | null;
+
 export type TeamSuggestion = {
   /** Players who qualify automatically, with the rule they satisfied. */
-  picks: { player_id: string; name: string; reason: string; form: ("W" | "D" | "L")[] }[];
+  picks: {
+    player_id: string;
+    name: string;
+    reason: string;
+    form: ("W" | "D" | "L")[];
+    /** Which half of the fixture suits them, when they've played in both. */
+    halfPreference: HalfPreference;
+  }[];
   openSpots: number;
   teamSize: number;
 };
+
+/**
+ * Where does a player perform best — games 1-3 (early) or 4-6 (late)?
+ * Needs results in both halves; ties mean no preference.
+ */
+export function halfPreference(matches: MatchResult[]): HalfPreference {
+  const recordFor = (half: 1 | 2) => {
+    const inHalf = matches.filter((m) => m.half === half);
+    const wins = inHalf.filter((m) => m.result === "W").length;
+    return { played: inHalf.length, wins, rate: inHalf.length ? wins / inHalf.length : 0 };
+  };
+  const first = recordFor(1);
+  const second = recordFor(2);
+  if (!first.played || !second.played || first.rate === second.rate) return null;
+  const better = first.rate > second.rate ? 1 : 2;
+  const rec = better === 1 ? first : second;
+  return {
+    half: better as 1 | 2,
+    note: `wins ${rec.wins}/${rec.played} ${better === 1 ? "early" : "late"}`
+  };
+}
 
 /**
  * Suggested team for the next fixture:
@@ -121,6 +179,7 @@ export function suggestTeam(form: PlayerForm[], teamSize = 6): TeamSuggestion {
         name: p.name,
         reason,
         form: p.matches.slice(0, 5).map((m) => m.result),
+        halfPreference: halfPreference(p.matches),
         wins,
         lastDate: p.matches[0]?.date ?? ""
       };
@@ -128,11 +187,14 @@ export function suggestTeam(form: PlayerForm[], teamSize = 6): TeamSuggestion {
     .filter((p): p is NonNullable<typeof p> => p !== null)
     .sort((a, b) => b.wins - a.wins || b.lastDate.localeCompare(a.lastDate));
 
-  const picks = qualified.slice(0, teamSize).map(({ player_id, name, reason, form }) => ({
-    player_id,
-    name,
-    reason,
-    form
-  }));
+  const picks = qualified
+    .slice(0, teamSize)
+    .map(({ player_id, name, reason, form, halfPreference }) => ({
+      player_id,
+      name,
+      reason,
+      form,
+      halfPreference
+    }));
   return { picks, openSpots: Math.max(0, teamSize - picks.length), teamSize };
 }
