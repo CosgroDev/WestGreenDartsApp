@@ -9,19 +9,9 @@ export default async function PlayersPage({ searchParams }: { searchParams?: { e
 
   return (
     <main className="flex flex-col gap-4">
-      <header className="card">
-        <div className="mb-2">
-          <a
-            href="/dashboard"
-            className="inline-flex items-center justify-center rounded-full bg-slate-100 px-3 py-2 text-sm font-semibold text-slate-800 hover:bg-slate-200"
-            aria-label="Back to dashboard"
-            title="Back to dashboard"
-          >
-            ←
-          </a>
-        </div>
-        <p className="text-sm text-slate-600">Team roster</p>
-        <h1 className="text-2xl font-semibold">Players</h1>
+      <header>
+        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-emerald-700">Team roster</p>
+        <h1 className="text-2xl font-bold">Players</h1>
         {error === "duplicate" && (
           <p className="text-sm text-red-700 mt-1">That player name already exists.</p>
         )}
@@ -68,9 +58,15 @@ export default async function PlayersPage({ searchParams }: { searchParams?: { e
                 .filter((p) => p.active)
                 .map((p) => (
                   <div key={p.id} className="flex items-center justify-between px-3 py-2">
-                    <div>
+                    <div className="flex items-center gap-3">
+                      <span className="flex h-10 w-10 items-center justify-center rounded-full border border-emerald-200 bg-emerald-50 text-sm font-bold text-emerald-700">
+                        {p.name
+                          .split(/\s+/)
+                          .slice(0, 2)
+                          .map((w: string) => w[0]?.toUpperCase())
+                          .join("")}
+                      </span>
                       <p className="font-semibold">{p.name}</p>
-                      <p className="text-sm text-slate-600">Active</p>
                     </div>
                     <div className="flex items-center gap-2">
                       <Link
@@ -107,9 +103,15 @@ export default async function PlayersPage({ searchParams }: { searchParams?: { e
                 .filter((p) => !p.active)
                 .map((p) => (
                   <div key={p.id} className="flex items-center justify-between px-3 py-2">
-                    <div>
+                    <div className="flex items-center gap-3 opacity-60">
+                      <span className="flex h-10 w-10 items-center justify-center rounded-full border border-slate-300 bg-slate-100 text-sm font-bold text-slate-600">
+                        {p.name
+                          .split(/\s+/)
+                          .slice(0, 2)
+                          .map((w: string) => w[0]?.toUpperCase())
+                          .join("")}
+                      </span>
                       <p className="font-semibold">{p.name}</p>
-                      <p className="text-sm text-slate-600">Inactive</p>
                     </div>
                     <div className="flex items-center gap-2">
                       <Link

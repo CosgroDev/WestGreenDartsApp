@@ -34,80 +34,90 @@ export default async function DashboardPage() {
   const winRate = team.legs_played > 0 ? (team.legs_won / team.legs_played) * 100 : null;
 
   return (
-    <main className="flex flex-col gap-4">
-      <header className="card">
-        <p className="text-sm text-slate-600">Overview</p>
-        <h1 className="text-2xl font-semibold">Team Dashboard</h1>
+    <main className="flex flex-col gap-4 fade-up">
+      <header className="flex items-end justify-between">
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-emerald-700">Team HQ</p>
+          <h1 className="text-2xl font-bold">Dashboard</h1>
+        </div>
         {currentSeason ? (
-          <p className="mt-1 text-sm text-emerald-700 font-medium">Season {currentSeason.name}</p>
+          <span className="chip border border-emerald-200 bg-emerald-50 text-emerald-700">
+            Season {currentSeason.name}
+          </span>
         ) : (
-          <p className="mt-1 text-sm text-amber-600">No active season set — <a href="/settings" className="underline">configure in settings</a></p>
+          <a href="/settings" className="chip border border-amber-200 bg-amber-50 text-amber-700 underline">
+            Set active season
+          </a>
         )}
       </header>
 
       <section className="grid grid-cols-1 gap-3">
         <div className="card">
           <h2 className="text-lg font-semibold mb-3">Team snapshot</h2>
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 text-sm">
-            <div>
-              <p className="text-slate-600">Legs (W/L)</p>
-              <p className="text-xl font-semibold">
-                {team.legs_won ?? 0} / {team.legs_played ? team.legs_played - (team.legs_won ?? 0) : 0}
+          <div className="grid grid-cols-3 gap-2">
+            <div className="rounded-xl bg-slate-50 px-3 py-3">
+              <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">Legs W/L</p>
+              <p className="mt-1 text-xl font-bold">
+                {team.legs_won ?? 0}<span className="text-slate-500">/</span>{team.legs_played ? team.legs_played - (team.legs_won ?? 0) : 0}
               </p>
             </div>
-            <div>
-              <p className="text-slate-600">Win rate</p>
-              <p className={`text-xl font-semibold ${winRate !== null && winRate >= 50 ? "text-emerald-700" : winRate !== null ? "text-red-600" : ""}`}>
+            <div className="rounded-xl bg-slate-50 px-3 py-3">
+              <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">Win rate</p>
+              <p className={`mt-1 text-xl font-bold ${winRate !== null && winRate >= 50 ? "text-emerald-700" : winRate !== null ? "text-red-600" : ""}`}>
                 {winRate !== null ? winRate.toFixed(0) + "%" : "–"}
               </p>
             </div>
-            <div>
-              <p className="text-slate-600">3DA</p>
-              <p className="text-xl font-semibold">{team.three_dart_avg ? team.three_dart_avg.toFixed(1) : "–"}</p>
+            <div className="rounded-xl bg-slate-50 px-3 py-3">
+              <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">3DA</p>
+              <p className="mt-1 text-xl font-bold">{team.three_dart_avg ? team.three_dart_avg.toFixed(1) : "–"}</p>
             </div>
-            <div>
-              <p className="text-slate-600">Checkout %</p>
-              <p className="text-xl font-semibold">
+            <div className="rounded-xl bg-slate-50 px-3 py-3">
+              <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">Checkout</p>
+              <p className="mt-1 text-xl font-bold">
                 {team.checkout_pct !== null ? team.checkout_pct.toFixed(0) + "%" : "–"}
               </p>
             </div>
-            <div>
-              <p className="text-slate-600">Darts / leg won</p>
-              <p className="text-xl font-semibold">
+            <div className="rounded-xl bg-slate-50 px-3 py-3">
+              <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">Darts/leg</p>
+              <p className="mt-1 text-xl font-bold">
                 {team.darts_per_leg_won !== null ? team.darts_per_leg_won.toFixed(1) : "–"}
               </p>
             </div>
-            <div>
-              <p className="text-slate-600">High finish</p>
-              <p className="text-xl font-semibold">{team.high_finish ?? "–"}</p>
+            <div className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-3">
+              <p className="text-[11px] font-semibold uppercase tracking-wide text-amber-700">High finish</p>
+              <p className="mt-1 text-xl font-bold text-amber-700">{team.high_finish ?? "–"}</p>
             </div>
           </div>
         </div>
 
-        <div className="card grid grid-cols-2 gap-2">
+        <div className="grid grid-cols-2 gap-2">
           <Link
             href="/fixtures"
-            className="rounded-md bg-emerald-600 px-4 py-3 text-center text-white font-semibold hover:bg-emerald-700"
+            className="card flex items-center justify-between !p-4 transition hover:border-emerald-300 active:scale-[0.98]"
           >
-            Fixtures
-          </Link>
-          <Link
-            href="/players"
-            className="rounded-md bg-slate-200 px-4 py-3 text-center text-slate-800 font-semibold hover:bg-slate-300"
-          >
-            Players
+            <span className="font-semibold">📅 Fixtures</span>
+            <span className="text-emerald-700">→</span>
           </Link>
           <Link
             href="/practice"
-            className="rounded-md bg-purple-200 px-4 py-3 text-center text-purple-900 font-semibold hover:bg-purple-300"
+            className="card flex items-center justify-between !p-4 transition hover:border-purple-300 active:scale-[0.98]"
           >
-            Practice arena
+            <span className="font-semibold">🎯 Practice</span>
+            <span className="text-purple-700">→</span>
+          </Link>
+          <Link
+            href="/players"
+            className="card flex items-center justify-between !p-4 transition hover:border-emerald-300 active:scale-[0.98]"
+          >
+            <span className="font-semibold">👥 Players</span>
+            <span className="text-emerald-700">→</span>
           </Link>
           <Link
             href="/pub-games/killer"
-            className="rounded-md bg-amber-500 px-4 py-3 text-center text-white font-semibold hover:bg-amber-600"
+            className="card flex items-center justify-between !p-4 transition hover:border-amber-300 active:scale-[0.98]"
           >
-            Killer
+            <span className="font-semibold">💀 Killer</span>
+            <span className="text-amber-700">→</span>
           </Link>
         </div>
       </section>
@@ -134,9 +144,9 @@ export default async function DashboardPage() {
       </section>
 
       <section className="card">
-        <h2 className="text-lg font-semibold mb-2">Players</h2>
+        <h2 className="text-lg font-semibold mb-2">Leaderboard <span className="text-xs font-normal text-slate-500">by 3-dart average</span></h2>
         <div className="grid grid-cols-1 gap-2 max-h-[600px] overflow-y-auto pr-1">
-          {players.map((p) => {
+          {playersBy3da.map((p, rank) => {
             const winPct = p.legs_played > 0 ? (p.legs_won / p.legs_played) * 100 : null;
             const diff = (p.legs_won ?? 0) - ((p.legs_played ?? 0) - (p.legs_won ?? 0));
             const diffColor =
@@ -149,7 +159,22 @@ export default async function DashboardPage() {
               >
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                   <div className="w-full sm:w-auto">
-                    <p className="font-semibold">{p.name}</p>
+                    <p className="flex items-center gap-2 font-semibold">
+                      <span
+                        className={`inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[11px] font-bold ${
+                          rank === 0
+                            ? "bg-amber-100 text-amber-700 ring-1 ring-amber-300"
+                            : rank === 1
+                            ? "bg-slate-100 text-slate-800 ring-1 ring-slate-300"
+                            : rank === 2
+                            ? "bg-amber-50 text-amber-600"
+                            : "bg-slate-50 text-slate-500"
+                        }`}
+                      >
+                        {rank + 1}
+                      </span>
+                      {p.name}
+                    </p>
                     <div className="mt-1 grid grid-cols-1 sm:grid-cols-2 gap-2">
                       <StatBar label="3DA" value={p.three_dart_avg} max={80} />
                       <StatBar label="First 9" value={p.first_nine_avg} max={100} />
@@ -226,9 +251,9 @@ export default async function DashboardPage() {
       )}
 
       <section className="grid grid-cols-1 gap-3">
-        <ChartCard title="3-Dart Average (by player)" data={chartData} color="#2f8f6d" />
-        <ChartCard title="First 9 Average (by player)" data={first9Data} color="#4fb18d" />
-        <ChartCard title="26s Hit (by player)" data={t26Data} color="#8b5cf6" />
+        <ChartCard title="3-Dart Average (by player)" data={chartData} color="#12b886" />
+        <ChartCard title="First 9 Average (by player)" data={first9Data} color="#ffd43b" />
+        <ChartCard title="26s Hit (by player)" data={t26Data} color="#9775fa" />
       </section>
 
       <section className="card">

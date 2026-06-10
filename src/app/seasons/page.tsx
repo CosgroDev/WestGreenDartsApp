@@ -9,19 +9,9 @@ export default async function SeasonsPage() {
 
   return (
     <main className="flex flex-col gap-4">
-      <header className="card">
-        <div className="mb-2">
-          <a
-            href="/fixtures"
-            className="inline-flex items-center justify-center rounded-full bg-slate-100 px-3 py-2 text-sm font-semibold text-slate-800 hover:bg-slate-200"
-            aria-label="Back to fixtures"
-            title="Back to fixtures"
-          >
-            ←
-          </a>
-        </div>
-        <p className="text-sm text-slate-600">Seasons</p>
-        <h1 className="text-2xl font-semibold">Manage Seasons</h1>
+      <header>
+        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-emerald-700">Seasons</p>
+        <h1 className="text-2xl font-bold">Manage Seasons</h1>
       </header>
 
       <section className="card">

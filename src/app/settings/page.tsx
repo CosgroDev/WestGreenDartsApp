@@ -13,18 +13,9 @@ export default async function SettingsPage() {
 
   return (
     <main className="flex flex-col gap-4">
-      <header className="card">
-        <div className="mb-2">
-          <a
-            href="/dashboard"
-            className="inline-flex items-center justify-center rounded-full bg-slate-100 px-3 py-2 text-sm font-semibold text-slate-800 hover:bg-slate-200"
-            aria-label="Back to dashboard"
-          >
-            ←
-          </a>
-        </div>
-        <p className="text-sm text-slate-600">App</p>
-        <h1 className="text-2xl font-semibold">Settings</h1>
+      <header>
+        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-emerald-700">App</p>
+        <h1 className="text-2xl font-bold">Settings</h1>
       </header>
 
       <section className="card">

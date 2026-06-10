@@ -377,154 +377,160 @@ export default function ScoringPage() {
     setAlert(null);
   };
 
+  const legDots = (won: number) => (
+    <span className="flex items-center justify-center gap-1.5" aria-label={`${won} legs won`}>
+      {[0, 1].map((i) => (
+        <span key={i} className={`leg-dot ${i < won ? "won" : ""}`} />
+      ))}
+    </span>
+  );
+
   return (
-    <main className="flex flex-col gap-4">
-      <header className="card">
-        <p className="text-sm text-slate-600">Live scoring</p>
-        <h1 className="text-2xl font-semibold">501 Double-Out</h1>
-        {fixtureId && <p className="text-sm text-slate-700 mt-1">Fixture: {fixtureId}</p>}
-        {gameId && (
-          <p className="text-sm">
-            <span
-              className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold ${
-                isCompleted ? "bg-emerald-100 text-emerald-800" : "bg-slate-100 text-slate-700"
-              }`}
-            >
-              {isCompleted ? "Completed" : "In progress"}
-            </span>
-          </p>
-        )}
-        <div className="mt-2 flex gap-2">
-          <a
-            className="inline-flex items-center rounded-md bg-emerald-600 px-3 py-2 text-sm font-semibold text-white hover:bg-emerald-700"
-            href={fixtureId ? `/fixtures/${fixtureId}` : "/fixtures"}
-          >
-            ← Back to fixture
-          </a>
-          <a
-            className="inline-flex items-center rounded-md bg-slate-200 px-3 py-2 text-sm font-semibold text-slate-800 hover:bg-slate-300"
-            href="/dashboard"
-          >
-            Dashboard
-          </a>
+    <main className="flex flex-col gap-3 fade-up">
+      <header className="flex items-center justify-between gap-2">
+        <a
+          className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-slate-100 text-slate-700 hover:bg-slate-200"
+          href={fixtureId ? `/fixtures/${fixtureId}` : "/fixtures"}
+          aria-label="Back to fixture"
+        >
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <path d="M15 18l-6-6 6-6" />
+          </svg>
+        </a>
+        <div className="text-center">
+          <h1 className="text-lg font-bold leading-tight">501 Double-Out</h1>
+          <p className="text-xs text-slate-500">Best of 2 legs</p>
         </div>
-        <div className="mt-3 grid grid-cols-1 sm:grid-cols-3 gap-3">
-          <div
-            className={`rounded-xl p-4 shadow-sm border ${
-              activeSide === "west" ? "border-emerald-200 bg-emerald-50" : "border-slate-200 bg-white"
-            }`}
-          >
-            <span className="text-sm text-slate-600 block">{wgdName} remaining</span>
-            <span className="text-5xl font-semibold text-emerald-700">{displayRemaining}</span>
-          </div>
-          <div
-            className={`rounded-xl p-4 shadow-sm border ${
-              activeSide === "opponent" ? "border-emerald-200 bg-emerald-50" : "border-slate-200 bg-white"
-            }`}
-          >
-            <span className="text-sm text-slate-600 block">{oppName} remaining</span>
-            <span className="text-3xl font-semibold text-slate-800">{displayOppRemaining}</span>
-          </div>
-          <div className="rounded-xl p-4 shadow-sm border border-slate-200 bg-white text-sm text-slate-700">
-            <p className="font-semibold mb-1">Legs</p>
-            <p>
-              {wgdName} {displayLegs.wgd} - {displayLegs.opp} {oppName}
-            </p>
-            <p className="text-xs text-slate-500">Best of 2</p>
-          </div>
-        </div>
-        {finishHint && !isCompleted && (
-          <p className="mt-2 inline-flex items-center gap-2 rounded-md bg-emerald-50 text-emerald-700 px-3 py-2 text-sm">
-            Finish: {finishHint}
-          </p>
-        )}
-        {alert && <p className="mt-2 text-emerald-700 font-semibold">{alert}</p>}
-        {isCompleted && (
-          <div className="mt-3 flex flex-wrap gap-3">
-            {fixtureId && (
-              <a className="text-sm text-emerald-700 underline font-semibold" href={`/fixtures/${fixtureId}`}>
-                Back to fixture
-              </a>
-            )}
-          </div>
-        )}
+        <span
+          className={`chip ${isCompleted ? "bg-emerald-100 text-emerald-800" : "bg-slate-100 text-slate-700"}`}
+        >
+          {isCompleted ? "Done" : "Live"}
+        </span>
       </header>
 
-      {!isCompleted && (
-      <section className="card flex flex-col gap-3" id="summary">
-        <h2 className="text-lg font-semibold">Enter score</h2>
-        <div className="flex gap-2 items-center">
+      <section className="grid grid-cols-2 gap-2">
         <button
-          className={`rounded-md px-4 py-2 text-sm font-semibold ${activeSide === "west" ? "bg-emerald-600 text-white" : "bg-slate-200 text-slate-800"}`}
+          type="button"
+          className={`score-panel ${activeSide === "west" && !isCompleted ? "active" : ""}`}
           onClick={() => setActiveSide("west")}
-            disabled={finishPrompt !== null || isCompleted}
+          disabled={finishPrompt !== null || isCompleted}
         >
-          {wgdName}
+          <p className="truncate text-sm font-semibold text-slate-700">{wgdName}</p>
+          <p key={`w-${displayRemaining}`} className="score-remaining score-pop mt-1 text-6xl text-emerald-700">
+            {displayRemaining}
+          </p>
+          <div className="mt-2">{legDots(displayLegs.wgd)}</div>
+          <p className={`mt-1 text-[10px] font-bold uppercase tracking-widest ${activeSide === "west" && !isCompleted ? "text-emerald-700" : "text-transparent"}`}>
+            ● Throwing
+          </p>
         </button>
         <button
-          className={`rounded-md px-4 py-2 text-sm font-semibold ${activeSide === "opponent" ? "bg-emerald-600 text-white" : "bg-slate-200 text-slate-800"}`}
+          type="button"
+          className={`score-panel ${activeSide === "opponent" && !isCompleted ? "active" : ""}`}
           onClick={() => setActiveSide("opponent")}
-            disabled={finishPrompt !== null || isCompleted}
+          disabled={finishPrompt !== null || isCompleted}
         >
-          {oppName}
+          <p className="truncate text-sm font-semibold text-slate-700">{oppName}</p>
+          <p key={`o-${displayOppRemaining}`} className="score-remaining score-pop mt-1 text-6xl text-slate-800">
+            {displayOppRemaining}
+          </p>
+          <div className="mt-2">{legDots(displayLegs.opp)}</div>
+          <p className={`mt-1 text-[10px] font-bold uppercase tracking-widest ${activeSide === "opponent" && !isCompleted ? "text-emerald-700" : "text-transparent"}`}>
+            ● Throwing
+          </p>
         </button>
-          <span className="ml-auto text-sm text-slate-600">Input:</span>
-          <span className="text-3xl font-semibold text-slate-900">{inputScore || "0"}</span>
-        </div>
+      </section>
 
-        {!finishPrompt && !isCompleted && (
+      {finishHint && !isCompleted && (
+        <div className="finish-banner">
+          <span aria-hidden="true">🎯</span>
+          <span>
+            {remaining} out: <span className="tracking-wide">{finishHint}</span>
+          </span>
+        </div>
+      )}
+      {alert && <p className="text-center text-sm font-semibold text-emerald-700">{alert}</p>}
+      {isCompleted && fixtureId && (
+        <a className="btn-primary" href={`/fixtures/${fixtureId}`}>
+          Back to fixture
+        </a>
+      )}
+
+      {!isCompleted && (
+      <section className="card flex flex-col gap-3 !p-3" id="summary">
+        {!finishPrompt && (
           <>
+            <div className="flex items-center justify-between rounded-xl bg-slate-50 px-4 py-2">
+              <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                {activeSide === "west" ? wgdName : oppName} scored
+              </span>
+              <span className="score-remaining text-4xl text-slate-900">{inputScore || "0"}</span>
+            </div>
+
+            <div className="flex flex-wrap gap-1.5">
+              {[26, 45, 60, 85, 100, 140].map((q) => (
+                <button
+                  key={q}
+                  type="button"
+                  className="chip border border-slate-300 bg-slate-100 px-3.5 py-1.5 text-sm text-slate-700 transition hover:border-emerald-300 active:scale-95"
+                  onClick={() => addScore(q)}
+                  disabled={pending}
+                >
+                  {q}
+                </button>
+              ))}
+            </div>
+
             <div className="grid grid-cols-3 gap-2">
               {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((n) => (
-                <button
-                  key={n}
-                  className="rounded-md bg-slate-100 px-4 py-4 text-2xl font-semibold hover:bg-slate-200"
-                  onClick={() => appendDigit(n)}
-                >
+                <button key={n} type="button" className="keypad-key" onClick={() => appendDigit(n)}>
                   {n}
                 </button>
               ))}
               <button
-                className="rounded-md bg-slate-100 px-4 py-4 text-2xl font-semibold hover:bg-slate-200"
-                onClick={() => appendDigit(0)}
+                type="button"
+                className="keypad-key text-xl text-slate-500"
+                onClick={() => setInputScore((s) => s.slice(0, -1))}
+                aria-label="Delete digit"
               >
+                ⌫
+              </button>
+              <button type="button" className="keypad-key" onClick={() => appendDigit(0)}>
                 0
               </button>
               <button
-                className="rounded-md bg-red-50 text-red-700 px-4 py-4 font-semibold hover:bg-red-100"
-                onClick={() => setInputScore("")}
-              >
-                Clear
-              </button>
-              <button
-                className="rounded-md bg-emerald-600 text-white px-4 py-4 font-semibold hover:bg-emerald-700"
+                type="button"
+                className="keypad-key bg-emerald-600 text-xl text-white"
+                style={{ borderColor: "rgba(18,184,134,0.6)" }}
                 onClick={() => addScore(parseInt(inputScore || "0", 10))}
                 disabled={pending}
+                aria-label="Enter score"
               >
-                Enter
+                ✓
               </button>
             </div>
 
-            <div className="flex gap-2 flex-wrap">
-              <button
-                className="rounded-md border border-slate-300 px-3 py-2 text-sm font-semibold hover:border-emerald-200"
-                onClick={undo}
-                disabled={pending}
-              >
-                Undo last score
-              </button>
-            </div>
+            <button
+              type="button"
+              className="btn-secondary text-sm"
+              onClick={undo}
+              disabled={pending}
+            >
+              ↩ Undo last score
+            </button>
           </>
         )}
 
         {finishPrompt && (
-          <div className="rounded-md border border-slate-200 bg-slate-50 p-3 flex flex-col gap-2">
-            <p className="text-sm font-semibold">Checkout darts used?</p>
-            <div className="flex gap-2">
+          <div className="flex flex-col gap-3 rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-center">
+            <p className="text-lg font-bold text-emerald-800">GAME SHOT! 🎉</p>
+            <p className="text-sm font-semibold text-slate-700">How many darts on the checkout?</p>
+            <div className="grid grid-cols-3 gap-2">
               {[1, 2, 3].map((d) => (
                 <button
                   key={d}
-                  className="rounded-md border border-slate-300 px-3 py-2 text-sm font-semibold hover:border-emerald-200"
+                  type="button"
+                  className="keypad-key !text-lg"
                   onClick={() => {
                     if (!gameId) return;
                     startTransition(async () => {
@@ -549,13 +555,14 @@ export default function ScoringPage() {
                   {d} dart{d > 1 ? "s" : ""}
                 </button>
               ))}
-              <button
-                className="rounded-md border border-slate-300 px-3 py-2 text-sm font-semibold hover:border-red-200 text-red-700"
-                onClick={() => setFinishPrompt(null)}
-              >
-                Cancel
-              </button>
             </div>
+            <button
+              type="button"
+              className="text-sm font-semibold text-red-600 underline"
+              onClick={() => setFinishPrompt(null)}
+            >
+              Cancel
+            </button>
           </div>
         )}
 
