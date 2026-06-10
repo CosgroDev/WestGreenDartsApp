@@ -376,10 +376,10 @@ export default async function FixtureDetailPage({ params }: Props) {
                         <div className="flex items-start gap-2">
                           {match.latestGameId && (
                             <Link
-                              href={`/scoring?game=${match.latestGameId}&fixture=${fixture.id}&home=${fixture.home ? "1" : "0"}#summary`}
+                              href={`/matches/${match.latestGameId}`}
                               className="flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 text-slate-600 hover:border-emerald-200 hover:text-emerald-700"
-                              title="View summary"
-                              aria-label="View summary"
+                              title="Match summary & insights"
+                              aria-label="Match summary and insights"
                             >
                               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                                 <circle cx="11" cy="11" r="8" />

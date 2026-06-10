@@ -450,10 +450,19 @@ export default function ScoringPage() {
         </div>
       )}
       {alert && <p className="text-center text-sm font-semibold text-emerald-700">{alert}</p>}
-      {isCompleted && fixtureId && (
-        <a className="btn-primary" href={`/fixtures/${fixtureId}`}>
-          Back to fixture
-        </a>
+      {isCompleted && (
+        <div className="flex flex-col gap-2">
+          {gameId && (
+            <a className="btn-primary" href={`/matches/${gameId}`}>
+              📊 View match summary &amp; insights
+            </a>
+          )}
+          {fixtureId && (
+            <a className="btn-secondary" href={`/fixtures/${fixtureId}`}>
+              Back to fixture
+            </a>
+          )}
+        </div>
       )}
 
       {!isCompleted && (
