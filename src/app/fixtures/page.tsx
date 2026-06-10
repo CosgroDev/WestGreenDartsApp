@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { getFixtures } from "@/data/fixtures";
 import { getSeasons } from "@/data/seasons";
+import { getPlayerForm, suggestTeam } from "@/data/form";
+import { FormPills } from "@/components/FormPills";
 import { deleteFixtureAction } from "./actions";
 import { CreateFixtureForm } from "./CreateFixtureForm";
 import { SeasonFilter } from "./SeasonFilter";
@@ -62,6 +64,9 @@ export default async function FixturesPage({
   // Split into active (no final result yet) and completed
   const activeFixtures = fixtures.filter((f) => f.status === "in_progress");
   const completedFixtures = fixtures.filter((f) => f.status !== "in_progress");
+
+  // Suggested team for the next fixture, from recent form
+  const suggestion = upcoming ? suggestTeam(await getPlayerForm()) : null;
 
   const renderFixture = (fixture: (typeof fixtures)[number]) => (
     <div key={fixture.id} className="card hover:border-emerald-200 transition py-3">
@@ -204,6 +209,44 @@ export default async function FixturesPage({
             <Link href={`/fixtures/${upcoming.id}`} className="btn-primary text-sm">
               Open
             </Link>
+          </div>
+        </section>
+      )}
+
+      {upcoming && suggestion && (suggestion.picks.length > 0 || suggestion.openSpots < suggestion.teamSize) && (
+        <section className="card">
+          <div className="flex items-start justify-between gap-2">
+            <div>
+              <h2 className="text-lg font-semibold">Suggested team</h2>
+              <p className="text-xs text-slate-500">
+                vs {upcoming.opponent} · win your last match, or draw just 1 of your last 2, and you keep your spot
+              </p>
+            </div>
+            <span className="chip border border-slate-200 bg-slate-50 text-slate-500">Just a suggestion</span>
+          </div>
+          <div className="mt-3 flex flex-col gap-2">
+            {suggestion.picks.map((p) => (
+              <div
+                key={p.player_id}
+                className="flex items-center justify-between gap-3 rounded-2xl border border-emerald-200 bg-emerald-50/40 px-4 py-2.5"
+              >
+                <div className="flex items-center gap-2 min-w-0">
+                  <span className="text-emerald-700" aria-hidden="true">✓</span>
+                  <span className="truncate font-semibold">{p.name}</span>
+                  <span className="hidden sm:inline text-xs text-slate-500">{p.reason}</span>
+                </div>
+                <FormPills form={p.form} max={2} />
+              </div>
+            ))}
+            {Array.from({ length: suggestion.openSpots }).map((_, i) => (
+              <div
+                key={`open-${i}`}
+                className="flex items-center gap-2 rounded-2xl border border-dashed border-amber-300 bg-amber-50/30 px-4 py-2.5"
+              >
+                <span className="text-amber-700" aria-hidden="true">★</span>
+                <span className="font-semibold text-amber-700">Spot up for grabs</span>
+              </div>
+            ))}
           </div>
         </section>
       )}
