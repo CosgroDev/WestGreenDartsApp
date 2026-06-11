@@ -21,6 +21,8 @@ export type FixtureDetail = {
   venue: string | null;
   notes: string | null;
   home: boolean;
+  aiTeamReview: string | null;
+  aiTeamReviewAt: string | null;
 };
 
 export async function getFixtures(): Promise<Fixture[]> {
@@ -70,7 +72,7 @@ export async function getFixtureById(id: string): Promise<FixtureDetail | null> 
 
   const { data, error } = await supabase
     .from("fixtures")
-    .select("id, starts_at, opponent, venue, notes, home, seasons(name)")
+    .select("id, starts_at, opponent, venue, notes, home, ai_team_review, ai_team_review_at, seasons(name)")
     .eq("id", id)
     .single();
 
@@ -87,7 +89,9 @@ export async function getFixtureById(id: string): Promise<FixtureDetail | null> 
     opponent: data.opponent,
     venue: data.venue,
     notes: data.notes,
-    home: data.home
+    home: data.home,
+    aiTeamReview: (data as any).ai_team_review ?? null,
+    aiTeamReviewAt: (data as any).ai_team_review_at ?? null
   };
 }
 
