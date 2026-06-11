@@ -246,6 +246,150 @@ export async function getPlayerCards(seasonId?: string): Promise<PlayerCard[]> {
   return players;
 }
 
+export type PlayerGameStat = {
+  game_id: string;
+  /** completed_at, falling back to created_at. */
+  date: string;
+  opponent: string;
+  won: boolean;
+  three_dart_avg: number | null;
+  first_nine_avg: number | null;
+  darts_thrown: number | null;
+  high_finish: number | null;
+  /** Finishing double score when the leg was won, else null. */
+  checkout: number | null;
+  twenty_six: number;
+  hundred_plus: number;
+  hundred_forty_plus: number;
+  one_eighty: number;
+};
+
+/**
+ * Game-by-game log for one player — every completed leg with that leg's own
+ * stats, most recent first. Optionally scoped to a season via the fixture join.
+ */
+export async function getPlayerGameLog(
+  playerId: string,
+  seasonId?: string
+): Promise<PlayerGameStat[]> {
+  const supabase = supabaseServer();
+  if (!supabase) return [];
+
+  let gamesQuery = supabase
+    .from("games")
+    .select(
+      seasonId
+        ? "id, opponent_player, winner, completed_at, created_at, darts_thrown, fixtures!inner(season_id)"
+        : "id, opponent_player, winner, completed_at, created_at, darts_thrown"
+    )
+    .eq("deleted", false)
+    .eq("status", "completed")
+    .eq("west_green_player_id", playerId)
+    .order("completed_at", { ascending: false });
+
+  if (seasonId) {
+    gamesQuery = (gamesQuery as any).eq("fixtures.season_id", seasonId);
+  }
+
+  const { data: games, error: gamesErr } = await gamesQuery;
+  if (gamesErr || !games || !games.length) return [];
+
+  const gameIds = games.map((g: any) => g.id);
+  const { data: events } = await supabase
+    .from("scoring_events")
+    .select("game_id, score, darts, is_checkout, remaining_after")
+    .in("game_id", gameIds)
+    .eq("is_deleted", false)
+    .order("throw_index", { ascending: true });
+
+  type Agg = {
+    totalScore: number;
+    totalDarts: number;
+    first9Score: number;
+    first9Darts: number;
+    first9Visits: number;
+    high_finish: number | null;
+    checkout: number | null;
+    t26: number;
+    t100: number;
+    t140: number;
+    t180: number;
+  };
+  const agg = new Map<string, Agg>();
+  const ensure = (gid: string) => {
+    let a = agg.get(gid);
+    if (!a) {
+      a = {
+        totalScore: 0,
+        totalDarts: 0,
+        first9Score: 0,
+        first9Darts: 0,
+        first9Visits: 0,
+        high_finish: null,
+        checkout: null,
+        t26: 0,
+        t100: 0,
+        t140: 0,
+        t180: 0,
+      };
+      agg.set(gid, a);
+    }
+    return a;
+  };
+
+  (events || []).forEach((e: any) => {
+    const a = ensure(e.game_id);
+    if (typeof e.score === "number") {
+      a.totalScore += e.score;
+      if (e.score === 26) a.t26 += 1;
+      if (e.score >= 100) a.t100 += 1;
+      if (e.score >= 140) a.t140 += 1;
+      if (e.score === 180) a.t180 += 1;
+    }
+    if (typeof e.darts === "number") a.totalDarts += e.darts;
+    // First 9 darts = first three visits (events are ordered by throw_index)
+    if (a.first9Visits < 3) {
+      if (typeof e.darts === "number") a.first9Darts += e.darts;
+      if (typeof e.score === "number") a.first9Score += e.score;
+      a.first9Visits += 1;
+    }
+    if (e.is_checkout) {
+      const finish =
+        typeof e.score === "number"
+          ? e.score
+          : typeof e.remaining_after === "number"
+          ? 501 - e.remaining_after
+          : null;
+      if (typeof finish === "number") {
+        a.checkout = finish;
+        a.high_finish = a.high_finish === null ? finish : Math.max(a.high_finish, finish);
+      }
+    }
+  });
+
+  return games.map((g: any) => {
+    const a = agg.get(g.id);
+    const three_dart_avg = a && a.totalDarts > 0 ? (a.totalScore / a.totalDarts) * 3 : null;
+    const first_nine_avg = a && a.first9Darts > 0 ? (a.first9Score / a.first9Darts) * 3 : null;
+    const won = g.winner === "west_green";
+    return {
+      game_id: g.id,
+      date: g.completed_at || g.created_at,
+      opponent: g.opponent_player || "Opponent",
+      won,
+      three_dart_avg,
+      first_nine_avg,
+      darts_thrown: typeof g.darts_thrown === "number" ? g.darts_thrown : null,
+      high_finish: a?.high_finish ?? null,
+      checkout: won ? a?.checkout ?? null : null,
+      twenty_six: a?.t26 ?? 0,
+      hundred_plus: a?.t100 ?? 0,
+      hundred_forty_plus: a?.t140 ?? 0,
+      one_eighty: a?.t180 ?? 0,
+    };
+  });
+}
+
 export async function getTeamCard(seasonId?: string): Promise<TeamCard> {
   const supabase = supabaseServer();
   if (!supabase) return TEAM_CARD_EMPTY;
