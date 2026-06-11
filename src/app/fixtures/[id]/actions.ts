@@ -28,6 +28,19 @@ export async function generateTeamAiReviewAction(fixtureId: string): Promise<Tea
     return { ok: false, reason: "not_configured" };
   }
 
+  const supabase = supabaseServer();
+  if (!supabase) return { ok: false, reason: "error", message: "Supabase not configured" };
+
+  // The review is the night's summary — generate it once, then read it back.
+  const { data: existing } = await supabase
+    .from("fixtures")
+    .select("ai_team_review")
+    .eq("id", fixtureId)
+    .single();
+  if (existing?.ai_team_review) {
+    return { ok: true, review: existing.ai_team_review };
+  }
+
   const summary = await getFixtureTeamSummary(fixtureId);
   if (!summary) return { ok: false, reason: "no_data" };
 
@@ -81,6 +94,14 @@ export async function generateTeamAiReviewAction(fixtureId: string): Promise<Tea
       .join("")
       .trim();
     if (!text) return { ok: false, reason: "error", message: "Empty response from the AI." };
+
+    // Persist so the review only runs once and becomes the stored summary.
+    await supabase
+      .from("fixtures")
+      .update({ ai_team_review: text, ai_team_review_at: new Date().toISOString() })
+      .eq("id", fixtureId);
+    revalidatePath(`/fixtures/${fixtureId}`);
+
     return { ok: true, review: text };
   } catch (err) {
     if (err instanceof Anthropic.APIError) {

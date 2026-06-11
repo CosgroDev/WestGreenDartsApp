@@ -423,7 +423,16 @@ export default async function FixtureDetailPage({ params }: Props) {
       {allMatchesComplete && (
         <section className="card !border-amber-200" style={{ boxShadow: "0 0 24px rgba(255, 212, 59, 0.08)" }}>
           <h2 className="text-lg font-semibold mb-2">✨ AI team performance review</h2>
-          <TeamAiReview fixtureId={fixture.id} configured={Boolean(process.env.ANTHROPIC_API_KEY)} />
+          <TeamAiReview
+            fixtureId={fixture.id}
+            configured={Boolean(process.env.ANTHROPIC_API_KEY)}
+            initialReview={fixture.aiTeamReview}
+          />
+          {fixture.aiTeamReviewAt && (
+            <p className="mt-3 text-[11px] text-slate-400">
+              Saved {new Date(fixture.aiTeamReviewAt).toLocaleDateString()}
+            </p>
+          )}
         </section>
       )}
     </main>
