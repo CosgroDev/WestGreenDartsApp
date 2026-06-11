@@ -3,7 +3,7 @@ export const revalidate = 0;
 
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { getMatchSummary } from "@/data/matchSummary";
+import { getMatchSummary, getMatchAiReview } from "@/data/matchSummary";
 import { analyseMatch } from "@/lib/matchInsights";
 import { AiReview } from "./AiReview";
 
@@ -20,7 +20,10 @@ const visitTone = (score: number, isBust: boolean, isCheckout: boolean) => {
 };
 
 export default async function MatchSummaryPage({ params }: Props) {
-  const match = await getMatchSummary(params.gameId);
+  const [match, aiReview] = await Promise.all([
+    getMatchSummary(params.gameId),
+    getMatchAiReview(params.gameId)
+  ]);
   if (!match) return notFound();
 
   const insights = analyseMatch(match);
@@ -220,7 +223,16 @@ export default async function MatchSummaryPage({ params }: Props) {
 
       <section className="card !border-amber-200" style={{ boxShadow: "0 0 24px rgba(255, 212, 59, 0.08)" }}>
         <h2 className="text-lg font-semibold mb-2">✨ AI performance review</h2>
-        <AiReview gameId={params.gameId} configured={Boolean(process.env.ANTHROPIC_API_KEY)} />
+        <AiReview
+          gameId={params.gameId}
+          configured={Boolean(process.env.ANTHROPIC_API_KEY)}
+          initialReview={aiReview.review}
+        />
+        {aiReview.reviewAt && (
+          <p className="mt-3 text-[11px] text-slate-400">
+            Saved {new Date(aiReview.reviewAt).toLocaleDateString()}
+          </p>
+        )}
       </section>
     </main>
   );

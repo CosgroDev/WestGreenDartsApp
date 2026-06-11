@@ -203,6 +203,29 @@ export async function getMatchSummary(gameId: string): Promise<MatchSummary | nu
   };
 }
 
+// The match review is the same story every time — a completed match never
+// changes — so it's generated once and stored against the match's game row.
+// Read defensively (separate from getMatchSummary) so the match page still
+// renders if the ai_review column hasn't been migrated yet.
+export async function getMatchAiReview(
+  gameId: string
+): Promise<{ review: string | null; reviewAt: string | null }> {
+  const supabase = supabaseServer();
+  if (!supabase) return { review: null, reviewAt: null };
+
+  const { data, error } = await supabase
+    .from("games")
+    .select("ai_review, ai_review_at")
+    .eq("id", gameId)
+    .single();
+  if (error || !data) return { review: null, reviewAt: null };
+
+  return {
+    review: (data as any).ai_review ?? null,
+    reviewAt: (data as any).ai_review_at ?? null
+  };
+}
+
 export type TeamMatchSummary = {
   westPlayerName: string;
   opponentPlayer: string;

@@ -3,12 +3,20 @@
 import { useState, useTransition } from "react";
 import { generateAiReviewAction } from "./actions";
 
-export function AiReview({ gameId, configured }: { gameId: string; configured: boolean }) {
-  const [review, setReview] = useState<string | null>(null);
+export function AiReview({
+  gameId,
+  configured,
+  initialReview = null
+}: {
+  gameId: string;
+  configured: boolean;
+  initialReview?: string | null;
+}) {
+  const [review, setReview] = useState<string | null>(initialReview);
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
 
-  if (!configured) {
+  if (!configured && !review) {
     return (
       <p className="text-xs text-slate-500">
         AI match reviews are available once an Anthropic API key is configured on the server
