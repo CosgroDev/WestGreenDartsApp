@@ -115,20 +115,6 @@ export default async function DashboardPage() {
         )}
       </header>
 
-      {currentSeasonId && (
-        <section className="card !border-amber-200" style={{ boxShadow: "0 0 24px rgba(255, 212, 59, 0.08)" }}>
-          <h2 className="text-lg font-semibold mb-2">✨ AI season summary</h2>
-          <SeasonAiSummary
-            seasonId={currentSeasonId}
-            configured={Boolean(process.env.ANTHROPIC_API_KEY)}
-            completedFixtures={seasonToDate?.completedFixtures ?? 0}
-            initialSummary={storedSeasonSummary.summary}
-            initialAt={storedSeasonSummary.at}
-            initialFixtures={storedSeasonSummary.fixtures}
-          />
-        </section>
-      )}
-
       <section className="grid grid-cols-1 gap-3">
         <div className="card">
           <h2 className="text-lg font-semibold mb-3">Team snapshot</h2>
@@ -199,6 +185,20 @@ export default async function DashboardPage() {
           </Link>
         </div>
       </section>
+
+      {currentSeasonId && (
+        <section className="card !border-amber-200" style={{ boxShadow: "0 0 24px rgba(255, 212, 59, 0.08)" }}>
+          <h2 className="text-lg font-semibold mb-2">✨ AI season summary</h2>
+          <SeasonAiSummary
+            seasonId={currentSeasonId}
+            configured={Boolean(process.env.ANTHROPIC_API_KEY)}
+            completedFixtures={seasonToDate?.completedFixtures ?? 0}
+            initialSummary={storedSeasonSummary.summary}
+            initialAt={storedSeasonSummary.at}
+            initialFixtures={storedSeasonSummary.fixtures}
+          />
+        </section>
+      )}
 
       {hotPlayer && hotPlayer.wins > 0 && (
         <section
