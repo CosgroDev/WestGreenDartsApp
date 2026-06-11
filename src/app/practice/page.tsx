@@ -25,16 +25,38 @@ export default async function PracticePage() {
       {/* Quick links to other practice games */}
       <section className="card">
         <h2 className="text-base font-semibold mb-2 text-slate-700">Practice games</h2>
-        <Link
-          href="/practice/121"
-          className="flex items-center justify-between rounded-md border border-purple-200 bg-purple-50 px-4 py-3 hover:bg-purple-100"
-        >
-          <div>
-            <p className="font-semibold text-purple-900">121 Challenge</p>
-            <p className="text-xs text-purple-600 mt-0.5">Progress from checkout 121 → 170</p>
-          </div>
-          <span className="text-purple-700 font-semibold text-sm">Play →</span>
-        </Link>
+        <div className="flex flex-col gap-2">
+          <Link
+            href="/practice/121"
+            className="flex items-center justify-between rounded-md border border-purple-200 bg-purple-50 px-4 py-3 hover:bg-purple-100"
+          >
+            <div>
+              <p className="font-semibold text-purple-900">121 Challenge</p>
+              <p className="text-xs text-purple-600 mt-0.5">Progress from checkout 121 → 170</p>
+            </div>
+            <span className="text-purple-700 font-semibold text-sm">Play →</span>
+          </Link>
+          <Link
+            href="/practice/doubles"
+            className="flex items-center justify-between rounded-md border border-emerald-200 bg-emerald-50 px-4 py-3 hover:bg-emerald-100"
+          >
+            <div>
+              <p className="font-semibold text-emerald-900">Doubles Switch</p>
+              <p className="text-xs text-emerald-600 mt-0.5">Team doubles drill — rotate then random</p>
+            </div>
+            <span className="text-emerald-700 font-semibold text-sm">Play →</span>
+          </Link>
+          <Link
+            href="/practice/checkout"
+            className="flex items-center justify-between rounded-md border border-blue-200 bg-blue-50 px-4 py-3 hover:bg-blue-100"
+          >
+            <div>
+              <p className="font-semibold text-blue-900">Random Checkout</p>
+              <p className="text-xs text-blue-600 mt-0.5">Finish a random 2–170 checkout</p>
+            </div>
+            <span className="text-blue-700 font-semibold text-sm">Play →</span>
+          </Link>
+        </div>
       </section>
 
       <section className="card">
