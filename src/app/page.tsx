@@ -1,37 +1,52 @@
 import Link from "next/link";
 import Image from "next/image";
+import { cookies } from "next/headers";
+import { redirect } from "next/navigation";
 
 export default function HomePage() {
-  return (
-    <main className="flex flex-col gap-6">
-      <header className="card">
-        <div className="flex items-center gap-3">
-          <Image src="/west_green_logo.png" alt="West Green Darts" width={82} height={82} className="brand-logo" />
-          <div>
-            <p className="text-sm text-slate-600">West Green Darts</p>
-            <h1 className="text-2xl font-semibold">Team Control Room</h1>
-          </div>
-        </div>
-        <p className="text-slate-700 mt-2">
-          Manage seasons, fixtures, players, and live scoring from any device. Enter the shared team PIN to get started.
-        </p>
-        <Link
-          href="/pin"
-          className="mt-4 inline-flex items-center justify-center rounded-md bg-emerald-600 px-4 py-2 text-white font-semibold hover:bg-emerald-700"
-        >
-          Enter PIN
-        </Link>
-      </header>
+  // Already unlocked devices go straight to the dashboard.
+  if (cookies().get("wgd_session")?.value) {
+    redirect("/dashboard");
+  }
 
-      <section className="card">
-        <h2 className="text-lg font-semibold">What&apos;s ready in this build</h2>
-        <ul className="list-disc ml-5 text-slate-700 leading-relaxed">
-          <li>Project scaffold with Next.js App Router and Tailwind.</li>
-          <li>Supabase client wiring via environment variables.</li>
-          <li>PIN gate page scaffold and protected dashboard shell.</li>
-          <li>Initial Supabase schema in `supabase/schema.sql` aligned to the PRD.</li>
-        </ul>
-      </section>
+  return (
+    <main className="flex min-h-[80vh] flex-col items-center justify-center gap-8 text-center fade-up">
+      <div className="flex flex-col items-center gap-4">
+        <Image
+          src="/west_green_logo.png"
+          alt="West Green Darts"
+          width={132}
+          height={132}
+          className="brand-logo"
+          priority
+        />
+        <div>
+          <p className="text-sm font-semibold uppercase tracking-[0.3em] text-emerald-700">Team HQ</p>
+          <h1 className="mt-1 text-4xl font-extrabold tracking-tight">West Green Darts</h1>
+          <p className="mt-3 max-w-sm text-slate-600">
+            Live 501 scoring, fixtures, stats and bragging rights — one shared PIN for the whole team.
+          </p>
+        </div>
+      </div>
+
+      <Link href="/pin" className="btn-primary px-10 py-4 text-lg">
+        Enter team PIN
+      </Link>
+
+      <div className="grid w-full max-w-sm grid-cols-3 gap-2 text-xs text-slate-500">
+        <div className="rounded-xl border border-slate-200 bg-slate-50 px-2 py-3">
+          <p className="text-lg">🎯</p>
+          <p className="mt-1 font-semibold text-slate-700">Live scoring</p>
+        </div>
+        <div className="rounded-xl border border-slate-200 bg-slate-50 px-2 py-3">
+          <p className="text-lg">📈</p>
+          <p className="mt-1 font-semibold text-slate-700">Auto stats</p>
+        </div>
+        <div className="rounded-xl border border-slate-200 bg-slate-50 px-2 py-3">
+          <p className="text-lg">🏆</p>
+          <p className="mt-1 font-semibold text-slate-700">Leaderboards</p>
+        </div>
+      </div>
     </main>
   );
 }

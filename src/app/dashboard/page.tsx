@@ -3,8 +3,10 @@ export const revalidate = 0;
 
 import Link from "next/link";
 import { getPlayerCards, getTeamCard } from "@/data/stats";
+import { getPlayerForm } from "@/data/form";
 import { StatBar } from "@/components/StatBar";
-import { ChartCard } from "./ChartCard";
+import { FormPills } from "@/components/FormPills";
+import { BarChartCard } from "./BarChartCard";
 import { ExportLinks } from "./ExportLinks";
 import { ScoringBreakdown } from "./ScoringBreakdown";
 import { getSeasons } from "@/data/seasons";
@@ -15,102 +17,231 @@ export default async function DashboardPage() {
   const currentSeason = seasons.find((s) => s.is_current);
   const currentSeasonId = currentSeason?.id ?? "";
 
-  const [players, team] = await Promise.all([
+  const [players, team, playerForm] = await Promise.all([
     getPlayerCards(currentSeasonId || undefined),
-    getTeamCard(currentSeasonId || undefined)
+    getTeamCard(currentSeasonId || undefined),
+    getPlayerForm()
   ]);
+  const winPctOf = (p: (typeof players)[number]) => (p.legs_played > 0 ? p.legs_won / p.legs_played : 0);
+  const playersByLegs = [...players].sort(
+    (a, b) =>
+      (b.legs_won ?? 0) - (a.legs_won ?? 0) ||
+      winPctOf(b) - winPctOf(a) ||
+      (b.three_dart_avg ?? 0) - (a.three_dart_avg ?? 0)
+  );
+  const formById = new Map(playerForm.map((f) => [f.player_id, f.matches.map((m) => m.result)]));
   const playersBy3da = [...players].sort((a, b) => (b.three_dart_avg ?? 0) - (a.three_dart_avg ?? 0));
   const playersByFirst9 = [...players].sort((a, b) => (b.first_nine_avg ?? 0) - (a.first_nine_avg ?? 0));
   const playersBy26 = [...players].sort((a, b) => (b.twenty_six ?? 0) - (a.twenty_six ?? 0));
   const playersBy180 = [...players]
     .filter((p) => (p.one_eighty ?? 0) > 0)
     .sort((a, b) => (b.one_eighty ?? 0) - (a.one_eighty ?? 0));
-  const chartData = playersBy3da.slice(0, 6).map((p) => ({ label: p.name || "—", value: p.three_dart_avg ?? 0 }));
+  const chartData = playersBy3da
+    .slice(0, 6)
+    .map((p) => ({ label: p.name || "—", value: Math.round((p.three_dart_avg ?? 0) * 10) / 10 }));
   const first9Data = playersByFirst9
     .slice(0, 6)
-    .map((p) => ({ label: p.name || "—", value: p.first_nine_avg ?? 0 }));
+    .map((p) => ({ label: p.name || "—", value: Math.round((p.first_nine_avg ?? 0) * 10) / 10 }));
   const t26Data = playersBy26.slice(0, 6).map((p) => ({ label: p.name || "—", value: p.twenty_six ?? 0 }));
+  const legsWonData = playersByLegs
+    .slice(0, 8)
+    .map((p) => ({ label: p.name || "—", value: p.legs_won ?? 0 }));
+  const checkoutData = [...players]
+    .filter((p) => p.checkout_pct !== null)
+    .sort((a, b) => (b.checkout_pct ?? 0) - (a.checkout_pct ?? 0))
+    .slice(0, 8)
+    .map((p) => ({ label: p.name || "—", value: Math.round(p.checkout_pct ?? 0) }));
+
+  // Hottest player: most wins across their last 5 matches (needs at least 2 played)
+  const hotPlayer = playerForm
+    .filter((f) => f.matches.length >= 2)
+    .map((f) => {
+      const last5 = f.matches.slice(0, 5).map((m) => m.result);
+      const wins = last5.filter((r) => r === "W").length;
+      let streak = 0;
+      for (const r of f.matches.map((m) => m.result)) {
+        if (r === "W") streak += 1;
+        else break;
+      }
+      return { ...f, wins, streak, played: last5.length };
+    })
+    .sort((a, b) => b.wins - a.wins || b.streak - a.streak)[0];
+
+  const best = <T,>(arr: T[], value: (p: T) => number | null, dir: 1 | -1 = 1) =>
+    arr.reduce<T | null>((acc, p) => {
+      const v = value(p);
+      if (v === null) return acc;
+      if (acc === null) return p;
+      const a = value(acc);
+      return a === null || v * dir > a * dir ? p : acc;
+    }, null);
+  const highFinishLeader = best(players, (p) => p.high_finish);
+  const checkoutLeader = best(players, (p) => p.checkout_pct);
+  const fastestLeader = best(players, (p) => p.darts_per_leg_won, -1);
+  // Ton machine is rate-based so heavy schedules don't dominate:
+  // fewest darts thrown per 100+ visit (includes 140+ and 180s).
+  const tonsLeader = best(
+    players,
+    (p) => (p.hundred_plus > 0 && p.total_darts > 0 ? p.total_darts / p.hundred_plus : null),
+    -1
+  );
 
   const winRate = team.legs_played > 0 ? (team.legs_won / team.legs_played) * 100 : null;
 
   return (
-    <main className="flex flex-col gap-4">
-      <header className="card">
-        <p className="text-sm text-slate-600">Overview</p>
-        <h1 className="text-2xl font-semibold">Team Dashboard</h1>
+    <main className="flex flex-col gap-4 fade-up">
+      <header className="flex items-end justify-between">
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-emerald-700">Team HQ</p>
+          <h1 className="text-2xl font-bold">Dashboard</h1>
+        </div>
         {currentSeason ? (
-          <p className="mt-1 text-sm text-emerald-700 font-medium">Season {currentSeason.name}</p>
+          <span className="chip border border-emerald-200 bg-emerald-50 text-emerald-700">
+            Season {currentSeason.name}
+          </span>
         ) : (
-          <p className="mt-1 text-sm text-amber-600">No active season set — <a href="/settings" className="underline">configure in settings</a></p>
+          <a href="/settings" className="chip border border-amber-200 bg-amber-50 text-amber-700 underline">
+            Set active season
+          </a>
         )}
       </header>
 
       <section className="grid grid-cols-1 gap-3">
         <div className="card">
           <h2 className="text-lg font-semibold mb-3">Team snapshot</h2>
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 text-sm">
-            <div>
-              <p className="text-slate-600">Legs (W/L)</p>
-              <p className="text-xl font-semibold">
-                {team.legs_won ?? 0} / {team.legs_played ? team.legs_played - (team.legs_won ?? 0) : 0}
+          <div className="grid grid-cols-3 gap-2">
+            <div className="rounded-xl bg-slate-50 px-3 py-3">
+              <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">Legs W/L</p>
+              <p className="mt-1 text-xl font-bold">
+                {team.legs_won ?? 0}<span className="text-slate-500">/</span>{team.legs_played ? team.legs_played - (team.legs_won ?? 0) : 0}
               </p>
             </div>
-            <div>
-              <p className="text-slate-600">Win rate</p>
-              <p className={`text-xl font-semibold ${winRate !== null && winRate >= 50 ? "text-emerald-700" : winRate !== null ? "text-red-600" : ""}`}>
+            <div className="rounded-xl bg-slate-50 px-3 py-3">
+              <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">Win rate</p>
+              <p className={`mt-1 text-xl font-bold ${winRate !== null && winRate >= 50 ? "text-emerald-700" : winRate !== null ? "text-red-600" : ""}`}>
                 {winRate !== null ? winRate.toFixed(0) + "%" : "–"}
               </p>
             </div>
-            <div>
-              <p className="text-slate-600">3DA</p>
-              <p className="text-xl font-semibold">{team.three_dart_avg ? team.three_dart_avg.toFixed(1) : "–"}</p>
+            <div className="rounded-xl bg-slate-50 px-3 py-3">
+              <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">3DA</p>
+              <p className="mt-1 text-xl font-bold">{team.three_dart_avg ? team.three_dart_avg.toFixed(1) : "–"}</p>
             </div>
-            <div>
-              <p className="text-slate-600">Checkout %</p>
-              <p className="text-xl font-semibold">
+            <div className="rounded-xl bg-slate-50 px-3 py-3">
+              <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">Checkout</p>
+              <p className="mt-1 text-xl font-bold">
                 {team.checkout_pct !== null ? team.checkout_pct.toFixed(0) + "%" : "–"}
               </p>
             </div>
-            <div>
-              <p className="text-slate-600">Darts / leg won</p>
-              <p className="text-xl font-semibold">
+            <div className="rounded-xl bg-slate-50 px-3 py-3">
+              <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">Darts/leg</p>
+              <p className="mt-1 text-xl font-bold">
                 {team.darts_per_leg_won !== null ? team.darts_per_leg_won.toFixed(1) : "–"}
               </p>
             </div>
-            <div>
-              <p className="text-slate-600">High finish</p>
-              <p className="text-xl font-semibold">{team.high_finish ?? "–"}</p>
+            <div className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-3">
+              <p className="text-[11px] font-semibold uppercase tracking-wide text-amber-700">High finish</p>
+              <p className="mt-1 text-xl font-bold text-amber-700">{team.high_finish ?? "–"}</p>
             </div>
           </div>
         </div>
 
-        <div className="card grid grid-cols-2 gap-2">
+        <div className="grid grid-cols-2 gap-2">
           <Link
             href="/fixtures"
-            className="rounded-md bg-emerald-600 px-4 py-3 text-center text-white font-semibold hover:bg-emerald-700"
+            className="card flex items-center justify-between !p-4 transition hover:border-emerald-300 active:scale-[0.98]"
           >
-            Fixtures
-          </Link>
-          <Link
-            href="/players"
-            className="rounded-md bg-slate-200 px-4 py-3 text-center text-slate-800 font-semibold hover:bg-slate-300"
-          >
-            Players
+            <span className="font-semibold">📅 Fixtures</span>
+            <span className="text-emerald-700">→</span>
           </Link>
           <Link
             href="/practice"
-            className="rounded-md bg-purple-200 px-4 py-3 text-center text-purple-900 font-semibold hover:bg-purple-300"
+            className="card flex items-center justify-between !p-4 transition hover:border-purple-300 active:scale-[0.98]"
           >
-            Practice arena
+            <span className="font-semibold">🎯 Practice</span>
+            <span className="text-purple-700">→</span>
+          </Link>
+          <Link
+            href="/players"
+            className="card flex items-center justify-between !p-4 transition hover:border-emerald-300 active:scale-[0.98]"
+          >
+            <span className="font-semibold">👥 Players</span>
+            <span className="text-emerald-700">→</span>
           </Link>
           <Link
             href="/pub-games/killer"
-            className="rounded-md bg-amber-500 px-4 py-3 text-center text-white font-semibold hover:bg-amber-600"
+            className="card flex items-center justify-between !p-4 transition hover:border-amber-300 active:scale-[0.98]"
           >
-            Killer
+            <span className="font-semibold">💀 Killer</span>
+            <span className="text-amber-700">→</span>
           </Link>
         </div>
       </section>
+
+      {hotPlayer && hotPlayer.wins > 0 && (
+        <section
+          className="card !border-amber-200"
+          style={{ boxShadow: "0 0 28px rgba(255, 212, 59, 0.1)" }}
+        >
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-amber-700">🔥 On fire</p>
+              <p className="mt-1 text-xl font-bold">{hotPlayer.name}</p>
+              <p className="text-sm text-slate-600">
+                {hotPlayer.wins} win{hotPlayer.wins === 1 ? "" : "s"} in their last {hotPlayer.played} match
+                {hotPlayer.played === 1 ? "" : "es"}
+                {hotPlayer.streak >= 2 ? ` · on a ${hotPlayer.streak}-match streak` : ""}
+              </p>
+            </div>
+            <FormPills form={hotPlayer.matches.map((m) => m.result)} />
+          </div>
+        </section>
+      )}
+
+      {(highFinishLeader || checkoutLeader || fastestLeader || tonsLeader) && (
+        <section className="card">
+          <h2 className="text-lg font-semibold mb-3">Honours board</h2>
+          <div className="grid grid-cols-2 gap-2">
+            {highFinishLeader && (
+              <div className="rounded-2xl border border-amber-200 bg-amber-50 px-3 py-3">
+                <p className="text-[11px] font-semibold uppercase tracking-wide text-amber-700">🎯 Highest finish</p>
+                <p className="mt-1 text-2xl font-bold text-amber-700">{highFinishLeader.high_finish}</p>
+                <p className="text-xs text-slate-600">{highFinishLeader.name}</p>
+              </div>
+            )}
+            {checkoutLeader && (
+              <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-3 py-3">
+                <p className="text-[11px] font-semibold uppercase tracking-wide text-emerald-700">🧊 Coolest finisher</p>
+                <p className="mt-1 text-2xl font-bold text-emerald-700">
+                  {(checkoutLeader.checkout_pct ?? 0).toFixed(0)}%
+                </p>
+                <p className="text-xs text-slate-600">{checkoutLeader.name} · checkout rate</p>
+              </div>
+            )}
+            {fastestLeader && (
+              <div className="rounded-2xl border border-blue-200 bg-blue-50 px-3 py-3">
+                <p className="text-[11px] font-semibold uppercase tracking-wide text-blue-700">⚡ Fastest finisher</p>
+                <p className="mt-1 text-2xl font-bold text-blue-700">
+                  {(fastestLeader.darts_per_leg_won ?? 0).toFixed(1)}
+                </p>
+                <p className="text-xs text-slate-600">{fastestLeader.name} · darts per leg won</p>
+              </div>
+            )}
+            {tonsLeader && (
+              <div className="rounded-2xl border border-purple-200 bg-purple-50 px-3 py-3">
+                <p className="text-[11px] font-semibold uppercase tracking-wide text-purple-700">💯 Ton machine</p>
+                <p className="mt-1 text-2xl font-bold text-purple-700">
+                  {(tonsLeader.total_darts / tonsLeader.hundred_plus).toFixed(0)}
+                  <span className="text-sm font-semibold"> darts</span>
+                </p>
+                <p className="text-xs text-slate-600">
+                  {tonsLeader.name} · a 100+ every {(tonsLeader.total_darts / tonsLeader.hundred_plus).toFixed(0)} darts
+                  ({tonsLeader.hundred_plus} in total)
+                </p>
+              </div>
+            )}
+          </div>
+        </section>
+      )}
 
       {/* Scoring breakdown */}
       <section className="card">
@@ -134,9 +265,9 @@ export default async function DashboardPage() {
       </section>
 
       <section className="card">
-        <h2 className="text-lg font-semibold mb-2">Players</h2>
+        <h2 className="text-lg font-semibold mb-2">Leaderboard <span className="text-xs font-normal text-slate-500">by legs won</span></h2>
         <div className="grid grid-cols-1 gap-2 max-h-[600px] overflow-y-auto pr-1">
-          {players.map((p) => {
+          {playersByLegs.map((p, rank) => {
             const winPct = p.legs_played > 0 ? (p.legs_won / p.legs_played) * 100 : null;
             const diff = (p.legs_won ?? 0) - ((p.legs_played ?? 0) - (p.legs_won ?? 0));
             const diffColor =
@@ -145,11 +276,31 @@ export default async function DashboardPage() {
             return (
               <div
                 key={p.player_id}
-                className="flex flex-col gap-3 rounded-md border border-slate-200 px-3 py-3 text-sm"
+                className={`flex flex-col gap-3 rounded-2xl border px-4 py-3 text-sm ${
+                  rank === 0 ? "border-amber-200 bg-amber-50/40" : "border-slate-200 bg-slate-50/40"
+                }`}
               >
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                   <div className="w-full sm:w-auto">
-                    <p className="font-semibold">{p.name}</p>
+                    <p className="flex items-center gap-2 font-semibold">
+                      <span
+                        className={`inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[11px] font-bold ${
+                          rank === 0
+                            ? "bg-amber-100 text-amber-700 ring-1 ring-amber-300"
+                            : rank === 1
+                            ? "bg-slate-100 text-slate-800 ring-1 ring-slate-300"
+                            : rank === 2
+                            ? "bg-amber-50 text-amber-600"
+                            : "bg-slate-50 text-slate-500"
+                        }`}
+                      >
+                        {rank + 1}
+                      </span>
+                      {p.name}
+                      <span className="ml-auto sm:ml-3">
+                        <FormPills form={formById.get(p.player_id) ?? []} />
+                      </span>
+                    </p>
                     <div className="mt-1 grid grid-cols-1 sm:grid-cols-2 gap-2">
                       <StatBar label="3DA" value={p.three_dart_avg} max={80} />
                       <StatBar label="First 9" value={p.first_nine_avg} max={100} />
@@ -226,9 +377,26 @@ export default async function DashboardPage() {
       )}
 
       <section className="grid grid-cols-1 gap-3">
-        <ChartCard title="3-Dart Average (by player)" data={chartData} color="#2f8f6d" />
-        <ChartCard title="First 9 Average (by player)" data={first9Data} color="#4fb18d" />
-        <ChartCard title="26s Hit (by player)" data={t26Data} color="#8b5cf6" />
+        {legsWonData.length > 0 && (
+          <BarChartCard
+            title="Legs won"
+            subtitle="who's putting points on the board"
+            data={legsWonData}
+            color="#12b886"
+          />
+        )}
+        {checkoutData.length > 0 && (
+          <BarChartCard
+            title="Checkout %"
+            subtitle="composure on the doubles"
+            data={checkoutData}
+            color="#ffd43b"
+            suffix="%"
+          />
+        )}
+        <BarChartCard title="3-Dart Average" subtitle="overall scoring power" data={chartData} color="#2fc08a" />
+        <BarChartCard title="First 9 Average" subtitle="who starts a leg fastest" data={first9Data} color="#d9a52b" />
+        <BarChartCard title="26s Hit" subtitle="the wall of shame" data={t26Data} color="#9775fa" />
       </section>
 
       <section className="card">

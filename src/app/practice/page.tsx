@@ -17,17 +17,9 @@ export default async function PracticePage() {
 
   return (
     <main className="flex flex-col gap-4">
-      <header className="card">
-        <div className="flex items-center justify-between mb-1">
-          <p className="text-sm text-slate-600">Practice arena</p>
-          <Link
-            href="/dashboard"
-            className="rounded-md border border-slate-300 px-2 py-1 text-xs font-semibold text-slate-600 hover:border-slate-400 hover:text-slate-800"
-          >
-            ← Dashboard
-          </Link>
-        </div>
-        <h1 className="text-2xl font-semibold">Practice sessions</h1>
+      <header>
+        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-emerald-700">Practice arena</p>
+        <h1 className="text-2xl font-bold">Practice sessions</h1>
       </header>
 
       {/* Quick links to other practice games */}

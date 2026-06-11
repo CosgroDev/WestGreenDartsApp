@@ -1,8 +1,11 @@
 import Link from "next/link";
 import { getFixtures } from "@/data/fixtures";
 import { getSeasons } from "@/data/seasons";
+import { getPlayerForm, suggestTeam } from "@/data/form";
+import { FormPills } from "@/components/FormPills";
 import { deleteFixtureAction } from "./actions";
 import { CreateFixtureForm } from "./CreateFixtureForm";
+import { SeasonFilter } from "./SeasonFilter";
 
 function formatDate(date: string) {
   return new Intl.DateTimeFormat("en-GB", {
@@ -58,9 +61,24 @@ export default async function FixturesPage({
     .filter((f) => new Date(f.starts_at) > now)
     .sort((a, b) => new Date(a.starts_at).getTime() - new Date(b.starts_at).getTime())[0];
 
-  // Split into active (no final result yet) and completed
-  const activeFixtures = fixtures.filter((f) => f.status === "in_progress");
-  const completedFixtures = fixtures.filter((f) => f.status !== "in_progress");
+  // Split into active (no final result yet) and completed.
+  // Upcoming list leads with the next game: future fixtures soonest-first,
+  // then any older in-progress ones. Completed shows most recent first.
+  const time = (f: (typeof fixtures)[number]) => new Date(f.starts_at).getTime();
+  const activeFixtures = fixtures
+    .filter((f) => f.status === "in_progress")
+    .sort((a, b) => {
+      const aFuture = time(a) >= now.getTime();
+      const bFuture = time(b) >= now.getTime();
+      if (aFuture !== bFuture) return aFuture ? -1 : 1;
+      return aFuture ? time(a) - time(b) : time(b) - time(a);
+    });
+  const completedFixtures = fixtures
+    .filter((f) => f.status !== "in_progress")
+    .sort((a, b) => time(b) - time(a));
+
+  // Suggested team for the next fixture, from recent form
+  const suggestion = upcoming ? suggestTeam(await getPlayerForm()) : null;
 
   const renderFixture = (fixture: (typeof fixtures)[number]) => (
     <div key={fixture.id} className="card hover:border-emerald-200 transition py-3">
@@ -105,20 +123,26 @@ export default async function FixturesPage({
         <div className="flex items-start gap-2">
           <Link
             href={`/fixtures/${fixture.id}`}
-            className="flex h-8 w-8 items-center justify-center rounded-full border border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100"
+            className="flex h-9 w-9 items-center justify-center rounded-full border border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100"
             title="Open fixture"
+            aria-label="Open fixture"
           >
-            ↗
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <path d="M9 18l6-6-6-6" />
+            </svg>
           </Link>
           {fixture.games_count === 0 && (
             <form action={deleteFixtureAction}>
               <input type="hidden" name="fixtureId" value={fixture.id} />
               <button
                 type="submit"
-                className="rounded-full border border-slate-300 w-7 h-7 flex items-center justify-center text-slate-500 hover:border-red-200 hover:text-red-600 text-xs"
+                className="rounded-full border border-slate-300 w-9 h-9 flex items-center justify-center text-slate-500 hover:border-red-200 hover:text-red-600"
                 title="Delete fixture (only if no games)"
+                aria-label="Delete fixture"
               >
-                x
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <path d="M18 6L6 18M6 6l12 12" />
+                </svg>
               </button>
             </form>
           )}
@@ -130,54 +154,20 @@ export default async function FixturesPage({
   return (
     <main className="flex flex-col gap-4">
       <header className="card">
-        <div className="mb-2 flex gap-2">
-          <a
-            href="/dashboard"
-            className="inline-flex items-center justify-center rounded-full bg-slate-100 px-3 py-2 text-sm font-semibold text-slate-800 hover:bg-slate-200"
-            aria-label="Back"
-            title="Back"
-          >
-            ←
-          </a>
-          <a
-            href="/seasons"
-            className="inline-flex items-center justify-center rounded-full bg-slate-100 px-3 py-2 text-sm font-semibold text-slate-800 hover:bg-slate-200"
-            aria-label="Seasons"
-            title="Seasons"
-          >
-            📅
-          </a>
+        <div className="flex items-start justify-between gap-2">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-emerald-700">Match calendar</p>
+            <h1 className="text-2xl font-bold">Fixtures</h1>
+            <p className="mt-1 text-sm text-slate-500">{fixtures.length} fixture{fixtures.length === 1 ? "" : "s"}</p>
+          </div>
+          <Link href="/seasons" className="chip border border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100">
+            Manage seasons
+          </Link>
         </div>
-        <p className="text-sm text-slate-600">Season fixtures</p>
-        <h1 className="text-2xl font-semibold">Fixtures</h1>
-        <p className="text-slate-700 mt-2">
-          Total fixtures: <span className="font-semibold">{fixtures.length}</span>
-        </p>
-        <form method="get" className="mt-2 flex items-center gap-2">
-          <label className="text-sm text-slate-700" htmlFor="seasonFilter">
-            Season
-          </label>
-          <select
-            id="seasonFilter"
-            name="season"
-            defaultValue={defaultSeasonName}
-            className="rounded-md border border-slate-300 px-3 py-2 text-sm"
-          >
-            <option value="all">All seasons</option>
-            {uniqueSeasonNames.map((name) => (
-              <option key={name} value={name}>
-                {name}
-              </option>
-            ))}
-          </select>
-          <button
-            type="submit"
-            className="rounded-md bg-emerald-600 px-3 py-2 text-white text-sm font-semibold hover:bg-emerald-700"
-          >
-            Apply
-          </button>
-        </form>
-        <div className="mt-2 grid grid-cols-2 sm:grid-cols-4 gap-2">
+        <div className="mt-3">
+          <SeasonFilter seasonNames={uniqueSeasonNames} selected={defaultSeasonName} />
+        </div>
+        <div className="mt-3 grid grid-cols-2 sm:grid-cols-4 gap-2">
           <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2">
             <p className="text-xs text-emerald-700 uppercase tracking-wide">Fixture wins</p>
             <p className="text-lg font-semibold text-emerald-900">{fixtureWins}</p>
@@ -212,33 +202,89 @@ export default async function FixturesPage({
       </header>
 
       {upcoming && (
-        <section className="card">
-          <div className="flex justify-between items-start">
+        <section className="card !border-emerald-200" style={{ boxShadow: "0 0 24px rgba(18,184,134,0.12)" }}>
+          <div className="flex justify-between items-start gap-3">
             <div className="flex flex-col gap-1">
-              <p className="text-sm text-slate-600">Next fixture</p>
-              <h2 className="text-lg font-semibold">
+              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-emerald-700">
+                Next match ·{" "}
+                {(() => {
+                  const days = Math.ceil((new Date(upcoming.starts_at).getTime() - now.getTime()) / 86400000);
+                  return days <= 0 ? "today" : days === 1 ? "tomorrow" : `in ${days} days`;
+                })()}
+              </p>
+              <h2 className="text-lg font-bold">
                 {upcoming.home ? "Home vs" : "Away @"} {upcoming.opponent}
               </h2>
-              <p className="text-sm text-slate-700">{formatDate(upcoming.starts_at)}</p>
-              {upcoming.venue && <p className="text-sm text-slate-600">{upcoming.venue}</p>}
+              <p className="text-sm text-slate-600">{formatDate(upcoming.starts_at)}</p>
+              {upcoming.venue && <p className="text-sm text-slate-500">{upcoming.venue}</p>}
             </div>
-            <Link
-              href={`/fixtures/${upcoming.id}`}
-              className="inline-flex items-center rounded-md bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700"
-            >
-              Open fixture
+            <Link href={`/fixtures/${upcoming.id}`} className="btn-primary text-sm">
+              Open
             </Link>
+          </div>
+        </section>
+      )}
+
+      {upcoming && suggestion && (suggestion.picks.length > 0 || suggestion.openSpots < suggestion.teamSize) && (
+        <section className="card">
+          <div className="flex items-start justify-between gap-2">
+            <div>
+              <h2 className="text-lg font-semibold">Suggested team</h2>
+              <p className="text-xs text-slate-500">
+                vs {upcoming.opponent} · win your last match, or draw just 1 of your last 2, and you keep your spot.
+                Half tags show where a player&apos;s record is strongest (games 1–3 vs 4–6).
+              </p>
+            </div>
+            <span className="chip border border-slate-200 bg-slate-50 text-slate-500">Just a suggestion</span>
+          </div>
+          <div className="mt-3 flex flex-col gap-2">
+            {suggestion.picks.map((p) => (
+              <div
+                key={p.player_id}
+                className="flex items-center justify-between gap-3 rounded-2xl border border-emerald-200 bg-emerald-50/40 px-4 py-2.5"
+              >
+                <div className="flex items-center gap-2 min-w-0">
+                  <span className="text-emerald-700" aria-hidden="true">✓</span>
+                  <span className="truncate font-semibold">{p.name}</span>
+                  <span className="hidden sm:inline text-xs text-slate-500">{p.reason}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  {p.halfPreference && (
+                    <span
+                      className={`chip ${
+                        p.halfPreference.half === 1
+                          ? "border border-blue-200 bg-blue-50 text-blue-700"
+                          : "border border-purple-200 bg-purple-50 text-purple-700"
+                      }`}
+                      title={p.halfPreference.note}
+                    >
+                      {p.halfPreference.half === 1 ? "1st half" : "2nd half"}
+                    </span>
+                  )}
+                  <FormPills form={p.form} max={2} />
+                </div>
+              </div>
+            ))}
+            {Array.from({ length: suggestion.openSpots }).map((_, i) => (
+              <div
+                key={`open-${i}`}
+                className="flex items-center gap-2 rounded-2xl border border-dashed border-amber-300 bg-amber-50/30 px-4 py-2.5"
+              >
+                <span className="text-amber-700" aria-hidden="true">★</span>
+                <span className="font-semibold text-amber-700">Spot up for grabs</span>
+              </div>
+            ))}
           </div>
         </section>
       )}
 
       <details className="card">
         <summary className="text-lg font-semibold cursor-pointer select-none flex items-center gap-2">
-          <span className="inline-flex items-center justify-center rounded-full bg-slate-100 px-3 py-2 text-sm font-semibold text-slate-800 hover:bg-slate-200">
-            ☰
+          <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-emerald-50 text-lg font-bold text-emerald-700">
+            +
           </span>
           <span>Add fixture</span>
-          <span className="text-xs font-normal text-slate-500">(click to show/hide)</span>
+          <span className="ml-auto text-xs font-normal text-slate-500">tap to expand</span>
         </summary>
         <div className="mt-3">
           <CreateFixtureForm seasons={uniqueSeasons} defaultSeasonId={defaultSeasonId} />
