@@ -5,6 +5,7 @@ import { getPlayers } from "@/data/players";
 import { getGamesForFixture, type Game } from "@/data/games";
 import { deleteMatchAction } from "./actions";
 import { CreateGameForm } from "./CreateGameClient";
+import { TeamAiReview } from "./TeamAiReview";
 
 type Props = { params: { id: string } };
 
@@ -112,6 +113,8 @@ export default async function FixtureDetailPage({ params }: Props) {
 
   const maxGames = 6;
   const disableCreate = grouped.length >= maxGames;
+  const allMatchesComplete =
+    grouped.length >= maxGames && grouped.every((g) => g.status !== "in_progress");
 
   const westLegsTotal = grouped.reduce((sum, g) => sum + g.westWins, 0);
   const oppLegsTotal = grouped.reduce((sum, g) => sum + g.oppWins, 0);
@@ -416,6 +419,13 @@ export default async function FixtureDetailPage({ params }: Props) {
           </>
         )}
       </section>
+
+      {allMatchesComplete && (
+        <section className="card !border-amber-200" style={{ boxShadow: "0 0 24px rgba(255, 212, 59, 0.08)" }}>
+          <h2 className="text-lg font-semibold mb-2">✨ AI team performance review</h2>
+          <TeamAiReview fixtureId={fixture.id} configured={Boolean(process.env.ANTHROPIC_API_KEY)} />
+        </section>
+      )}
     </main>
   );
 }
