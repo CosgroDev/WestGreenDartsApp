@@ -9,13 +9,22 @@ import { BarChartCard } from "./BarChartCard";
 import { ExportLinks } from "./ExportLinks";
 import { ScoringBreakdown } from "./ScoringBreakdown";
 import { Leaderboard } from "./Leaderboard";
+import { SeasonAiSummary } from "./SeasonAiSummary";
 import { getSeasons } from "@/data/seasons";
 import { getFixtures } from "@/data/fixtures";
+import { getSeasonToDate, getStoredSeasonSummary } from "@/data/seasonSummary";
 
 export default async function DashboardPage() {
   const [seasons, fixtures] = await Promise.all([getSeasons(), getFixtures()]);
   const currentSeason = seasons.find((s) => s.is_current);
   const currentSeasonId = currentSeason?.id ?? "";
+
+  const [seasonToDate, storedSeasonSummary] = await Promise.all([
+    currentSeasonId ? getSeasonToDate(currentSeasonId) : Promise.resolve(null),
+    currentSeasonId
+      ? getStoredSeasonSummary(currentSeasonId)
+      : Promise.resolve({ summary: null, at: null, fixtures: null })
+  ]);
 
   const [players, team, playerForm] = await Promise.all([
     getPlayerCards(currentSeasonId || undefined),
@@ -176,6 +185,20 @@ export default async function DashboardPage() {
           </Link>
         </div>
       </section>
+
+      {currentSeasonId && (
+        <section className="card !border-amber-200" style={{ boxShadow: "0 0 24px rgba(255, 212, 59, 0.08)" }}>
+          <h2 className="text-lg font-semibold mb-2">✨ AI season summary</h2>
+          <SeasonAiSummary
+            seasonId={currentSeasonId}
+            configured={Boolean(process.env.ANTHROPIC_API_KEY)}
+            completedFixtures={seasonToDate?.completedFixtures ?? 0}
+            initialSummary={storedSeasonSummary.summary}
+            initialAt={storedSeasonSummary.at}
+            initialFixtures={storedSeasonSummary.fixtures}
+          />
+        </section>
+      )}
 
       {hotPlayer && hotPlayer.wins > 0 && (
         <section
