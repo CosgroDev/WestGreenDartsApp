@@ -1,6 +1,8 @@
 "use server";
 
 import Anthropic from "@anthropic-ai/sdk";
+import { revalidatePath } from "next/cache";
+import { supabaseServer } from "@/lib/supabaseServer";
 import { getMatchSummary } from "@/data/matchSummary";
 
 export type AiReviewResult =
@@ -21,6 +23,21 @@ Keep it under 220 words. Plain text only, no headings or markdown.`;
 export async function generateAiReviewAction(gameId: string): Promise<AiReviewResult> {
   if (!process.env.ANTHROPIC_API_KEY) {
     return { ok: false, reason: "not_configured" };
+  }
+
+  const supabase = supabaseServer();
+
+  // A completed match never changes — generate the review once, then read it
+  // back rather than regenerating on every visit.
+  if (supabase) {
+    const { data: existing } = await supabase
+      .from("games")
+      .select("ai_review")
+      .eq("id", gameId)
+      .single();
+    if (existing?.ai_review) {
+      return { ok: true, review: existing.ai_review };
+    }
   }
 
   const summary = await getMatchSummary(gameId);
@@ -70,6 +87,16 @@ export async function generateAiReviewAction(gameId: string): Promise<AiReviewRe
       .join("")
       .trim();
     if (!text) return { ok: false, reason: "error", message: "Empty response from the AI." };
+
+    // Persist so the review only runs once and becomes the stored match summary.
+    if (supabase) {
+      await supabase
+        .from("games")
+        .update({ ai_review: text, ai_review_at: new Date().toISOString() })
+        .eq("id", gameId);
+      revalidatePath(`/matches/${gameId}`);
+    }
+
     return { ok: true, review: text };
   } catch (err) {
     if (err instanceof Anthropic.APIError) {
