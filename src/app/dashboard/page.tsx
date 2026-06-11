@@ -4,11 +4,11 @@ export const revalidate = 0;
 import Link from "next/link";
 import { getPlayerCards, getTeamCard } from "@/data/stats";
 import { getPlayerForm } from "@/data/form";
-import { StatBar } from "@/components/StatBar";
 import { FormPills } from "@/components/FormPills";
 import { BarChartCard } from "./BarChartCard";
 import { ExportLinks } from "./ExportLinks";
 import { ScoringBreakdown } from "./ScoringBreakdown";
+import { Leaderboard } from "./Leaderboard";
 import { getSeasons } from "@/data/seasons";
 import { getFixtures } from "@/data/fixtures";
 
@@ -265,96 +265,14 @@ export default async function DashboardPage() {
       </section>
 
       <section className="card">
-        <h2 className="text-lg font-semibold mb-2">Leaderboard <span className="text-xs font-normal text-slate-500">by legs won</span></h2>
-        <div className="grid grid-cols-1 gap-2 max-h-[600px] overflow-y-auto pr-1">
-          {playersByLegs.map((p, rank) => {
-            const winPct = p.legs_played > 0 ? (p.legs_won / p.legs_played) * 100 : null;
-            const diff = (p.legs_won ?? 0) - ((p.legs_played ?? 0) - (p.legs_won ?? 0));
-            const diffColor =
-              diff > 0 ? "bg-emerald-50 text-emerald-700" : diff < 0 ? "bg-red-50 text-red-700" : "bg-slate-100 text-slate-700";
-            const diffLabel = diff > 0 ? `+${diff}` : `${diff}`;
-            return (
-              <div
-                key={p.player_id}
-                className={`flex flex-col gap-3 rounded-2xl border px-4 py-3 text-sm ${
-                  rank === 0 ? "border-amber-200 bg-amber-50/40" : "border-slate-200 bg-slate-50/40"
-                }`}
-              >
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                  <div className="w-full sm:w-auto">
-                    <p className="flex items-center gap-2 font-semibold">
-                      <span
-                        className={`inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[11px] font-bold ${
-                          rank === 0
-                            ? "bg-amber-100 text-amber-700 ring-1 ring-amber-300"
-                            : rank === 1
-                            ? "bg-slate-100 text-slate-800 ring-1 ring-slate-300"
-                            : rank === 2
-                            ? "bg-amber-50 text-amber-600"
-                            : "bg-slate-50 text-slate-500"
-                        }`}
-                      >
-                        {rank + 1}
-                      </span>
-                      {p.name}
-                      <span className="ml-auto sm:ml-3">
-                        <FormPills form={formById.get(p.player_id) ?? []} />
-                      </span>
-                    </p>
-                    <div className="mt-1 grid grid-cols-1 sm:grid-cols-2 gap-2">
-                      <StatBar label="3DA" value={p.three_dart_avg} max={80} />
-                      <StatBar label="First 9" value={p.first_nine_avg} max={100} />
-                    </div>
-                  </div>
-                  <div className="flex flex-wrap gap-2">
-                    <span className="rounded-full bg-emerald-50 text-emerald-700 px-3 py-1 text-xs font-semibold">
-                      Won {p.legs_won}
-                    </span>
-                    <span className="rounded-full bg-slate-100 text-slate-700 px-3 py-1 text-xs font-semibold">
-                      Played {p.legs_played}
-                    </span>
-                    <span className={`rounded-full px-3 py-1 text-xs font-semibold ${diffColor}`}>
-                      {diffLabel}
-                    </span>
-                    {winPct !== null && (
-                      <span className={`rounded-full px-3 py-1 text-xs font-semibold ${winPct >= 50 ? "bg-emerald-50 text-emerald-700" : "bg-red-50 text-red-600"}`}>
-                        {winPct.toFixed(0)}% win
-                      </span>
-                    )}
-                  </div>
-                </div>
-                {/* Secondary stats row */}
-                <div className="flex flex-wrap gap-2 border-t border-slate-100 pt-2">
-                  {p.checkout_pct !== null && (
-                    <span className="rounded-full bg-blue-50 text-blue-700 px-3 py-1 text-xs font-semibold">
-                      CO {p.checkout_pct.toFixed(0)}%
-                    </span>
-                  )}
-                  {p.darts_per_leg_won !== null && (
-                    <span className="rounded-full bg-slate-100 text-slate-700 px-3 py-1 text-xs font-semibold">
-                      {p.darts_per_leg_won.toFixed(1)} darts/leg
-                    </span>
-                  )}
-                  {p.hundred_plus > 0 && (
-                    <span className="rounded-full bg-emerald-50 text-emerald-700 px-3 py-1 text-xs font-semibold">
-                      {p.hundred_plus} × 100+
-                    </span>
-                  )}
-                  {p.hundred_forty_plus > 0 && (
-                    <span className="rounded-full bg-purple-50 text-purple-700 px-3 py-1 text-xs font-semibold">
-                      {p.hundred_forty_plus} × 140+
-                    </span>
-                  )}
-                  {p.one_eighty > 0 && (
-                    <span className="rounded-full bg-amber-50 text-amber-700 px-3 py-1 text-xs font-semibold">
-                      {p.one_eighty} × 180
-                    </span>
-                  )}
-                </div>
-              </div>
-            );
-          })}
-        </div>
+        <h2 className="text-lg font-semibold mb-2">
+          Leaderboard <span className="text-xs font-normal text-slate-500">by legs won · tap a player for game-by-game</span>
+        </h2>
+        <Leaderboard
+          players={playersByLegs}
+          formByPlayer={Object.fromEntries(formById)}
+          seasonId={currentSeasonId}
+        />
       </section>
 
       {!!playersBy180.length && (

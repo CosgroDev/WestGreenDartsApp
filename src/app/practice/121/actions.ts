@@ -8,6 +8,8 @@ const TEAM_ID = process.env.TEAM_ID;
 
 export async function start121GameAction(formData: FormData): Promise<void> {
   const playerId = (formData.get("playerId") as string) || null;
+  // When checked, base advances on any finish within 9 darts (not just Turn 1).
+  const advanceBaseOnAnyFinish = formData.get("advanceBaseOnAnyFinish") === "on";
   const supabase = supabaseServer();
   if (!supabase) return;
 
@@ -20,6 +22,7 @@ export async function start121GameAction(formData: FormData): Promise<void> {
       current_checkout: 121,
       current_turn: 1,
       remaining: 121,
+      advance_base_on_any_finish: advanceBaseOnAnyFinish,
     })
     .select("id")
     .single();
@@ -84,11 +87,14 @@ export async function record121TurnAction(sessionId: string, score: number) {
 
   if (finished) {
     const isWin = session.current_checkout >= 170;
+    // Base locks on a Turn 1 finish, or — when this mode is enabled — on any
+    // finish within the 3 turns (9 darts).
+    const locksBase = session.current_turn === 1 || session.advance_base_on_any_finish === true;
     if (isWin) {
       result = "won";
       newStatus = "won";
       completedAt = new Date().toISOString();
-    } else if (session.current_turn === 1) {
+    } else if (locksBase) {
       result = "locked";
       newBase = session.current_checkout;
       nextCheckout = session.current_checkout + 1;

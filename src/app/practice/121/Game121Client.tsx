@@ -21,6 +21,7 @@ type Session = {
   current_turn: number;
   remaining: number;
   status: string;
+  advance_base_on_any_finish?: boolean;
   player?: { name: string } | null;
 };
 
@@ -153,6 +154,9 @@ export default function Game121Client({ sessionId }: { sessionId: string }) {
         <div>
           <p className="text-xs text-slate-500">121 Challenge</p>
           <p className="text-sm font-semibold text-slate-800">{playerName}</p>
+          {session.advance_base_on_any_finish && (
+            <p className="text-[11px] font-semibold text-purple-600">⚙️ Base advances on any finish</p>
+          )}
         </div>
         {confirmAbandon ? (
           <div className="flex items-center gap-2">

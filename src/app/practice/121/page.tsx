@@ -44,6 +44,7 @@ export default async function Game121Page() {
           <li>🔒 Finish on <strong>Turn 1</strong> → new checkout becomes your locked base</li>
           <li>✓ Finish on <strong>Turn 2 or 3</strong> → move up, base stays the same</li>
           <li>✗ <strong>Fail</strong> → return to your base checkout</li>
+          <li>⚙️ Or enable <strong>“Advance base on any finish”</strong> below — the base moves up every time you finish within 9 darts</li>
         </ul>
       </section>
 
@@ -69,6 +70,19 @@ export default async function Game121Page() {
               ))}
             </select>
           </div>
+          <label className="flex items-start gap-2 rounded-md border border-slate-200 px-3 py-2.5 cursor-pointer">
+            <input
+              type="checkbox"
+              name="advanceBaseOnAnyFinish"
+              className="mt-0.5 h-4 w-4 accent-purple-600"
+            />
+            <span className="text-sm text-slate-700">
+              Advance base on any finish
+              <span className="block text-xs text-slate-500">
+                Base goes up by one every time you finish within 9 darts — not just on a Turn 1 finish.
+              </span>
+            </span>
+          </label>
           <button
             type="submit"
             className="rounded-md bg-purple-600 px-4 py-3 text-white font-semibold hover:bg-purple-700"
