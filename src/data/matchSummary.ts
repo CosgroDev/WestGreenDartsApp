@@ -202,3 +202,159 @@ export async function getMatchSummary(gameId: string): Promise<MatchSummary | nu
     bands
   };
 }
+
+export type TeamMatchSummary = {
+  westPlayerName: string;
+  opponentPlayer: string;
+  result: "win" | "loss" | "draw";
+  westLegs: number;
+  oppLegs: number;
+  threeDartAvg: number | null;
+  firstNineAvg: number | null;
+  checkoutHits: number;
+  checkoutAttempts: number;
+  checkoutPct: number | null;
+  highFinish: number | null;
+  bestLegDarts: number | null;
+  busts: number;
+  bands: LegSummary["bands"];
+};
+
+export type FixtureTeamSummary = {
+  fixtureId: string;
+  fixtureLabel: string;
+  opponent: string;
+  matchesPlayed: number;
+  teamResult: "win" | "loss" | "draw";
+  matchWins: number;
+  matchLosses: number;
+  matchDraws: number;
+  legsFor: number;
+  legsAgainst: number;
+  // team-wide aggregates (West Green players only — opponent visits aren't tracked)
+  threeDartAvg: number | null;
+  firstNineAvg: number | null;
+  checkoutHits: number;
+  checkoutAttempts: number;
+  checkoutPct: number | null;
+  highFinish: number | null;
+  bestLegDarts: number | null;
+  busts: number;
+  bands: LegSummary["bands"];
+  matches: TeamMatchSummary[];
+};
+
+/**
+ * Team-wide summary for a fixture: rolls up every completed match (each a
+ * group of legs played by one West Green player vs one opponent, mirroring the
+ * fixture page's grouping) into one set of team aggregates plus a per-match
+ * breakdown. Returns null until at least one match is complete.
+ */
+export async function getFixtureTeamSummary(fixtureId: string): Promise<FixtureTeamSummary | null> {
+  const supabase = supabaseServer();
+  if (!supabase) return null;
+
+  const [{ data: fixture }, { data: games, error }] = await Promise.all([
+    supabase.from("fixtures").select("id, opponent, home").eq("id", fixtureId).single(),
+    supabase
+      .from("games")
+      .select("id, opponent_player, west_green_player_id, status, created_at")
+      .eq("fixture_id", fixtureId)
+      .eq("deleted", false)
+      .order("created_at", { ascending: true })
+  ]);
+  if (error || !games || !games.length) return null;
+
+  // Group legs into matches by West Green player + opponent (mirrors fixture page).
+  const groups = new Map<string, any[]>();
+  games.forEach((g: any) => {
+    const key = `${g.west_green_player_id || "none"}|${(g.opponent_player || "").trim().toLowerCase()}`;
+    const list = groups.get(key) ?? [];
+    list.push(g);
+    groups.set(key, list);
+  });
+
+  // Build a full MatchSummary for each completed match (skip any still in progress).
+  const summaries: MatchSummary[] = [];
+  for (const list of groups.values()) {
+    if (list.some((g) => g.status === "in_progress")) continue;
+    const completed = list.find((g) => g.status === "completed");
+    if (!completed) continue;
+    const ms = await getMatchSummary(completed.id);
+    if (ms) summaries.push(ms);
+  }
+  if (!summaries.length) return null;
+
+  const matches: TeamMatchSummary[] = summaries.map((m) => ({
+    westPlayerName: m.westPlayerName,
+    opponentPlayer: m.opponentPlayer,
+    result: m.result,
+    westLegs: m.westLegs,
+    oppLegs: m.oppLegs,
+    threeDartAvg: m.threeDartAvg,
+    firstNineAvg: m.firstNineAvg,
+    checkoutHits: m.checkoutHits,
+    checkoutAttempts: m.checkoutAttempts,
+    checkoutPct: m.checkoutPct,
+    highFinish: m.highFinish,
+    bestLegDarts: m.bestLegDarts,
+    busts: m.busts,
+    bands: m.bands
+  }));
+
+  const matchWins = summaries.filter((m) => m.result === "win").length;
+  const matchLosses = summaries.filter((m) => m.result === "loss").length;
+  const matchDraws = summaries.filter((m) => m.result === "draw").length;
+  const legsFor = summaries.reduce((s, m) => s + m.westLegs, 0);
+  const legsAgainst = summaries.reduce((s, m) => s + m.oppLegs, 0);
+  const teamResult: FixtureTeamSummary["teamResult"] =
+    matchWins > matchLosses ? "win" : matchLosses > matchWins ? "loss" : "draw";
+
+  const dartsTotal = summaries.reduce((s, m) => s + m.dartsTotal, 0);
+  const pointsTotal = summaries.reduce((s, m) => s + m.pointsTotal, 0);
+  const checkoutHits = summaries.reduce((s, m) => s + m.checkoutHits, 0);
+  const checkoutAttempts = summaries.reduce((s, m) => s + m.checkoutAttempts, 0);
+  const f9 = summaries.filter((m) => m.firstNineAvg !== null);
+  const highFinish = summaries.reduce<number | null>((max, m) => {
+    if (m.highFinish === null) return max;
+    return max === null ? m.highFinish : Math.max(max, m.highFinish);
+  }, null);
+  const bestLegDarts = summaries.reduce<number | null>((min, m) => {
+    if (m.bestLegDarts === null) return min;
+    return min === null ? m.bestLegDarts : Math.min(min, m.bestLegDarts);
+  }, null);
+  const bands = summaries.reduce(
+    (acc, m) => ({
+      sixtyPlus: acc.sixtyPlus + m.bands.sixtyPlus,
+      eightyPlus: acc.eightyPlus + m.bands.eightyPlus,
+      hundredPlus: acc.hundredPlus + m.bands.hundredPlus,
+      oneFortyPlus: acc.oneFortyPlus + m.bands.oneFortyPlus,
+      oneEighty: acc.oneEighty + m.bands.oneEighty,
+      twentySix: acc.twentySix + m.bands.twentySix
+    }),
+    { sixtyPlus: 0, eightyPlus: 0, hundredPlus: 0, oneFortyPlus: 0, oneEighty: 0, twentySix: 0 }
+  );
+
+  return {
+    fixtureId,
+    fixtureLabel: fixture ? `${fixture.home ? "Home vs" : "Away @"} ${fixture.opponent}` : "Fixture",
+    opponent: fixture?.opponent ?? "Opponent",
+    matchesPlayed: summaries.length,
+    teamResult,
+    matchWins,
+    matchLosses,
+    matchDraws,
+    legsFor,
+    legsAgainst,
+    threeDartAvg: dartsTotal > 0 ? (pointsTotal / dartsTotal) * 3 : null,
+    firstNineAvg: f9.length ? f9.reduce((s, m) => s + (m.firstNineAvg ?? 0), 0) / f9.length : null,
+    checkoutHits,
+    checkoutAttempts,
+    checkoutPct: checkoutAttempts > 0 ? (checkoutHits / checkoutAttempts) * 100 : null,
+    highFinish,
+    bestLegDarts,
+    busts: summaries.reduce((s, m) => s + m.busts, 0),
+    bands,
+    matches
+  };
+}
