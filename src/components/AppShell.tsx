@@ -54,7 +54,13 @@ const NAV_ITEMS = [
 
 // Screens that need full focus (PIN entry, live scoring) hide the app chrome.
 const CHROME_HIDDEN_PATHS = ["/", "/pin"];
-const CHROME_HIDDEN_PREFIXES = ["/scoring", "/practice/scoring", "/practice/121/scoring"];
+const CHROME_HIDDEN_PREFIXES = [
+  "/scoring",
+  "/practice/scoring",
+  "/practice/121/scoring",
+  "/practice/doubles/scoring",
+  "/practice/checkout/scoring",
+];
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname() || "/";
