@@ -66,7 +66,7 @@ export default async function FixturesPage({
   // then any older in-progress ones. Completed shows most recent first.
   const time = (f: (typeof fixtures)[number]) => new Date(f.starts_at).getTime();
   const activeFixtures = fixtures
-    .filter((f) => f.status === "in_progress")
+    .filter((f) => f.status === "in_progress" || f.status === "scheduled")
     .sort((a, b) => {
       const aFuture = time(a) >= now.getTime();
       const bFuture = time(b) >= now.getTime();
@@ -74,7 +74,13 @@ export default async function FixturesPage({
       return aFuture ? time(a) - time(b) : time(b) - time(a);
     });
   const completedFixtures = fixtures
-    .filter((f) => f.status !== "in_progress")
+    .filter((f) => f.status === "win" || f.status === "loss" || f.status === "draw")
+    .sort((a, b) => time(b) - time(a));
+
+  // Fixtures with games added but not yet finished — these are the matches
+  // currently being played, surfaced prominently at the top of the page.
+  const inProgressFixtures = fixtures
+    .filter((f) => f.status === "in_progress")
     .sort((a, b) => time(b) - time(a));
 
   // Suggested team for the next fixture, from recent form
@@ -91,23 +97,33 @@ export default async function FixturesPage({
             </span>
             {fixture.status && (
               <span
-                className={`rounded-full px-2 py-0.5 text-xs font-semibold ${
+                className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-semibold ${
                   fixture.status === "win"
                     ? "bg-emerald-50 text-emerald-700"
                     : fixture.status === "loss"
                     ? "bg-red-50 text-red-700"
                     : fixture.status === "draw"
                     ? "bg-amber-50 text-amber-700"
-                    : "bg-slate-100 text-slate-700"
+                    : fixture.status === "in_progress"
+                    ? "bg-amber-100 text-amber-800"
+                    : "bg-slate-100 text-slate-600"
                 }`}
               >
+                {fixture.status === "in_progress" && (
+                  <span className="relative flex h-2 w-2" aria-hidden="true">
+                    <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-amber-500 opacity-75" />
+                    <span className="relative inline-flex h-2 w-2 rounded-full bg-amber-600" />
+                  </span>
+                )}
                 {fixture.status === "win"
                   ? "Win"
                   : fixture.status === "loss"
                   ? "Loss"
                   : fixture.status === "draw"
                   ? "Draw"
-                  : "In progress"}
+                  : fixture.status === "in_progress"
+                  ? "In progress"
+                  : "Upcoming"}
               </span>
             )}
           </div>
@@ -200,6 +216,37 @@ export default async function FixturesPage({
           </div>
         </div>
       </header>
+
+      {inProgressFixtures.length > 0 && (
+        <section className="card !border-amber-300" style={{ boxShadow: "0 0 24px rgba(245,158,11,0.18)" }}>
+          <div className="flex items-center gap-2">
+            <span className="relative flex h-2.5 w-2.5" aria-hidden="true">
+              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-amber-500 opacity-75" />
+              <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-amber-600" />
+            </span>
+            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-amber-700">
+              {inProgressFixtures.length === 1 ? "Game in progress" : "Games in progress"}
+            </p>
+          </div>
+          <div className="mt-3 flex flex-col gap-3">
+            {inProgressFixtures.map((f) => (
+              <div key={f.id} className="flex justify-between items-center gap-3">
+                <div className="flex flex-col gap-0.5 min-w-0">
+                  <h2 className="text-lg font-bold truncate">
+                    {f.home ? "Home vs" : "Away @"} {f.opponent}
+                  </h2>
+                  <p className="text-sm text-slate-600">
+                    {f.games_count} game{f.games_count === 1 ? "" : "s"} added · {formatDate(f.starts_at)}
+                  </p>
+                </div>
+                <Link href={`/fixtures/${f.id}`} className="btn-primary text-sm shrink-0">
+                  Open
+                </Link>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
 
       {upcoming && (
         <section className="card !border-emerald-200" style={{ boxShadow: "0 0 24px rgba(18,184,134,0.12)" }}>
