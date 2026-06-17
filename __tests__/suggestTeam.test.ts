@@ -22,13 +22,14 @@ describe("suggestTeam", () => {
     expect(res.openSpots).toBe(5);
   });
 
-  it("picks players with exactly one draw and no loss in their last two", () => {
+  it("picks players who drew their last match unless it's two draws on the bounce", () => {
     const res = suggestTeam([
       player("draw-then-win", ["D", "W"]),
-      player("two-draws", ["D", "D"]),
-      player("draw-then-loss", ["D", "L"])
+      player("draw-then-loss", ["D", "L"]),
+      player("two-draws", ["D", "D"])
     ]);
-    expect(res.picks.map((p) => p.player_id)).toEqual(["draw-then-win"]);
+    // A loss before the draw doesn't cost the spot; two draws in a row does.
+    expect(res.picks.map((p) => p.player_id).sort()).toEqual(["draw-then-loss", "draw-then-win"]);
   });
 
   it("a single drawn match still qualifies", () => {
