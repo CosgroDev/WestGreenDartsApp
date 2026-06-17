@@ -157,20 +157,20 @@ export function halfPreference(matches: MatchResult[]): HalfPreference {
 /**
  * Suggested team for the next fixture:
  * - won their last match -> in
- * - exactly one draw (and no loss) across their last two matches -> in
- * Anything else leaves the spot up for grabs.
+ * - drew their last match, but not two draws on the bounce -> in
+ * Anything else leaves the spot up for grabs. A loss before the drawn
+ * game doesn't matter: a single draw still holds your spot.
  */
 export function suggestTeam(form: PlayerForm[], teamSize = 6): TeamSuggestion {
   const qualified = form
     .map((p) => {
       const lastTwo = p.matches.slice(0, 2).map((m) => m.result);
       const last = lastTwo[0];
-      const draws = lastTwo.filter((r) => r === "D").length;
-      const losses = lastTwo.filter((r) => r === "L").length;
+      const previous = lastTwo[1];
 
       let reason: string | null = null;
       if (last === "W") reason = "Won last match";
-      else if (draws === 1 && losses === 0) reason = "Drew 1 of last 2";
+      else if (last === "D" && previous !== "D") reason = "Drew last match";
       if (!reason) return null;
 
       const wins = lastTwo.filter((r) => r === "W").length;
