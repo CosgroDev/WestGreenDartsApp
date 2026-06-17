@@ -9,7 +9,7 @@ export type Fixture = {
   notes: string | null;
   home: boolean;
   games_count: number;
-  status?: "win" | "loss" | "draw" | "in_progress";
+  status?: "win" | "loss" | "draw" | "in_progress" | "scheduled";
   games?: { winner: string | null; status: string; deleted?: boolean | null }[];
 };
 
@@ -54,14 +54,20 @@ export async function getFixtures(): Promise<Fixture[]> {
       games_count: activeGames.length,
       games: f.games || [],
       status: (() => {
+        // No games added yet → the fixture is merely scheduled/upcoming.
+        if (activeGames.length === 0) return "scheduled";
+        // Any game still being played → the fixture is actively in progress,
+        // even if some games have already been completed.
+        const hasInProgress = activeGames.some((g: any) => g.status !== "completed");
+        if (hasInProgress) return "in_progress";
+        // All games completed → settle the fixture result.
         const completed = activeGames.filter((g: any) => g.status === "completed");
         const wins = completed.filter((g: any) => g.winner === "west_green").length;
         const losses = completed.filter((g: any) => g.winner === "opponent").length;
-        if (completed.length === 0) return "in_progress";
         if (wins > losses) return "win";
         if (losses > wins) return "loss";
-      return "draw";
-    })()
+        return "draw";
+      })()
     };
   });
 }
