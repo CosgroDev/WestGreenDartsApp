@@ -186,6 +186,28 @@ export default async function DashboardPage() {
         </div>
       </section>
 
+      {seasonToDate && seasonToDate.anomalies.length > 0 && (
+        <section className="card !border-red-200 !bg-red-50">
+          <h2 className="text-sm font-semibold text-red-800">⚠️ Fixture data needs a look</h2>
+          <p className="mt-1 text-sm text-red-700">
+            {seasonToDate.anomalies.length === 1 ? "This fixture has" : "These fixtures have"} every match settled
+            but not 6 results — a match was likely deleted and never re-entered, so it's left out of the season
+            record and AI summary until it's fixed:
+          </p>
+          <ul className="mt-2 space-y-1 text-sm text-red-700">
+            {seasonToDate.anomalies.map((a) => (
+              <li key={a.fixtureId}>
+                <Link href={`/fixtures/${a.fixtureId}`} className="underline">
+                  {new Date(a.startsAt).toLocaleDateString("en-GB", { day: "numeric", month: "short" })} vs{" "}
+                  {a.opponent}
+                </Link>{" "}
+                — {a.matchesFound} of 6 matches found
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+
       {currentSeasonId && (
         <section className="card !border-amber-200" style={{ boxShadow: "0 0 24px rgba(255, 212, 59, 0.08)" }}>
           <h2 className="text-lg font-semibold mb-2">✨ AI season summary</h2>
