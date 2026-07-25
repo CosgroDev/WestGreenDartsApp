@@ -212,6 +212,8 @@ export async function recordVisitAction(gameId: string, score: number, dartsOver
     }
     meta = { status: "completed", winner: "west_green", darts_thrown: totalDarts };
     revalidateAllDashboards();
+    const { data: gameRow } = await supabase.from("games").select("fixture_id").eq("id", gameId).single();
+    if (gameRow?.fixture_id) revalidatePath(`/fixtures/${gameRow.fixture_id}`);
   }
 
   revalidatePath(`/scoring?game=${gameId}`);
@@ -228,6 +230,8 @@ export async function setOpponentWinAction(gameId: string) {
   if (error) return { ok: false, message: error.message };
   revalidatePath(`/scoring?game=${gameId}`);
   revalidateAllDashboards();
+  const { data: gameRow } = await supabase.from("games").select("fixture_id").eq("id", gameId).single();
+  if (gameRow?.fixture_id) revalidatePath(`/fixtures/${gameRow.fixture_id}`);
   return { ok: true, meta: { status: "completed", winner: "opponent" } };
 }
 
