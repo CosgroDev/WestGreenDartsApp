@@ -17,6 +17,13 @@ export type SeasonFixtureResult = {
   legsAgainst: number;
 };
 
+export type SeasonFixtureAnomaly = {
+  fixtureId: string;
+  opponent: string;
+  startsAt: string;
+  matchesFound: number;
+};
+
 export type SeasonToDate = {
   seasonId: string;
   /** Completed fixtures act as the summary's fingerprint — it is regenerated
@@ -26,6 +33,12 @@ export type SeasonToDate = {
   fixtureWins: number;
   fixtureDraws: number;
   fixtureLosses: number;
+  /** Fixtures where every live game is completed but the matchup count isn't
+   *  6 — usually a match was deleted (e.g. a scoring correction gone wrong)
+   *  and never re-entered. These fixtures look "finished" on the fixtures
+   *  page but are silently excluded here and from the AI summary, so they're
+   *  surfaced instead of just dropped. */
+  anomalies: SeasonFixtureAnomaly[];
 };
 
 /**
@@ -56,6 +69,7 @@ export async function getSeasonToDate(seasonId: string): Promise<SeasonToDate | 
   });
 
   const fixtures: SeasonFixtureResult[] = [];
+  const anomalies: SeasonFixtureAnomaly[] = [];
   for (const list of byFixture.values()) {
     const matches = new Map<string, any[]>();
     list.forEach((g: any) => {
@@ -66,6 +80,12 @@ export async function getSeasonToDate(seasonId: string): Promise<SeasonToDate | 
     });
 
     const anyInProgress = list.some((g: any) => g.status === "in_progress");
+    if (matches.size !== MATCHES_PER_FIXTURE && !anyInProgress) {
+      // Every live game is settled but the matchup count is off — a match
+      // was likely deleted rather than the night being genuinely unfinished.
+      const f = list[0].fixtures;
+      anomalies.push({ fixtureId: f.id, opponent: f.opponent, startsAt: f.starts_at, matchesFound: matches.size });
+    }
     // Only count a fixture once it is fully played out.
     if (matches.size < MATCHES_PER_FIXTURE || anyInProgress) continue;
 
@@ -108,7 +128,8 @@ export async function getSeasonToDate(seasonId: string): Promise<SeasonToDate | 
     fixtures,
     fixtureWins: fixtures.filter((f) => f.result === "win").length,
     fixtureDraws: fixtures.filter((f) => f.result === "draw").length,
-    fixtureLosses: fixtures.filter((f) => f.result === "loss").length
+    fixtureLosses: fixtures.filter((f) => f.result === "loss").length,
+    anomalies
   };
 }
 
