@@ -1,5 +1,39 @@
 import { supabaseServer } from "@/lib/supabaseServer";
 
+// Supabase/PostgREST caps a single response at 1000 rows by default. A
+// season's worth of scoring_events comfortably exceeds that (each leg is
+// ~10-15 visits), so any unpaginated `.in("game_id", ...)` fetch silently
+// drops rows past the limit instead of erroring — under-counting whichever
+// legs/players happen to fall past the cutoff. Page through with `.range()`
+// so every event is counted regardless of season size.
+async function fetchAllScoringEvents(
+  supabase: NonNullable<ReturnType<typeof supabaseServer>>,
+  gameIds: string[],
+  columns: string,
+  orderColumn: string = "id"
+): Promise<any[]> {
+  if (!gameIds.length) return [];
+  const PAGE_SIZE = 1000;
+  const all: any[] = [];
+  for (let from = 0; ; from += PAGE_SIZE) {
+    const { data, error } = await supabase
+      .from("scoring_events")
+      .select(columns)
+      .in("game_id", gameIds)
+      .eq("is_deleted", false)
+      .order(orderColumn, { ascending: true })
+      .range(from, from + PAGE_SIZE - 1);
+    if (error) {
+      console.warn("scoring_events fetch error", error.message);
+      break;
+    }
+    if (!data || !data.length) break;
+    all.push(...data);
+    if (data.length < PAGE_SIZE) break;
+  }
+  return all;
+}
+
 export type PlayerCard = {
   player_id: string;
   name: string;
@@ -133,14 +167,11 @@ export async function getPlayerCards(seasonId?: string): Promise<PlayerCard[]> {
 
   // Fetch scoring events for all those games
   const allGameIds = games.map((g: any) => g.id);
-  const { data: events, error: evErr } = await supabase
-    .from("scoring_events")
-    .select("game_id, score, darts, is_bust, is_checkout, remaining_after, is_deleted")
-    .in("game_id", allGameIds)
-    .eq("is_deleted", false);
-  if (evErr) {
-    console.warn("player stats events error", evErr.message);
-  }
+  const events = await fetchAllScoringEvents(
+    supabase,
+    allGameIds,
+    "game_id, score, darts, is_bust, is_checkout, remaining_after, is_deleted"
+  );
 
   if (events) {
     const gameToPlayer = new Map<string, string>();
@@ -295,12 +326,12 @@ export async function getPlayerGameLog(
   if (gamesErr || !games || !games.length) return [];
 
   const gameIds = games.map((g: any) => g.id);
-  const { data: events } = await supabase
-    .from("scoring_events")
-    .select("game_id, score, darts, is_checkout, remaining_after")
-    .in("game_id", gameIds)
-    .eq("is_deleted", false)
-    .order("throw_index", { ascending: true });
+  const events = await fetchAllScoringEvents(
+    supabase,
+    gameIds,
+    "game_id, score, darts, is_checkout, remaining_after",
+    "throw_index"
+  );
 
   type Agg = {
     totalScore: number;
@@ -435,48 +466,46 @@ export async function getTeamCard(seasonId?: string): Promise<TeamCard> {
 
   if (games.length) {
     const gameIds = games.map((g: any) => g.id);
-    const { data: events, error: evErr } = await supabase
-      .from("scoring_events")
-      .select("score, darts, is_bust, is_checkout, remaining_after")
-      .in("game_id", gameIds)
-      .eq("is_deleted", false);
+    const events = await fetchAllScoringEvents(
+      supabase,
+      gameIds,
+      "score, darts, is_bust, is_checkout, remaining_after"
+    );
 
-    if (!evErr && events) {
-      let totalScore = 0;
-      let totalDarts = 0;
-      let checkoutAttempts = 0;
-      let checkoutHits = 0;
+    let totalScore = 0;
+    let totalDarts = 0;
+    let checkoutAttempts = 0;
+    let checkoutHits = 0;
 
-      events.forEach((e: any) => {
-        if (typeof e.score === "number") totalScore += e.score;
-        if (typeof e.darts === "number") totalDarts += e.darts;
+    events.forEach((e: any) => {
+      if (typeof e.score === "number") totalScore += e.score;
+      if (typeof e.darts === "number") totalDarts += e.darts;
 
-        if (typeof e.score === "number") {
-          if (e.score >= 60) sixty_plus += 1;
-          if (e.score >= 100) hundred_plus += 1;
-          if (e.score >= 140) hundred_forty_plus += 1;
-          if (e.score === 180) one_eighty_count += 1;
-        }
+      if (typeof e.score === "number") {
+        if (e.score >= 60) sixty_plus += 1;
+        if (e.score >= 100) hundred_plus += 1;
+        if (e.score >= 140) hundred_forty_plus += 1;
+        if (e.score === 180) one_eighty_count += 1;
+      }
 
-        const remaining_before =
-          e.is_bust
-            ? (typeof e.remaining_after === "number" ? e.remaining_after : 501)
-            : (typeof e.remaining_after === "number" && typeof e.score === "number"
-                ? e.remaining_after + e.score
-                : 501);
-        if (remaining_before <= 170) {
-          checkoutAttempts += 1;
-          if (e.is_checkout) checkoutHits += 1;
-        }
+      const remaining_before =
+        e.is_bust
+          ? (typeof e.remaining_after === "number" ? e.remaining_after : 501)
+          : (typeof e.remaining_after === "number" && typeof e.score === "number"
+              ? e.remaining_after + e.score
+              : 501);
+      if (remaining_before <= 170) {
+        checkoutAttempts += 1;
+        if (e.is_checkout) checkoutHits += 1;
+      }
 
-        if (e.is_checkout && typeof e.score === "number") {
-          high_finish = high_finish === null ? e.score : Math.max(high_finish, e.score);
-        }
-      });
+      if (e.is_checkout && typeof e.score === "number") {
+        high_finish = high_finish === null ? e.score : Math.max(high_finish, e.score);
+      }
+    });
 
-      if (totalDarts > 0) three_dart_avg = (totalScore / totalDarts) * 3;
-      if (checkoutAttempts > 0) checkout_pct = (checkoutHits / checkoutAttempts) * 100;
-    }
+    if (totalDarts > 0) three_dart_avg = (totalScore / totalDarts) * 3;
+    if (checkoutAttempts > 0) checkout_pct = (checkoutHits / checkoutAttempts) * 100;
   }
 
   return {
