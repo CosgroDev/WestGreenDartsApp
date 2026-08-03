@@ -1,3 +1,6 @@
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 import Link from "next/link";
 import { getFixtures } from "@/data/fixtures";
 import { getSeasons } from "@/data/seasons";
