@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { randomUUID } from "crypto";
 import { supabaseServer } from "@/lib/supabaseServer";
 import { finishRoutes } from "@/lib/finishRoutes";
 import { canFinishFrom } from "@/lib/scoringUtils";
@@ -91,7 +92,7 @@ export async function getLegSummariesAction(gameId: string) {
 
   const { data: game, error: gameErr } = await supabase
     .from("games")
-    .select("id, fixture_id, west_green_player_id, opponent_player")
+    .select("id, fixture_id, west_green_player_id, opponent_player, match_id")
     .eq("id", gameId)
     .single();
   if (gameErr || !game) return { ok: false, summaries: [] as LegSummaryWire[] };
@@ -99,15 +100,20 @@ export async function getLegSummariesAction(gameId: string) {
   const legsQuery = supabase
     .from("games")
     .select("id, winner, status, completed_at")
-    .eq("fixture_id", game.fixture_id)
-    .eq("opponent_player", game.opponent_player)
     .eq("deleted", false)
     .eq("status", "completed")
     .order("completed_at", { ascending: true });
-  const { data: legs, error: legsErr } =
-    game.west_green_player_id === null
-      ? await legsQuery.is("west_green_player_id", null)
-      : await legsQuery.eq("west_green_player_id", game.west_green_player_id);
+  const { data: legs, error: legsErr } = game.match_id
+    ? await legsQuery.eq("match_id", game.match_id)
+    : game.west_green_player_id === null
+    ? await legsQuery
+        .eq("fixture_id", game.fixture_id)
+        .eq("opponent_player", game.opponent_player)
+        .is("west_green_player_id", null)
+    : await legsQuery
+        .eq("fixture_id", game.fixture_id)
+        .eq("opponent_player", game.opponent_player)
+        .eq("west_green_player_id", game.west_green_player_id);
 
   if (legsErr || !legs) return { ok: false, summaries: [] as LegSummaryWire[] };
 
@@ -131,24 +137,29 @@ export async function loadGameStateAction(gameId: string) {
     const { data: game } = await supabase
       .from("games")
       .select(
-        "id, fixture_id, status, winner, darts_thrown, opponent_player, west_green_player_id, players:west_green_player_id(name)"
+        "id, fixture_id, status, winner, darts_thrown, opponent_player, west_green_player_id, match_id, players:west_green_player_id(name)"
       )
       .eq("id", gameId)
       .single();
     if (game) {
       meta = game;
-      // Count legs for this matchup within the fixture
+      // Count legs for this match within the fixture
       const matchQuery = supabase
         .from("games")
         .select("winner")
-        .eq("fixture_id", game.fixture_id)
-        .eq("opponent_player", game.opponent_player)
         .eq("deleted", false)
         .eq("status", "completed");
-      const legsData =
-        game.west_green_player_id === null
-          ? await matchQuery.is("west_green_player_id", null)
-          : await matchQuery.eq("west_green_player_id", game.west_green_player_id);
+      const legsData = game.match_id
+        ? await matchQuery.eq("match_id", game.match_id)
+        : game.west_green_player_id === null
+        ? await matchQuery
+            .eq("fixture_id", game.fixture_id)
+            .eq("opponent_player", game.opponent_player)
+            .is("west_green_player_id", null)
+        : await matchQuery
+            .eq("fixture_id", game.fixture_id)
+            .eq("opponent_player", game.opponent_player)
+            .eq("west_green_player_id", game.west_green_player_id);
 
       if (!legsData.error && legsData.data) {
         const westLegs = legsData.data.filter((g: any) => g.winner === "west_green").length;
@@ -265,10 +276,17 @@ export async function newLegAction(gameId: string) {
 
   const { data: game, error: fetchError } = await supabase
     .from("games")
-    .select("fixture_id, west_green_player_id, opponent_player, west_green_starts")
+    .select("fixture_id, west_green_player_id, opponent_player, west_green_starts, match_id")
     .eq("id", gameId)
     .single();
   if (fetchError || !game) return { ok: false, message: fetchError?.message || "Game not found" };
+
+  // Legs of a match share its match_id; adopt one for legacy games without it.
+  let matchId = game.match_id;
+  if (!matchId) {
+    matchId = randomUUID();
+    await supabase.from("games").update({ match_id: matchId }).eq("id", gameId);
+  }
 
   const { data, error } = await supabase
     .from("games")
@@ -277,7 +295,8 @@ export async function newLegAction(gameId: string) {
       fixture_id: game.fixture_id,
       west_green_player_id: game.west_green_player_id,
       opponent_player: game.opponent_player,
-      west_green_starts: !game.west_green_starts // alternate starts
+      west_green_starts: !game.west_green_starts, // alternate starts
+      match_id: matchId
     })
     .select("id")
     .single();

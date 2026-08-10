@@ -54,6 +54,7 @@ create table if not exists games (
   id uuid primary key default gen_random_uuid(),
   team_id uuid references teams(id) on delete cascade,
   fixture_id uuid references fixtures(id) on delete cascade,
+  match_id uuid, -- legs of the same match share this id
   west_green_player_id uuid references players(id),
   opponent_player text not null,
   west_green_starts boolean not null,

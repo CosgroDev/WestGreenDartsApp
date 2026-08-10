@@ -89,8 +89,8 @@ function summariseLeg(gameId: string, winner: LegSummary["winner"], visits: Visi
 
 /**
  * Full summary for a completed match. `gameId` may be any leg of the match;
- * the match is the group of game (leg) records sharing fixture + player +
- * opponent, mirroring the fixture page's grouping.
+ * the match is the group of game (leg) records sharing a match_id (or, for
+ * legacy rows, fixture + player + opponent), mirroring the fixture page.
  */
 export async function getMatchSummary(gameId: string): Promise<MatchSummary | null> {
   const supabase = supabaseServer();
@@ -98,7 +98,7 @@ export async function getMatchSummary(gameId: string): Promise<MatchSummary | nu
 
   const { data: game, error: gameErr } = await supabase
     .from("games")
-    .select("id, fixture_id, west_green_player_id, opponent_player, players(name)")
+    .select("id, fixture_id, west_green_player_id, opponent_player, match_id, players(name)")
     .eq("id", gameId)
     .single();
   if (gameErr || !game) return null;
@@ -107,7 +107,7 @@ export async function getMatchSummary(gameId: string): Promise<MatchSummary | nu
     supabase.from("fixtures").select("id, opponent, home").eq("id", game.fixture_id).single(),
     supabase
       .from("games")
-      .select("id, opponent_player, west_green_player_id, winner, status, created_at")
+      .select("id, match_id, opponent_player, west_green_player_id, winner, status, created_at")
       .eq("fixture_id", game.fixture_id)
       .eq("deleted", false)
       .order("created_at", { ascending: true })
@@ -117,8 +117,10 @@ export async function getMatchSummary(gameId: string): Promise<MatchSummary | nu
   const oppKey = (game.opponent_player || "").trim().toLowerCase();
   const legsGames = siblings.filter(
     (g: any) =>
-      g.west_green_player_id === game.west_green_player_id &&
-      (g.opponent_player || "").trim().toLowerCase() === oppKey &&
+      (game.match_id
+        ? g.match_id === game.match_id
+        : g.west_green_player_id === game.west_green_player_id &&
+          (g.opponent_player || "").trim().toLowerCase() === oppKey) &&
       g.status === "completed"
   );
   if (!legsGames.length) return null;
@@ -281,17 +283,19 @@ export async function getFixtureTeamSummary(fixtureId: string): Promise<FixtureT
     supabase.from("fixtures").select("id, opponent, home").eq("id", fixtureId).single(),
     supabase
       .from("games")
-      .select("id, opponent_player, west_green_player_id, status, created_at")
+      .select("id, match_id, opponent_player, west_green_player_id, status, created_at")
       .eq("fixture_id", fixtureId)
       .eq("deleted", false)
       .order("created_at", { ascending: true })
   ]);
   if (error || !games || !games.length) return null;
 
-  // Group legs into matches by West Green player + opponent (mirrors fixture page).
+  // Group legs into matches by match_id, falling back to West Green player +
+  // opponent name for legacy rows (mirrors fixture page).
   const groups = new Map<string, any[]>();
   games.forEach((g: any) => {
-    const key = `${g.west_green_player_id || "none"}|${(g.opponent_player || "").trim().toLowerCase()}`;
+    const key =
+      g.match_id ?? `${g.west_green_player_id || "none"}|${(g.opponent_player || "").trim().toLowerCase()}`;
     const list = groups.get(key) ?? [];
     list.push(g);
     groups.set(key, list);

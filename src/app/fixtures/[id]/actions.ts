@@ -1,6 +1,7 @@
 ﻿
 "use server";
 
+import { randomUUID } from "crypto";
 import Anthropic from "@anthropic-ai/sdk";
 import { revalidatePath } from "next/cache";
 import { supabaseServer } from "@/lib/supabaseServer";
@@ -126,7 +127,9 @@ export async function createGameAction(prevState: any, formData: FormData) {
     fixture_id: fixtureId,
     west_green_player_id: playerId || null,
     opponent_player: opponent,
-    west_green_starts: false
+    west_green_starts: false,
+    // Each created game is its own match; legs added later share this id.
+    match_id: randomUUID()
   });
 
   if (error) return { ok: false, message: error.message };
@@ -137,30 +140,32 @@ export async function createGameAction(prevState: any, formData: FormData) {
 
 export async function deleteMatchAction(formData: FormData): Promise<void> {
   const fixtureId = formData.get("fixtureId") as string | null;
+  const matchId = (formData.get("matchId") as string | null) || null;
   const opponent = formData.get("opponent") as string | null;
   const westId = (formData.get("westId") as string | null) || null;
 
-  if (!fixtureId || !opponent) return;
+  if (!fixtureId || (!matchId && !opponent)) return;
 
   const supabase = supabaseServer();
   if (!supabase) return;
 
-  // Find leg IDs for this matchup. Match the fixture page's grouping exactly
-  // (case-insensitive opponent name, null-safe player id) so deleting a match
-  // removes all of its legs — .eq() with a null player id matches nothing.
+  // Find leg IDs for this match. Prefer the stable match_id; fall back to the
+  // fixture page's legacy grouping (case-insensitive opponent name, null-safe
+  // player id) for rows without one — .eq() with a null player id matches nothing.
   const { data: games, error: fetchErr } = await supabase
     .from("games")
-    .select("id, opponent_player, west_green_player_id")
+    .select("id, match_id, opponent_player, west_green_player_id")
     .eq("fixture_id", fixtureId)
     .eq("deleted", false);
   if (fetchErr || !games || games.length === 0) return;
 
-  const targetOpponent = opponent.trim().toLowerCase();
+  const targetOpponent = (opponent || "").trim().toLowerCase();
   const gameIds = games
-    .filter(
-      (g: any) =>
-        (g.west_green_player_id ?? null) === (westId || null) &&
-        (g.opponent_player || "").trim().toLowerCase() === targetOpponent
+    .filter((g: any) =>
+      matchId
+        ? g.match_id === matchId
+        : (g.west_green_player_id ?? null) === westId &&
+          (g.opponent_player || "").trim().toLowerCase() === targetOpponent
     )
     .map((g: any) => g.id);
   if (gameIds.length === 0) return;

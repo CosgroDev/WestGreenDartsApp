@@ -2,6 +2,7 @@ import { supabaseServer } from "@/lib/supabaseServer";
 
 export type Game = {
   id: string;
+  match_id?: string | null;
   opponent_player: string;
   west_green_player_id: string | null;
   west_green_player_name?: string | null;
@@ -24,7 +25,7 @@ export async function getGamesForFixture(fixtureId: string): Promise<Game[]> {
   const { data: gamesRaw, error: gameErr } = await supabase
     .from("games")
     .select(
-      "id, opponent_player, west_green_player_id, west_green_starts, status, winner, created_at, darts_thrown, deleted, players(name)"
+      "id, match_id, opponent_player, west_green_player_id, west_green_starts, status, winner, created_at, darts_thrown, deleted, players(name)"
     )
     .eq("fixture_id", fixtureId)
     .eq("deleted", false)
