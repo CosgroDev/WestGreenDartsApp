@@ -23,6 +23,13 @@ export type LegStats = {
   };
 };
 
+// Scores a leg cannot be finished from with three darts and a double out:
+// anything above 170, plus the bogey numbers.
+const BOGEY_NUMBERS = new Set([169, 168, 166, 165, 163, 162, 159]);
+export function canFinishFrom(remaining: number): boolean {
+  return remaining >= 2 && remaining <= 170 && !BOGEY_NUMBERS.has(remaining);
+}
+
 export function computeRemaining(visits: ScoringVisit[], startScore = 501): number {
   if (!visits.length) return startScore;
   return visits[visits.length - 1].remaining_after;

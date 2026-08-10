@@ -145,17 +145,25 @@ export async function deleteMatchAction(formData: FormData): Promise<void> {
   const supabase = supabaseServer();
   if (!supabase) return;
 
-  // Find leg IDs for this matchup
+  // Find leg IDs for this matchup. Match the fixture page's grouping exactly
+  // (case-insensitive opponent name, null-safe player id) so deleting a match
+  // removes all of its legs — .eq() with a null player id matches nothing.
   const { data: games, error: fetchErr } = await supabase
     .from("games")
-    .select("id")
+    .select("id, opponent_player, west_green_player_id")
     .eq("fixture_id", fixtureId)
-    .eq("opponent_player", opponent)
-    .eq("west_green_player_id", westId)
     .eq("deleted", false);
   if (fetchErr || !games || games.length === 0) return;
 
-  const gameIds = games.map((g: any) => g.id);
+  const targetOpponent = opponent.trim().toLowerCase();
+  const gameIds = games
+    .filter(
+      (g: any) =>
+        (g.west_green_player_id ?? null) === (westId || null) &&
+        (g.opponent_player || "").trim().toLowerCase() === targetOpponent
+    )
+    .map((g: any) => g.id);
+  if (gameIds.length === 0) return;
 
   // Soft-delete scoring events for those legs
   await supabase.from("scoring_events").update({ is_deleted: true }).in("game_id", gameIds);

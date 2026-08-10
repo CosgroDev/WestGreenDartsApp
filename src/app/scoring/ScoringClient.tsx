@@ -6,6 +6,7 @@ export const revalidate = false;
 import { useEffect, useMemo, useState, useTransition } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { finishRoutes } from "@/lib/finishRoutes";
+import { canFinishFrom } from "@/lib/scoringUtils";
 import {
   loadGameStateAction,
   recordVisitAction,
@@ -26,7 +27,8 @@ type Visit = {
 
 const START_SCORE = 501;
 
-const isValidCheckoutLocal = (remaining: number, score: number) => remaining - score === 0;
+const isValidCheckoutLocal = (remaining: number, score: number) =>
+  remaining - score === 0 && canFinishFrom(remaining);
 
 type LegSummary = {
   winner: "west" | "opponent";
@@ -115,6 +117,8 @@ export default function ScoringPage() {
             isCheckout: v.is_checkout
           }))
         );
+        let legsWest = 0;
+        let legsOpp = 0;
         if (res.meta) {
           const status = res.meta.status || "in_progress";
           const winner = res.meta.winner ?? null;
@@ -127,13 +131,20 @@ export default function ScoringPage() {
             legs: res.meta.legs
           } as any);
 
-          if (status !== "in_progress") {
+          // Always seed local leg counts from the server, even mid-match:
+          // reloading during leg 2 must not forget leg 1, or finishLeg would
+          // spawn a phantom third leg instead of completing the match.
+          const legsMeta = res.meta.legs;
+          if (legsMeta) {
+            legsWest = legsMeta.west ?? 0;
+            legsOpp = legsMeta.opp ?? 0;
+            setWgdLegs(legsWest);
+            setOppLegs(legsOpp);
+          }
+
+          if (status !== "in_progress" || legsWest + legsOpp >= 2) {
             setMatchComplete(true);
-            const legsMeta = res.meta.legs;
-            if (legsMeta) {
-              setWgdLegs(legsMeta.west ?? 0);
-              setOppLegs(legsMeta.opp ?? 0);
-            } else {
+            if (!legsMeta) {
               if (winner === "west_green") {
                 setWgdLegs(2);
                 setOppLegs(0);
@@ -164,7 +175,7 @@ export default function ScoringPage() {
           }
         }
         if (res.visits.length === 0) {
-          setActiveSide(getStarter(wgdLegs + oppLegs));
+          setActiveSide(getStarter(legsWest + legsOpp));
         }
       } else {
         // set starting side on fresh leg
@@ -263,6 +274,11 @@ export default function ScoringPage() {
         router.replace(`/scoring?game=${resNew.gameId}${fixtureId ? `&fixture=${fixtureId}` : ""}`);
         return;
       }
+      // Don't reset into the completed leg's game record — new visits would
+      // land on a finished leg. Surface the failure instead.
+      setAlert("Couldn't start the next leg — check your connection and reload this page.");
+      setFinishPrompt(null);
+      return;
     }
     resetLegState();
     setFinishPrompt(null);
@@ -293,6 +309,8 @@ export default function ScoringPage() {
             setThrowLog((prev) => [...prev, "west"]);
             setLastThrowSide("west");
             switchSide();
+          } else if (!res.ok) {
+            setAlert(res.message ?? "Could not record the visit.");
           }
         });
       } else {
@@ -324,12 +342,12 @@ export default function ScoringPage() {
       setOppRemaining(remainingAfter);
       if (isCheckout && remainingAfter === 0) {
         setAlert("Leg completed - Opponent");
-        if (gameId) {
-          startTransition(async () => {
-            await setOpponentWinAction(gameId);
-          });
-        }
-        finishLeg("opponent", visits);
+        // Mark the leg lost before starting the next one, so the server-side
+        // leg counts are correct when the new leg's page loads.
+        startTransition(async () => {
+          if (gameId) await setOpponentWinAction(gameId);
+          await finishLeg("opponent", visits);
+        });
         setOppRemaining(START_SCORE);
       } else setAlert(null);
       switchSide();
