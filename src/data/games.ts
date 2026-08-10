@@ -2,6 +2,7 @@ import { supabaseServer } from "@/lib/supabaseServer";
 
 export type Game = {
   id: string;
+  match_id?: string | null;
   opponent_player: string;
   west_green_player_id: string | null;
   west_green_player_name?: string | null;
@@ -24,7 +25,7 @@ export async function getGamesForFixture(fixtureId: string): Promise<Game[]> {
   const { data: gamesRaw, error: gameErr } = await supabase
     .from("games")
     .select(
-      "id, opponent_player, west_green_player_id, west_green_starts, status, winner, created_at, darts_thrown, deleted, players(name)"
+      "id, match_id, opponent_player, west_green_player_id, west_green_starts, status, winner, created_at, darts_thrown, deleted, players(name)"
     )
     .eq("fixture_id", fixtureId)
     .eq("deleted", false)
@@ -39,10 +40,11 @@ export async function getGamesForFixture(fixtureId: string): Promise<Game[]> {
     gamesRaw.map(async (g: any) => {
       const { data: events } = await supabase
         .from("scoring_events")
-        .select("score, remaining_after, is_checkout, is_deleted, darts")
+        .select("score, remaining_after, is_checkout, is_bust, is_deleted, darts")
         .eq("game_id", g.id)
         .order("throw_index", { ascending: true })
         .limit(2000);
+      const activeEvents = (events || []).filter((e) => e.is_deleted !== true);
 
     const buckets = {
       sixty: 0,
@@ -60,8 +62,7 @@ export async function getGamesForFixture(fixtureId: string): Promise<Game[]> {
     let first9Score = 0;
     let first9Darts = 0;
 
-      (events || []).forEach((e) => {
-        if (e.is_deleted === true) return;
+      activeEvents.forEach((e) => {
         const s = e.score;
         if (typeof s === "number") {
           if (s === 26) buckets.twenty_six++;
@@ -72,7 +73,8 @@ export async function getGamesForFixture(fixtureId: string): Promise<Game[]> {
           if (s >= 140 && s < 170) buckets.hundred_forty++;
           if (s >= 170 && s < 180) buckets.hundred_seventy++;
           if (s === 180) buckets.one_eighty++;
-          totalScore += s;
+          // a bust visit scores nothing towards the averages
+          if (e.is_bust !== true) totalScore += s;
         }
         if (typeof e.darts === "number") totalDarts += e.darts;
         const isFinish = e.is_checkout === true || e.remaining_after === 0;
@@ -89,14 +91,14 @@ export async function getGamesForFixture(fixtureId: string): Promise<Game[]> {
         }
       });
 
-      // first 9 darts: first 3 events (9 darts) if present
-      const firstThree = (events || []).slice(0, 3);
+      // first 9 darts: first 3 non-deleted visits, only when a full 9 darts were thrown
+      const firstThree = activeEvents.slice(0, 3);
       firstThree.forEach((e) => {
         if (typeof e.darts === "number") first9Darts += e.darts;
-        if (typeof e.score === "number") first9Score += e.score;
+        if (typeof e.score === "number" && e.is_bust !== true) first9Score += e.score;
       });
       const three_dart_avg = totalDarts > 0 ? (totalScore / totalDarts) * 3 : null;
-      const first_nine_avg = first9Darts > 0 ? (first9Score / first9Darts) * 3 : null;
+      const first_nine_avg = first9Darts === 9 ? (first9Score / first9Darts) * 3 : null;
 
       return {
         ...g,

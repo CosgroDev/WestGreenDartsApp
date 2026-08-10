@@ -14,6 +14,7 @@ type Props = { params: { id: string } };
 
 type MatchGroup = {
   matchKey: string;
+  matchId: string | null;
   games: Game[];
   westWins: number;
   oppWins: number;
@@ -40,8 +41,10 @@ export default async function FixtureDetailPage({ params }: Props) {
 
   const grouped: MatchGroup[] = Array.from(
     games.reduce((map, g) => {
+      // Legs of the same match share a match_id; fall back to the legacy
+      // player/opponent-name key for rows created before the column existed.
       const opponentKey = (g.opponent_player || "").trim().toLowerCase();
-      const key = `${g.west_green_player_id || "none"}|${opponentKey}`;
+      const key = g.match_id ?? `${g.west_green_player_id || "none"}|${opponentKey}`;
       const list = map.get(key) ?? [];
       list.push(g);
       map.set(key, list);
@@ -98,6 +101,7 @@ export default async function FixtureDetailPage({ params }: Props) {
 
     return {
       matchKey: key,
+      matchId: sorted[0]?.match_id ?? null,
       games: sorted,
       westWins: displayWestWins,
       oppWins: displayOppWins,
@@ -311,11 +315,12 @@ export default async function FixtureDetailPage({ params }: Props) {
                       <div className="flex gap-2 items-start">
                         <form action={deleteMatchAction}>
                           <input type="hidden" name="fixtureId" value={fixture.id} />
+                          <input type="hidden" name="matchId" value={match.matchId ?? ""} />
                           <input type="hidden" name="opponent" value={match.opponentPlayer} />
                           <input
                             type="hidden"
                             name="westId"
-                            value={match.matchKey.split("|")[0] === "none" ? "" : match.matchKey.split("|")[0]}
+                            value={match.games[0]?.west_green_player_id ?? ""}
                           />
                           <button
                             title="Delete game"
@@ -395,11 +400,12 @@ export default async function FixtureDetailPage({ params }: Props) {
                           )}
                           <form action={deleteMatchAction}>
                             <input type="hidden" name="fixtureId" value={fixture.id} />
+                            <input type="hidden" name="matchId" value={match.matchId ?? ""} />
                             <input type="hidden" name="opponent" value={match.opponentPlayer} />
                             <input
                               type="hidden"
                               name="westId"
-                              value={match.matchKey.split("|")[0] === "none" ? "" : match.matchKey.split("|")[0]}
+                              value={match.games[0]?.west_green_player_id ?? ""}
                             />
                             <button
                               title="Delete game"

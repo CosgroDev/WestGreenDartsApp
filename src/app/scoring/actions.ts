@@ -1,8 +1,10 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { randomUUID } from "crypto";
 import { supabaseServer } from "@/lib/supabaseServer";
 import { finishRoutes } from "@/lib/finishRoutes";
+import { canFinishFrom } from "@/lib/scoringUtils";
 
 const TEAM_ID = process.env.TEAM_ID;
 const revalidateAllDashboards = () => {
@@ -90,20 +92,28 @@ export async function getLegSummariesAction(gameId: string) {
 
   const { data: game, error: gameErr } = await supabase
     .from("games")
-    .select("id, fixture_id, west_green_player_id, opponent_player")
+    .select("id, fixture_id, west_green_player_id, opponent_player, match_id")
     .eq("id", gameId)
     .single();
   if (gameErr || !game) return { ok: false, summaries: [] as LegSummaryWire[] };
 
-  const { data: legs, error: legsErr } = await supabase
+  const legsQuery = supabase
     .from("games")
     .select("id, winner, status, completed_at")
-    .eq("fixture_id", game.fixture_id)
-    .eq("opponent_player", game.opponent_player)
-    .eq("west_green_player_id", game.west_green_player_id)
     .eq("deleted", false)
     .eq("status", "completed")
     .order("completed_at", { ascending: true });
+  const { data: legs, error: legsErr } = game.match_id
+    ? await legsQuery.eq("match_id", game.match_id)
+    : game.west_green_player_id === null
+    ? await legsQuery
+        .eq("fixture_id", game.fixture_id)
+        .eq("opponent_player", game.opponent_player)
+        .is("west_green_player_id", null)
+    : await legsQuery
+        .eq("fixture_id", game.fixture_id)
+        .eq("opponent_player", game.opponent_player)
+        .eq("west_green_player_id", game.west_green_player_id);
 
   if (legsErr || !legs) return { ok: false, summaries: [] as LegSummaryWire[] };
 
@@ -127,24 +137,29 @@ export async function loadGameStateAction(gameId: string) {
     const { data: game } = await supabase
       .from("games")
       .select(
-        "id, fixture_id, status, winner, darts_thrown, opponent_player, west_green_player_id, players:west_green_player_id(name)"
+        "id, fixture_id, status, winner, darts_thrown, opponent_player, west_green_player_id, match_id, players:west_green_player_id(name)"
       )
       .eq("id", gameId)
       .single();
     if (game) {
       meta = game;
-      // Count legs for this matchup within the fixture
+      // Count legs for this match within the fixture
       const matchQuery = supabase
         .from("games")
         .select("winner")
-        .eq("fixture_id", game.fixture_id)
-        .eq("opponent_player", game.opponent_player)
         .eq("deleted", false)
         .eq("status", "completed");
-      const legsData =
-        game.west_green_player_id === null
-          ? await matchQuery.is("west_green_player_id", null)
-          : await matchQuery.eq("west_green_player_id", game.west_green_player_id);
+      const legsData = game.match_id
+        ? await matchQuery.eq("match_id", game.match_id)
+        : game.west_green_player_id === null
+        ? await matchQuery
+            .eq("fixture_id", game.fixture_id)
+            .eq("opponent_player", game.opponent_player)
+            .is("west_green_player_id", null)
+        : await matchQuery
+            .eq("fixture_id", game.fixture_id)
+            .eq("opponent_player", game.opponent_player)
+            .eq("west_green_player_id", game.west_green_player_id);
 
       if (!legsData.error && legsData.data) {
         const westLegs = legsData.data.filter((g: any) => g.winner === "west_green").length;
@@ -163,18 +178,38 @@ export async function recordVisitAction(gameId: string, score: number, dartsOver
   const supabase = supabaseServer();
   if (!supabase) return { ok: false, message: "Supabase not configured" };
 
+  const { data: gameRow, error: gameRowErr } = await supabase
+    .from("games")
+    .select("id, status, fixture_id")
+    .eq("id", gameId)
+    .single();
+  if (gameRowErr || !gameRow) return { ok: false, message: "Game not found" };
+  if (gameRow.status !== "in_progress") {
+    return { ok: false, message: "This leg is already completed — reload the page to continue." };
+  }
+
   const existing = await fetchVisits(gameId);
   const remaining = computeRemaining(existing);
   const next = remaining - score;
-  const isCheckout = next === 0;
-  const isBust = !isCheckout && (next < 0 || next === 1);
+  const isCheckout = next === 0 && canFinishFrom(remaining);
+  const isBust = !isCheckout && (next < 0 || next === 1 || next === 0);
   const remainingAfter = isBust ? remaining : next;
   const dartsUsed = isCheckout ? dartsOverride ?? 3 : 3;
+
+  // Next throw_index must account for soft-deleted (undone) events too,
+  // otherwise a new visit reuses an undone visit's index and ordering breaks.
+  const { data: lastEvent } = await supabase
+    .from("scoring_events")
+    .select("throw_index")
+    .eq("game_id", gameId)
+    .order("throw_index", { ascending: false })
+    .limit(1)
+    .maybeSingle();
 
   const { error } = await supabase.from("scoring_events").insert({
     team_id: TEAM_ID,
     game_id: gameId,
-    throw_index: existing.length + 1,
+    throw_index: (lastEvent?.throw_index ?? 0) + 1,
     score,
     darts: dartsUsed,
     remaining_after: remainingAfter,
@@ -212,8 +247,7 @@ export async function recordVisitAction(gameId: string, score: number, dartsOver
     }
     meta = { status: "completed", winner: "west_green", darts_thrown: totalDarts };
     revalidateAllDashboards();
-    const { data: gameRow } = await supabase.from("games").select("fixture_id").eq("id", gameId).single();
-    if (gameRow?.fixture_id) revalidatePath(`/fixtures/${gameRow.fixture_id}`);
+    if (gameRow.fixture_id) revalidatePath(`/fixtures/${gameRow.fixture_id}`);
   }
 
   revalidatePath(`/scoring?game=${gameId}`);
@@ -226,7 +260,8 @@ export async function setOpponentWinAction(gameId: string) {
   const { error } = await supabase
     .from("games")
     .update({ status: "completed", winner: "opponent", completed_at: new Date().toISOString() })
-    .eq("id", gameId);
+    .eq("id", gameId)
+    .eq("status", "in_progress");
   if (error) return { ok: false, message: error.message };
   revalidatePath(`/scoring?game=${gameId}`);
   revalidateAllDashboards();
@@ -241,10 +276,17 @@ export async function newLegAction(gameId: string) {
 
   const { data: game, error: fetchError } = await supabase
     .from("games")
-    .select("fixture_id, west_green_player_id, opponent_player, west_green_starts")
+    .select("fixture_id, west_green_player_id, opponent_player, west_green_starts, match_id")
     .eq("id", gameId)
     .single();
   if (fetchError || !game) return { ok: false, message: fetchError?.message || "Game not found" };
+
+  // Legs of a match share its match_id; adopt one for legacy games without it.
+  let matchId = game.match_id;
+  if (!matchId) {
+    matchId = randomUUID();
+    await supabase.from("games").update({ match_id: matchId }).eq("id", gameId);
+  }
 
   const { data, error } = await supabase
     .from("games")
@@ -253,7 +295,8 @@ export async function newLegAction(gameId: string) {
       fixture_id: game.fixture_id,
       west_green_player_id: game.west_green_player_id,
       opponent_player: game.opponent_player,
-      west_green_starts: !game.west_green_starts // alternate starts
+      west_green_starts: !game.west_green_starts, // alternate starts
+      match_id: matchId
     })
     .select("id")
     .single();
@@ -270,7 +313,7 @@ export async function undoLastVisitAction(gameId: string) {
 
   const { data: latest, error: findError } = await supabase
     .from("scoring_events")
-    .select("id")
+    .select("id, is_checkout")
     .eq("game_id", gameId)
     .eq("is_deleted", false)
     .order("throw_index", { ascending: false })
@@ -284,6 +327,25 @@ export async function undoLastVisitAction(gameId: string) {
   if (latest) {
     const { error } = await supabase.from("scoring_events").update({ is_deleted: true }).eq("id", latest.id);
     if (error) return { ok: false, message: error.message };
+
+    // Undoing the checkout visit must also reopen the game, otherwise the leg
+    // stays marked completed with a winner and stale darts_thrown.
+    if (latest.is_checkout) {
+      const { error: reopenErr } = await supabase
+        .from("games")
+        .update({ status: "in_progress", winner: null, darts_thrown: null, completed_at: null })
+        .eq("id", gameId)
+        .eq("status", "completed")
+        .eq("winner", "west_green");
+      if (reopenErr) return { ok: false, message: reopenErr.message };
+      const { error: hfErr } = await supabase.from("games").update({ high_finish: null }).eq("id", gameId);
+      if (hfErr && hfErr.code !== "42703") {
+        console.warn("high_finish reset failed", hfErr.message);
+      }
+      revalidateAllDashboards();
+      const { data: gameRow } = await supabase.from("games").select("fixture_id").eq("id", gameId).single();
+      if (gameRow?.fixture_id) revalidatePath(`/fixtures/${gameRow.fixture_id}`);
+    }
   }
 
   const visits = await fetchVisits(gameId);

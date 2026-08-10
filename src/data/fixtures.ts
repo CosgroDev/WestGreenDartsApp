@@ -52,7 +52,7 @@ export async function getFixtures(): Promise<Fixture[]> {
       notes: f.notes,
       home: f.home,
       games_count: activeGames.length,
-      games: f.games || [],
+      games: activeGames,
       status: (() => {
         // No games added yet → the fixture is merely scheduled/upcoming.
         if (activeGames.length === 0) return "scheduled";
