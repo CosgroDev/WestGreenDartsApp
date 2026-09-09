@@ -2,7 +2,7 @@
 
 import crypto from "crypto";
 import { revalidatePath } from "next/cache";
-import { setSessionCookie, supabaseServer } from "@/lib/supabaseServer";
+import { setSessionCookie, pinAuthClient } from "@/lib/supabaseServer";
 
 const PIN_SALT = process.env.PIN_SALT || "wgd-salt";
 const PIN_HASH = process.env.PIN_HASH;
@@ -18,14 +18,14 @@ export async function enterPinAction(formData: FormData) {
   }
 
   // Preferred path: call Supabase RPC for PIN auth.
-  const supabase = supabaseServer();
+  const supabase = pinAuthClient();
   if (supabase) {
     const { data, error } = await supabase
       .rpc("auth_pin", { pin_input: pin })
       .single<{ token: string | null }>();
     const token = data?.token ?? null;
     if (!error && token) {
-      setSessionCookie(token);
+      await setSessionCookie();
       revalidatePath("/");
       return { ok: true };
     }
@@ -37,11 +37,11 @@ export async function enterPinAction(formData: FormData) {
     return { ok: false, message: "Server PIN hash is not configured" };
   }
   const candidate = hashPin(pin);
-  if (candidate !== PIN_HASH) {
+  if (!/^[a-f0-9]{64}$/i.test(PIN_HASH) || !crypto.timingSafeEqual(Buffer.from(candidate, "hex"), Buffer.from(PIN_HASH, "hex"))) {
     return { ok: false, message: "Incorrect PIN" };
   }
 
-  setSessionCookie(candidate);
+  await setSessionCookie();
   revalidatePath("/");
   return { ok: true };
 }

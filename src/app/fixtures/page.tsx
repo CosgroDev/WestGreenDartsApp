@@ -21,10 +21,11 @@ function formatDate(date: string) {
 }
 
 export default async function FixturesPage({
-  searchParams
+  searchParams: paramsPromise
 }: {
-  searchParams?: { season?: string };
+  searchParams?: Promise<{ season?: string }>;
 }) {
+  const searchParams = await paramsPromise;
   const seasons = await getSeasons();
   // dedupe by name but keep id; pick first occurrence
   const uniqueSeasons = seasons.filter(

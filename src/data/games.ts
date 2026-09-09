@@ -1,3 +1,4 @@
+import { allRows } from "@/lib/database";
 import { supabaseServer } from "@/lib/supabaseServer";
 
 export type Game = {
@@ -16,20 +17,22 @@ export type Game = {
   twenty_six?: number | null;
   three_dart_avg?: number | null;
   first_nine_avg?: number | null;
+  total_points: number;
+  total_darts: number;
 };
 
 export async function getGamesForFixture(fixtureId: string): Promise<Game[]> {
-  const supabase = supabaseServer();
+  const supabase = await supabaseServer();
   if (!supabase) return [];
 
-  const { data: gamesRaw, error: gameErr } = await supabase
+  const { data: gamesRaw, error: gameErr } = await allRows(() => supabase
     .from("games")
     .select(
       "id, match_id, opponent_player, west_green_player_id, west_green_starts, status, winner, created_at, darts_thrown, deleted, players(name)"
     )
     .eq("fixture_id", fixtureId)
     .eq("deleted", false)
-    .order("created_at", { ascending: true });
+    .order("created_at", { ascending: true }).order("id", { ascending: true }));
 
   if (gameErr || !gamesRaw) {
     console.warn("games fetch fallback", gameErr?.message);
@@ -38,12 +41,13 @@ export async function getGamesForFixture(fixtureId: string): Promise<Game[]> {
 
   const gamesWithStats = await Promise.all(
     gamesRaw.map(async (g: any) => {
-      const { data: events } = await supabase
+      const { data: events } = await allRows(() => supabase
         .from("scoring_events")
         .select("score, remaining_after, is_checkout, is_bust, is_deleted, darts")
+    .eq("thrower", "west_green")
         .eq("game_id", g.id)
         .order("throw_index", { ascending: true })
-        .limit(2000);
+        .order("id", { ascending: true }));
       const activeEvents = (events || []).filter((e) => e.is_deleted !== true);
 
     const buckets = {
@@ -63,7 +67,7 @@ export async function getGamesForFixture(fixtureId: string): Promise<Game[]> {
     let first9Darts = 0;
 
       activeEvents.forEach((e) => {
-        const s = e.score;
+        const s = e.is_bust ? 0 : e.score;
         if (typeof s === "number") {
           if (s === 26) buckets.twenty_six++;
           if (s >= 60 && s < 80) buckets.sixty++;
@@ -102,6 +106,8 @@ export async function getGamesForFixture(fixtureId: string): Promise<Game[]> {
 
       return {
         ...g,
+        total_points: totalScore,
+        total_darts: totalDarts,
         west_green_player_name: g.players?.name,
         high_finish: highFinish,
         twenty_six: buckets.twenty_six,

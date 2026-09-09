@@ -1,3 +1,4 @@
+import { allRows } from "@/lib/database";
 import { supabaseServer } from "@/lib/supabaseServer";
 
 export type Season = {
@@ -7,13 +8,13 @@ export type Season = {
 };
 
 export async function getSeasons(): Promise<Season[]> {
-  const supabase = supabaseServer();
+  const supabase = await supabaseServer();
   if (!supabase) return [];
 
-  const { data, error } = await supabase
+  const { data, error } = await allRows(() => supabase
     .from("seasons")
     .select("id, name, is_current")
-    .order("name", { ascending: false });
+    .order("name", { ascending: false }).order("id", { ascending: true }));
 
   if (error || !data) {
     console.warn("seasons fetch fallback", error?.message);

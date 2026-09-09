@@ -1,10 +1,11 @@
-﻿import { getPlayers } from "@/data/players";
+import { getPlayers } from "@/data/players";
 import { updatePlayerAction, deletePlayerAction } from "../actions";
 import { notFound } from "next/navigation";
 
-type Props = { params: { id: string } };
+type Props = { params: Promise<{ id: string }> };
 
-export default async function PlayerEditPage({ params }: Props) {
+export default async function PlayerEditPage({ params: paramsPromise }: Props) {
+  const params = await paramsPromise;
   const players = await getPlayers();
   const player = players.find((p) => p.id === params.id);
   if (!player) return notFound();

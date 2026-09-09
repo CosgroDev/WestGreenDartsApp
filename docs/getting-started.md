@@ -1,24 +1,28 @@
-# Getting Started
+# Getting started
 
-1) Install deps (Node 18+):
-```bash
-npm install
+Use Node.js 22 or newer (verification used Node 24), then install the locked dependencies:
+
+```sh
+npm ci
 ```
 
-2) Configure env:
-- Copy `.env.example` to `.env.local`.
-- Fill Supabase URL/keys.
-- Create a PIN hash: `echo -n "wgd-salt:1234" | sha256sum` and paste into `PIN_HASH`.
+For an existing deployment, follow [the audit migration instructions](audit-fixes.md) before updating the application.
 
-3) Run dev server:
-```bash
+For a new, empty Supabase project, apply these SQL files in order:
+
+1. `supabase/schema.sql`.
+2. The feature SQL files in the subdirectories of `supabase/migrations`, in numeric order within each directory. These are legacy scripts; the Supabase CLI does not automatically discover them as timestamped migrations.
+3. `supabase/migrations/20260908193204_audit_scoring_and_access_fixes.sql`. This installs the scoring transactions and server-only access rules; it also includes the rules in `supabase/policies.sql`.
+
+Create a team row and copy its ID into `TEAM_ID`. Copy `.env.example` to `.env.local` and set the Supabase URL, server-only service role key and team ID. Set `SESSION_SECRET` to a random secret; for example, generate one with `node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"`.
+
+Set `PIN_HASH` to the SHA-256 digest of `PIN_SALT:your-pin`. The default salt is `wgd-salt`. Keep the PIN, its hash, the service key, and signing secret out of Git. The app can verify the configured hash without an `auth_pin` database RPC. A verified PIN creates a signed, expiring cookie; all privileged server operations independently check it.
+
+```sh
+npm test -- --runInBand
+npm run test:database
+npm run build
 npm run dev
 ```
-Visit http://localhost:3000.
 
-4) Apply database schema:
-- Run the SQL in `supabase/schema.sql` in your Supabase project (SQL editor or `supabase db push`).
-- Apply row-level policies and the PIN RPC sketch in `supabase/policies.sql` (adjust JWT claim names and the `auth_pin` function).
-- Add an initial team row and PIN hash entry (or use the env-based stub until RPC is wired).
-
-Next steps are tracked in `docs/milestones.md`.
+Open [the local app](http://localhost:3000) and enter the configured PIN. The database tests use an isolated, in-memory PostgreSQL instance and do not require Supabase credentials.

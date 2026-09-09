@@ -1,6 +1,7 @@
 "use client";
+import { useAsyncTask } from "@/lib/useAsyncTask";
 
-import { useEffect, useState, useTransition } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { load121StateAction, record121TurnAction, abandon121SessionAction } from "./actions";
 
@@ -16,6 +17,7 @@ type Turn = {
 };
 
 type Session = {
+  revision: number;
   base_checkout: number;
   current_checkout: number;
   current_turn: number;
@@ -33,20 +35,19 @@ export default function Game121Client({ sessionId }: { sessionId: string }) {
   const [lastResult, setLastResult] = useState<string | null>(null);
   const [lastBase, setLastBase] = useState<number | null>(null);
   const [confirmAbandon, setConfirmAbandon] = useState(false);
-  const [pending, startTransition] = useTransition();
+  const [pending, startTransition] = useAsyncTask();
 
-  const loadState = () => {
-    startTransition(async () => {
+  const loadState = async () => {
       const res = await load121StateAction(sessionId);
+      if (!res.ok) throw new Error("Could not load the session");
       if (res.ok) {
         setSession(res.session as Session);
         setTurns((res.turns as Turn[]) ?? []);
       }
-    });
   };
 
   useEffect(() => {
-    loadState();
+    startTransition(loadState);
   }, [sessionId]);
 
   const handleKey = (n: number) => {
@@ -60,9 +61,9 @@ export default function Game121Client({ sessionId }: { sessionId: string }) {
     if (!session || session.status !== "in_progress") return;
     setInputScore(0);
     startTransition(async () => {
-      const res = await record121TurnAction(sessionId, score);
-      if (!res?.ok) return;
-      setLastResult(res.result ?? null);
+      const res = await record121TurnAction(sessionId, score, session.revision);
+      if (!res?.ok) throw new Error("message" in res ? res.message : "Could not save the score");
+      setLastResult("result" in res ? res.result : null);
       const reload = await load121StateAction(sessionId);
       if (reload.ok) {
         setLastBase((reload.session as Session).base_checkout);
@@ -74,7 +75,8 @@ export default function Game121Client({ sessionId }: { sessionId: string }) {
 
   const abandon = () => {
     startTransition(async () => {
-      await abandon121SessionAction(sessionId);
+      const result = await abandon121SessionAction(sessionId, session?.revision);
+      if (!result.ok) throw new Error(result.message ?? "Could not finish the session");
       router.push("/practice/121");
     });
   };

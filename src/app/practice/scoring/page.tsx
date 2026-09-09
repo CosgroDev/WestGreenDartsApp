@@ -1,4 +1,4 @@
-﻿import { notFound, redirect } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { supabaseServer } from "@/lib/supabaseServer";
 import PracticeScoringClient from "../PracticeScoringClient";
 
@@ -6,7 +6,7 @@ export const dynamic = "force-dynamic";
 export const revalidate = false;
 
 async function getLatestGame(sessionId: string) {
-  const supabase = supabaseServer();
+  const supabase = await supabaseServer();
   if (!supabase) return null;
 
   // Prefer the active in_progress leg, fall back to most recent completed leg
@@ -31,9 +31,9 @@ async function getLatestGame(sessionId: string) {
   return completed?.id ?? null;
 }
 
-export default async function PracticeScoringPage({ searchParams }: { searchParams: { session?: string; game?: string } }) {
-  const sessionId = searchParams.session;
-  let gameId = searchParams.game;
+export default async function PracticeScoringPage({ searchParams }: { searchParams: Promise<{ session?: string; game?: string }> }) {
+  const sessionId = (await searchParams).session;
+  let gameId = (await searchParams).game;
   if (!sessionId) return notFound();
   if (!gameId) {
     gameId = await getLatestGame(sessionId);

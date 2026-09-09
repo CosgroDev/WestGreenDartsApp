@@ -1,3 +1,5 @@
+import { allRows } from "@/lib/database";
+import { matchKey } from "@/lib/matchKey";
 import { supabaseServer } from "@/lib/supabaseServer";
 
 export type MatchResult = {
@@ -22,22 +24,22 @@ export type PlayerForm = {
  * the same grouping the fixture detail page uses.
  */
 export async function getPlayerForm(): Promise<PlayerForm[]> {
-  const supabase = supabaseServer();
+  const supabase = await supabaseServer();
   if (!supabase) return [];
 
-  const { data: activePlayers, error: playersErr } = await supabase
+  const { data: activePlayers, error: playersErr } = await allRows(() => supabase
     .from("players")
     .select("id, name")
-    .eq("active", true);
+    .eq("active", true).order("id", { ascending: true }));
   if (playersErr || !activePlayers || !activePlayers.length) return [];
 
-  const { data: games, error: gamesErr } = await supabase
+  const { data: games, error: gamesErr } = await allRows(() => supabase
     .from("games")
-    .select("id, fixture_id, west_green_player_id, opponent_player, winner, status, created_at, completed_at")
+    .select("id, match_id, fixture_id, west_green_player_id, opponent_player, winner, status, created_at, completed_at")
     .eq("deleted", false)
     .eq("status", "completed")
     .in("west_green_player_id", activePlayers.map((p: any) => p.id))
-    .order("created_at", { ascending: true });
+    .order("created_at", { ascending: true }).order("id", { ascending: true }));
   if (gamesErr || !games) return [];
 
   type Group = {
@@ -53,7 +55,7 @@ export async function getPlayerForm(): Promise<PlayerForm[]> {
   const groups = new Map<string, Group>();
   games.forEach((g: any) => {
     if (!g.west_green_player_id) return;
-    const key = `${g.fixture_id}|${g.west_green_player_id}|${(g.opponent_player || "").trim().toLowerCase()}`;
+    const key = matchKey(g);
     const entry =
       groups.get(key) ||
       ({

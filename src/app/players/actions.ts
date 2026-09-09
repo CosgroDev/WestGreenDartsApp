@@ -11,7 +11,7 @@ export async function createPlayerAction(formData: FormData): Promise<void> {
   const active = (formData.get("active") as string | null) === "on";
   if (!name) return;
 
-  const supabase = supabaseServer();
+  const supabase = await supabaseServer();
   if (!supabase) return;
 
   // Prevent duplicate names (case-insensitive)
@@ -39,7 +39,7 @@ export async function setPlayerActiveAction(formData: FormData): Promise<void> {
   const nextActiveStr = (formData.get("nextActive") as string | null) ?? "";
   const nextActive = nextActiveStr.toLowerCase() === "true";
   if (!playerId) return;
-  const supabase = supabaseServer();
+  const supabase = await supabaseServer();
   if (!supabase) return;
 
   const { error } = await supabase.from("players").update({ active: nextActive }).eq("id", playerId);
@@ -59,7 +59,7 @@ export async function updatePlayerAction(formData: FormData): Promise<void> {
   const flight_type = (formData.get("flight_type") as string | null)?.trim() || null;
   if (!id || !name) return;
 
-  const supabase = supabaseServer();
+  const supabase = await supabaseServer();
   if (!supabase) return;
 
   const fullPayload = { name, active, dart_model, stem_length, flight_type };
@@ -78,7 +78,7 @@ export async function updatePlayerAction(formData: FormData): Promise<void> {
 export async function deletePlayerAction(formData: FormData): Promise<void> {
   const id = formData.get("id") as string | null;
   if (!id) return;
-  const supabase = supabaseServer();
+  const supabase = await supabaseServer();
   if (!supabase) return;
   const { error } = await supabase.from("players").delete().eq("id", id);
   if (error) return;

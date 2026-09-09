@@ -2,10 +2,11 @@ import Link from "next/link";
 import Image from "next/image";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
+import { verifySession } from "@/lib/session";
 
-export default function HomePage() {
+export default async function HomePage() {
   // Already unlocked devices go straight to the dashboard.
-  if (cookies().get("wgd_session")?.value) {
+  if (await verifySession((await cookies()).get("wgd_session")?.value)) {
     redirect("/dashboard");
   }
 

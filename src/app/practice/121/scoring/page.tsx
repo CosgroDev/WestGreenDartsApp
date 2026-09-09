@@ -7,12 +7,12 @@ export const dynamic = "force-dynamic";
 export default async function Game121ScoringPage({
   searchParams,
 }: {
-  searchParams: { session?: string };
+  searchParams: Promise<{ session?: string }>;
 }) {
-  const sessionId = searchParams.session;
+  const sessionId = (await searchParams).session;
   if (!sessionId) return notFound();
 
-  const supabase = supabaseServer();
+  const supabase = await supabaseServer();
   if (!supabase) return notFound();
 
   const { data } = await supabase

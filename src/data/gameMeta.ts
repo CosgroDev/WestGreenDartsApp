@@ -8,7 +8,7 @@ export type GameMeta = {
 };
 
 export async function getGameMeta(gameId: string): Promise<GameMeta | null> {
-  const supabase = supabaseServer();
+  const supabase = await supabaseServer();
   if (!supabase) return null;
 
   const { data, error } = await supabase

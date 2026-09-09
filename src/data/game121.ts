@@ -1,3 +1,4 @@
+import { allRows, rowsForIds } from "@/lib/database";
 import { supabaseServer } from "@/lib/supabaseServer";
 
 export type Game121PlayerStat = {
@@ -10,23 +11,23 @@ export type Game121PlayerStat = {
 };
 
 export async function get121PlayerStats(): Promise<Game121PlayerStat[]> {
-  const supabase = supabaseServer();
+  const supabase = await supabaseServer();
   if (!supabase) return [];
 
   // Only count finished games (won or abandoned) — not in_progress
-  const { data: sessions } = await supabase
+  const { data: sessions } = await allRows(() => supabase
     .from("game_121_sessions")
     .select("id, player_id, status, current_checkout, player:player_id(name)")
-    .in("status", ["won", "abandoned"]);
+    .in("status", ["won", "abandoned"]).order("id", { ascending: true }));
   if (!sessions?.length) return [];
 
   // Fetch turns only for these sessions (for lock rate calculation)
   const sessionIds = (sessions as any[]).map((s: any) => s.id);
-  const { data: turns } = await supabase
+  const turns = await rowsForIds(sessionIds, ids => supabase
     .from("game_121_turns")
-    .select("session_id, turn_number, result")
-    .in("session_id", sessionIds)
-    .in("result", ["locked", "progressed", "won"]);
+    .select("session_id, turn_number, result, checkout")
+    .in("session_id", ids)
+    .in("result", ["locked", "progressed", "won"]).order("id", { ascending: true }));
 
   type Acc = {
     name: string;
@@ -54,7 +55,7 @@ export async function get121PlayerStats(): Promise<Game121PlayerStat[]> {
     a.played += 1;
     if (s.status === "won") a.won += 1;
     // current_checkout = where they were when the game ended (mid-attempt or at 170)
-    if ((s.current_checkout ?? 0) > a.bestCheckout) a.bestCheckout = s.current_checkout;
+
   }
 
   if (turns) {
@@ -64,6 +65,7 @@ export async function get121PlayerStats(): Promise<Game121PlayerStat[]> {
       if (!s?.player_id) continue;
       const a = map.get(s.player_id);
       if (!a) continue;
+      a.bestCheckout = Math.max(a.bestCheckout, t.checkout ?? 0);
       a.completed += 1;
       if (t.turn_number === 1) a.t1Finishes += 1;
     }

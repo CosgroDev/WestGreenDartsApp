@@ -10,7 +10,7 @@ export async function createSeasonAction(formData: FormData): Promise<void> {
   const isCurrent = (formData.get("is_current") as string | null) === "on";
   if (!name) return;
 
-  const supabase = supabaseServer();
+  const supabase = await supabaseServer();
   if (!supabase) return;
 
   // Prevent duplicate season name for the same team (case-insensitive)
@@ -37,7 +37,7 @@ export async function createSeasonAction(formData: FormData): Promise<void> {
 }
 
 export async function setCurrentSeasonAction(seasonId: string): Promise<void> {
-  const supabase = supabaseServer();
+  const supabase = await supabaseServer();
   if (!supabase) return;
 
   await supabase.from("seasons").update({ is_current: false }).eq("team_id", TEAM_ID);

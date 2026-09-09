@@ -70,6 +70,7 @@ create table if not exists scoring_events (
   id bigserial primary key,
   team_id uuid references teams(id) on delete cascade,
   game_id uuid references games(id) on delete cascade,
+  thrower text not null default 'west_green',
   throw_index integer not null, -- visit number (1-based)
   score integer not null check (score between 0 and 180),
   darts integer not null check (darts between 1 and 3),
@@ -80,56 +81,60 @@ create table if not exists scoring_events (
   is_deleted boolean not null default false
 );
 
--- Materialized/stat views placeholders (to be fleshed out)
-create view player_leg_stats_view as
-select
-  g.west_green_player_id as player_id,
-  count(*) filter (where g.status = 'completed') as legs_played,
-  count(*) filter (where g.status = 'completed' and g.winner = 'west_green') as legs_won
-from games g
-where g.status = 'completed'
-group by g.west_green_player_id;
+-- Aggregate each leg once, then roll up players and teams. These views are
+-- server-only; callers use the authenticated server actions or export routes.
+alter table public.scoring_events add column if not exists thrower text not null default 'west_green';
+create or replace view public.player_leg_stats_view as
+select g.west_green_player_id as player_id, count(*) as legs_played,
+ count(*) filter (where g.winner='west_green') as legs_won
+from public.games g where g.status='completed' and not g.deleted group by g.west_green_player_id;
 
-create view score_buckets_view as
-select
-  se.game_id,
-  se.team_id,
-  count(*) filter (where score >= 60) as sixty_plus,
-  count(*) filter (where score >= 80) as eighty_plus,
-  count(*) filter (where score >= 100) as hundred_plus,
-  count(*) filter (where score >= 120) as hundred_twenty_plus,
-  count(*) filter (where score >= 140) as hundred_forty_plus,
-  count(*) filter (where score >= 170) as hundred_seventy_plus,
-  count(*) filter (where score = 180) as one_eighties
-from scoring_events se
-where se.is_deleted = false
-group by se.game_id, se.team_id;
+create or replace view public.score_buckets_view as
+select e.game_id, e.team_id,
+ count(*) filter(where e.score>=60) as sixty_plus,
+ count(*) filter(where e.score>=80) as eighty_plus,
+ count(*) filter(where e.score>=100) as hundred_plus,
+ count(*) filter(where e.score>=120) as hundred_twenty_plus,
+ count(*) filter(where e.score>=140) as hundred_forty_plus,
+ count(*) filter(where e.score>=170) as hundred_seventy_plus,
+ count(*) filter(where e.score=180) as one_eighties
+from public.scoring_events e join public.games g on g.id=e.game_id
+where not e.is_deleted and not e.is_bust and not g.deleted and e.thrower='west_green'
+group by e.game_id,e.team_id;
 
--- Player averages and checkout rates
-create view player_stats_view as
-select
-  p.id as player_id,
-  p.name,
-  count(g.id) filter (where g.status = 'completed') as legs_played,
-  count(g.id) filter (where g.status = 'completed' and g.winner = 'west_green') as legs_won,
-  avg( (501 - min(se.remaining_after))::numeric / nullif(sum(se.darts),0) * 3 ) filter (where g.status='completed') as three_dart_avg,
-  max(501 - se.remaining_after) filter (where se.is_checkout) as high_finish,
-  sum(case when se.is_checkout then 1 else 0 end)::numeric / nullif(count(case when se.remaining_after<=170 then 1 end),0) * 100 as checkout_pct
-from players p
-left join games g on g.west_green_player_id = p.id
-left join scoring_events se on se.game_id = g.id and se.is_deleted = false
-group by p.id, p.name;
+create or replace view public.player_stats_view as
+with legs as (
+ select g.id,g.west_green_player_id,g.winner,
+  coalesce(sum(case when e.is_bust then 0 else e.score end),0) as points,
+  coalesce(sum(e.darts),0) as darts,
+  max(e.score) filter(where e.is_checkout) as high_finish,
+  count(*) filter(where e.is_checkout) as hits,
+  count(*) filter(where (case when e.is_bust then e.remaining_after else e.remaining_after+e.score end)
+   between 2 and 170 and (case when e.is_bust then e.remaining_after else e.remaining_after+e.score end) not in (159,162,163,165,166,168,169)) as attempts
+ from public.games g left join public.scoring_events e on e.game_id=g.id and not e.is_deleted and e.thrower='west_green'
+ where g.status='completed' and not g.deleted group by g.id
+)
+select p.id as player_id,p.name,count(l.id) as legs_played,
+ count(l.id) filter(where l.winner='west_green') as legs_won,
+ sum(l.points)::numeric/nullif(sum(l.darts),0)*3 as three_dart_avg,
+ max(l.high_finish) as high_finish,
+ sum(l.hits)::numeric/nullif(sum(l.attempts),0)*100 as checkout_pct
+from public.players p left join legs l on l.west_green_player_id=p.id group by p.id,p.name;
 
-create view team_stats_view as
-select
-  g.team_id,
-  count(*) filter (where g.status='completed') as legs_played,
-  count(*) filter (where g.status='completed' and g.winner='west_green') as legs_won,
-  avg( (501 - min(se.remaining_after))::numeric / nullif(sum(se.darts),0) * 3 ) as three_dart_avg,
-  max(501 - se.remaining_after) filter (where se.is_checkout) as high_finish
-from games g
-left join scoring_events se on se.game_id = g.id and se.is_deleted = false
-group by g.team_id;
+create or replace view public.team_stats_view as
+with legs as (
+ select g.id,g.team_id,g.winner,
+  coalesce(sum(case when e.is_bust then 0 else e.score end),0) as points,
+  coalesce(sum(e.darts),0) as darts,max(e.score) filter(where e.is_checkout) as high_finish
+ from public.games g left join public.scoring_events e on e.game_id=g.id and not e.is_deleted and e.thrower='west_green'
+ where g.status='completed' and not g.deleted group by g.id
+)
+select team_id,count(*) as legs_played,count(*) filter(where winner='west_green') as legs_won,
+ sum(points)::numeric/nullif(sum(darts),0)*3 as three_dart_avg,max(high_finish) as high_finish
+from legs group by team_id;
+
+revoke all on public.player_leg_stats_view,public.score_buckets_view,public.player_stats_view,public.team_stats_view from anon,authenticated;
+grant select on public.player_leg_stats_view,public.score_buckets_view,public.player_stats_view,public.team_stats_view to service_role;
 
 -- Indexes for speed
 create index if not exists scoring_events_game_idx on scoring_events (game_id, throw_index);

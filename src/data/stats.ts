@@ -1,3 +1,5 @@
+import { allRows, rowsForIds } from "@/lib/database";
+import { canFinishFrom } from "@/lib/scoringUtils";
 import { supabaseServer } from "@/lib/supabaseServer";
 
 // Supabase/PostgREST caps a single response at 1000 rows by default. A
@@ -7,31 +9,14 @@ import { supabaseServer } from "@/lib/supabaseServer";
 // legs/players happen to fall past the cutoff. Page through with `.range()`
 // so every event is counted regardless of season size.
 async function fetchAllScoringEvents(
-  supabase: NonNullable<ReturnType<typeof supabaseServer>>,
+  supabase: NonNullable<Awaited<ReturnType<typeof supabaseServer>>>,
   gameIds: string[],
   columns: string,
   orderColumn: string = "id"
 ): Promise<any[]> {
-  if (!gameIds.length) return [];
-  const PAGE_SIZE = 1000;
-  const all: any[] = [];
-  for (let from = 0; ; from += PAGE_SIZE) {
-    const { data, error } = await supabase
-      .from("scoring_events")
-      .select(columns)
-      .in("game_id", gameIds)
-      .eq("is_deleted", false)
-      .order(orderColumn, { ascending: true })
-      .range(from, from + PAGE_SIZE - 1);
-    if (error) {
-      console.warn("scoring_events fetch error", error.message);
-      break;
-    }
-    if (!data || !data.length) break;
-    all.push(...data);
-    if (data.length < PAGE_SIZE) break;
-  }
-  return all;
+  return rowsForIds(gameIds, ids => supabase.from("scoring_events")
+    .select(columns).in("game_id", ids).eq("is_deleted", false).eq("thrower", "west_green")
+    .order(orderColumn, {ascending: true}).order("id", {ascending: true}));
 }
 
 export type PlayerCard = {
@@ -78,36 +63,37 @@ const TEAM_CARD_EMPTY: TeamCard = {
   one_eighty_count: 0,
 };
 
-export async function getPlayerCards(seasonId?: string): Promise<PlayerCard[]> {
-  const supabase = supabaseServer();
+export async function getPlayerCards(seasonId?: string, includeInactive = false): Promise<PlayerCard[]> {
+  const supabase = await supabaseServer();
   if (!supabase) return [];
 
-  // Active players
-  const { data: activePlayers, error: playersErr } = await supabase
-    .from("players")
-    .select("id, name")
-    .eq("active", true);
+  const { data: activePlayers, error: playersErr } = await allRows(() => {
+    const query = supabase.from("players").select("id, name").order("id");
+    return includeInactive ? query : query.eq("active", true);
+  });
   if (playersErr || !activePlayers || !activePlayers.length) return [];
   const activeIds = new Set(activePlayers.map((p: any) => p.id));
 
   // Completed games for active players, optionally scoped to a season via fixture join
-  let gamesQuery = supabase
-    .from("games")
-    .select(
-      seasonId
-        ? "id, west_green_player_id, winner, status, completed_at, darts_thrown, fixtures!inner(season_id)"
-        : "id, west_green_player_id, winner, status, completed_at, darts_thrown"
-    )
-    .eq("deleted", false)
-    .eq("status", "completed")
-    .in("west_green_player_id", Array.from(activeIds))
-    .order("completed_at", { ascending: true });
+  const { data: games, error: gamesErr } = await allRows(() => {
+    let gamesQuery = supabase
+      .from("games")
+      .select(
+        seasonId
+          ? "id, west_green_player_id, winner, status, completed_at, darts_thrown, fixtures!inner(season_id)"
+          : "id, west_green_player_id, winner, status, completed_at, darts_thrown"
+      )
+      .eq("deleted", false)
+      .eq("status", "completed")
+      .in("west_green_player_id", Array.from(activeIds))
+      .order("completed_at", { ascending: true });
 
-  if (seasonId) {
-    gamesQuery = (gamesQuery as any).eq("fixtures.season_id", seasonId);
-  }
+    if (seasonId) {
+      gamesQuery = (gamesQuery as any).eq("fixtures.season_id", seasonId);
+    }
 
-  const { data: games, error: gamesErr } = await gamesQuery;
+    return gamesQuery.order("id", {ascending: true});
+  });
   if (gamesErr || !games || !games.length) return [];
 
   // Map games to players and collect game IDs
@@ -182,6 +168,7 @@ export async function getPlayerCards(seasonId?: string): Promise<PlayerCard[]> {
     // Collect first 3 events per game to compute first 9 darts per leg
     const first3ByGame = new Map<string, any[]>();
     events.forEach((e: any) => {
+      if (e.is_bust) e = {...e, score: 0};
       const pid = gameToPlayer.get(e.game_id);
       if (!pid) return;
       const entry = perPlayer.get(pid);
@@ -204,7 +191,7 @@ export async function getPlayerCards(seasonId?: string): Promise<PlayerCard[]> {
           : (typeof e.remaining_after === "number" && typeof e.score === "number"
               ? e.remaining_after + e.score
               : 501);
-      if (remaining_before <= 170) {
+      if (canFinishFrom(remaining_before)) {
         entry.checkoutAttempts += 1;
         if (e.is_checkout) entry.checkoutHits += 1;
       }
@@ -235,7 +222,7 @@ export async function getPlayerCards(seasonId?: string): Promise<PlayerCard[]> {
       if (!entry) return;
       const darts = arr.reduce((s, v) => s + (typeof v.darts === "number" ? v.darts : 0), 0);
       const pts = arr.reduce((s, v) => s + (typeof v.score === "number" ? v.score : 0), 0);
-      if (darts > 0) {
+      if (darts === 9) {
         entry.first9Darts += darts;
         entry.first9Score += pts;
       }
@@ -303,33 +290,35 @@ export async function getPlayerGameLog(
   playerId: string,
   seasonId?: string
 ): Promise<PlayerGameStat[]> {
-  const supabase = supabaseServer();
+  const supabase = await supabaseServer();
   if (!supabase) return [];
 
-  let gamesQuery = supabase
-    .from("games")
-    .select(
-      seasonId
-        ? "id, opponent_player, winner, completed_at, created_at, darts_thrown, fixtures!inner(season_id)"
-        : "id, opponent_player, winner, completed_at, created_at, darts_thrown"
-    )
-    .eq("deleted", false)
-    .eq("status", "completed")
-    .eq("west_green_player_id", playerId)
-    .order("completed_at", { ascending: false });
+  const { data: games, error: gamesErr } = await allRows(() => {
+    let gamesQuery = supabase
+      .from("games")
+      .select(
+        seasonId
+          ? "id, opponent_player, winner, completed_at, created_at, darts_thrown, fixtures!inner(season_id)"
+          : "id, opponent_player, winner, completed_at, created_at, darts_thrown"
+      )
+      .eq("deleted", false)
+      .eq("status", "completed")
+      .eq("west_green_player_id", playerId)
+      .order("completed_at", { ascending: false });
 
-  if (seasonId) {
-    gamesQuery = (gamesQuery as any).eq("fixtures.season_id", seasonId);
-  }
+    if (seasonId) {
+      gamesQuery = (gamesQuery as any).eq("fixtures.season_id", seasonId);
+    }
 
-  const { data: games, error: gamesErr } = await gamesQuery;
+    return gamesQuery.order("id", {ascending: true});
+  });
   if (gamesErr || !games || !games.length) return [];
 
   const gameIds = games.map((g: any) => g.id);
   const events = await fetchAllScoringEvents(
     supabase,
     gameIds,
-    "game_id, score, darts, is_checkout, remaining_after",
+    "game_id, score, darts, is_bust, is_checkout, remaining_after",
     "throw_index"
   );
 
@@ -369,6 +358,7 @@ export async function getPlayerGameLog(
   };
 
   (events || []).forEach((e: any) => {
+    if (e.is_bust) e = {...e, score: 0};
     const a = ensure(e.game_id);
     if (typeof e.score === "number") {
       a.totalScore += e.score;
@@ -422,25 +412,27 @@ export async function getPlayerGameLog(
 }
 
 export async function getTeamCard(seasonId?: string): Promise<TeamCard> {
-  const supabase = supabaseServer();
+  const supabase = await supabaseServer();
   if (!supabase) return TEAM_CARD_EMPTY;
 
   // Fetch completed games (ignore deleted), optionally scoped to a season via fixture join
-  let gamesQuery = supabase
-    .from("games")
-    .select(
-      seasonId
-        ? "id, winner, darts_thrown, fixtures!inner(season_id)"
-        : "id, winner, darts_thrown"
-    )
-    .eq("deleted", false)
-    .eq("status", "completed");
+  const { data: games, error: gamesErr } = await allRows(() => {
+    let gamesQuery = supabase
+      .from("games")
+      .select(
+        seasonId
+          ? "id, winner, darts_thrown, fixtures!inner(season_id)"
+          : "id, winner, darts_thrown"
+      )
+      .eq("deleted", false)
+      .eq("status", "completed");
 
-  if (seasonId) {
-    gamesQuery = (gamesQuery as any).eq("fixtures.season_id", seasonId);
-  }
+    if (seasonId) {
+      gamesQuery = (gamesQuery as any).eq("fixtures.season_id", seasonId);
+    }
 
-  const { data: games, error: gamesErr } = await gamesQuery;
+    return gamesQuery.order("id", {ascending: true});
+  });
 
   if (gamesErr || !games) {
     console.warn("team stats fallback", gamesErr?.message);
@@ -478,6 +470,7 @@ export async function getTeamCard(seasonId?: string): Promise<TeamCard> {
     let checkoutHits = 0;
 
     events.forEach((e: any) => {
+      if (e.is_bust) e = {...e, score: 0};
       if (typeof e.score === "number") totalScore += e.score;
       if (typeof e.darts === "number") totalDarts += e.darts;
 
@@ -494,7 +487,7 @@ export async function getTeamCard(seasonId?: string): Promise<TeamCard> {
           : (typeof e.remaining_after === "number" && typeof e.score === "number"
               ? e.remaining_after + e.score
               : 501);
-      if (remaining_before <= 170) {
+      if (canFinishFrom(remaining_before)) {
         checkoutAttempts += 1;
         if (e.is_checkout) checkoutHits += 1;
       }

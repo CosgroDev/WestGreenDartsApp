@@ -1,4 +1,4 @@
-﻿"use server";
+"use server";
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
@@ -19,7 +19,7 @@ export async function createPracticeSessionAction(formData: FormData): Promise<v
 export async function deletePracticeSessionAction(formData: FormData): Promise<void> {
   const sessionId = formData.get("sessionId") as string | null;
   if (!sessionId) return;
-  const supabase = supabaseServer();
+  const supabase = await supabaseServer();
   if (!supabase) return;
 
   const { data: games, error } = await supabase

@@ -1,9 +1,10 @@
 "use client";
+import { useAsyncTask } from "@/lib/useAsyncTask";
 
 export const dynamic = "force-dynamic";
 export const revalidate = false;
 
-import { useEffect, useMemo, useState, useTransition } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { finishRoutes } from "@/lib/finishRoutes";
 import { canFinishFrom } from "@/lib/scoringUtils";
@@ -12,7 +13,6 @@ import {
   recordVisitAction,
   undoLastVisitAction,
   newLegAction,
-  setOpponentWinAction,
   getLegSummariesAction,
   LegSummaryWire
 } from "./actions";
@@ -48,27 +48,20 @@ export default function ScoringPage() {
   const gameId = searchParams.get("game");
 
   const [visits, setVisits] = useState<Visit[]>([]);
-  const [pending, startTransition] = useTransition();
+  const [saving, startTransition] = useAsyncTask();
+  const [loading, setLoading] = useState(true);
+  const pending = saving || loading;
   const [alert, setAlert] = useState<string | null>(null);
-  const [gameMeta, setGameMeta] = useState<{
-    status: string;
-    winner: string | null;
-    darts_thrown?: number | null;
-    players?: { name?: string | null };
-    opponent_player?: string | null;
-    legs?: { west?: number; opp?: number };
-  } | null>(null);
+  const [gameMeta, setGameMeta] = useState<any>(null);
   const [activeSide, setActiveSide] = useState<"west" | "opponent">("west");
   const [inputScore, setInputScore] = useState("");
   const [oppRemaining, setOppRemaining] = useState(START_SCORE);
   const [wgdLegs, setWgdLegs] = useState(0);
   const [oppLegs, setOppLegs] = useState(0);
-  const [finishPrompt, setFinishPrompt] = useState<{ score: number } | null>(null);
+  const [finishPrompt, setFinishPrompt] = useState<{ score: number; side: "west" | "opponent" } | null>(null);
   const [legSummaries, setLegSummaries] = useState<LegSummary[]>([]);
   const [matchComplete, setMatchComplete] = useState(false);
-  const [lastThrowSide, setLastThrowSide] = useState<"west" | "opponent" | null>(null);
   const [throwLog, setThrowLog] = useState<("west" | "opponent")[]>([]);
-  const [oppRemainingStack, setOppRemainingStack] = useState<number[]>([]);
   const remaining = visits.length ? visits[visits.length - 1].remainingAfter : START_SCORE;
   const wgdName = gameMeta?.players?.name ?? "West Green";
   const oppName = gameMeta?.opponent_player ?? "Opponent";
@@ -85,103 +78,43 @@ export default function ScoringPage() {
     }
     return { wgd: wgdLegs, opp: oppLegs };
   })();
-  const displayRemaining = isCompleted
-    ? gameMeta?.winner === "west_green"
-      ? 0
-      : START_SCORE
-    : remaining;
-  const displayOppRemaining = isCompleted
-    ? gameMeta?.winner === "opponent"
-      ? 0
-      : START_SCORE
-    : oppRemaining;
+  const displayRemaining = remaining;
+  const displayOppRemaining = oppRemaining;
 
-  const getStarter = (legIndex: number) => {
-    if (isHome) {
-      return legIndex % 2 === 0 ? "opponent" : "west";
-    }
-    return legIndex % 2 === 0 ? "west" : "opponent";
+  const mapVisits = (res: any): Visit[] => res.visits.map((v: any) => ({score: v.score, darts: v.darts, remainingAfter: v.remaining_after, isBust: v.is_bust, isCheckout: v.is_checkout}));
+  const applyState = (res: any) => {
+    setVisits(mapVisits(res));
+    setGameMeta(res.meta);
+    setOppRemaining(res.meta?.opponentRemaining ?? 501);
+    setActiveSide(res.meta?.activeSide ?? "west");
+    setThrowLog(res.meta?.throwLog ?? []);
+    setWgdLegs(res.meta?.legs?.west ?? 0);
+    setOppLegs(res.meta?.legs?.opp ?? 0);
+    setMatchComplete((res.meta?.legs?.west ?? 0) + (res.meta?.legs?.opp ?? 0) >= 2);
   };
-
   useEffect(() => {
     if (!gameId) return;
-    startTransition(async () => {
+    let cancelled = false;
+    setLoading(true);
+    (async () => {
       const res = await loadGameStateAction(gameId);
-      if (res.ok && res.visits) {
-        setVisits(
-          res.visits.map((v: any) => ({
-            score: v.score,
-            darts: v.darts,
-            remainingAfter: v.remaining_after,
-            isBust: v.is_bust,
-            isCheckout: v.is_checkout
-          }))
-        );
-        let legsWest = 0;
-        let legsOpp = 0;
-        if (res.meta) {
-          const status = res.meta.status || "in_progress";
-          const winner = res.meta.winner ?? null;
-          setGameMeta({
-            status,
-            winner,
-            darts_thrown: res.meta.darts_thrown,
-            players: res.meta.players,
-            opponent_player: res.meta.opponent_player,
-            legs: res.meta.legs
-          } as any);
-
-          // Always seed local leg counts from the server, even mid-match:
-          // reloading during leg 2 must not forget leg 1, or finishLeg would
-          // spawn a phantom third leg instead of completing the match.
-          const legsMeta = res.meta.legs;
-          if (legsMeta) {
-            legsWest = legsMeta.west ?? 0;
-            legsOpp = legsMeta.opp ?? 0;
-            setWgdLegs(legsWest);
-            setOppLegs(legsOpp);
-          }
-
-          if (status !== "in_progress" || legsWest + legsOpp >= 2) {
-            setMatchComplete(true);
-            if (!legsMeta) {
-              if (winner === "west_green") {
-                setWgdLegs(2);
-                setOppLegs(0);
-              } else if (winner === "opponent") {
-                setWgdLegs(0);
-                setOppLegs(2);
-              } else {
-                setWgdLegs(1);
-                setOppLegs(1);
-              }
-            }
-            // pull accurate leg summaries from server for the matchup
-            const summariesRes = await getLegSummariesAction(gameId);
-            if (summariesRes.ok) {
-              setLegSummaries(
-                summariesRes.summaries.map((l: LegSummaryWire) => ({
-                  winner: l.winner,
-                  dartsTotal: l.dartsTotal,
-                  pointsTotal: l.pointsTotal,
-                  threeDA: l.dartsTotal ? (l.pointsTotal / l.dartsTotal) * 3 : null,
-                  firstNine: l.firstNine,
-                  firstNinePoints: l.firstNinePoints,
-                  firstNineDarts: l.firstNineDarts,
-                  buckets: l.buckets
-                }))
-              );
-            }
-          }
-        }
-        if (res.visits.length === 0) {
-          setActiveSide(getStarter(legsWest + legsOpp));
-        }
-      } else {
-        // set starting side on fresh leg
-        setActiveSide(getStarter(0));
+      if (cancelled) return;
+      if (!res.ok || !res.meta) { setAlert("Could not load this game"); return; }
+      applyState(res);
+      const west = res.meta.legs?.west ?? 0;
+      const opp = res.meta.legs?.opp ?? 0;
+      setWgdLegs(west); setOppLegs(opp);
+      setMatchComplete(west + opp >= 2);
+      if (res.meta.status === "completed" && west + opp < 2) {
+        const next = await newLegAction(gameId);
+        if (!next.ok) { setAlert(next.message); return; }
+        router.replace(`/scoring?game=${next.gameId}${fixtureId ? `&fixture=${fixtureId}` : ""}&home=${isHome ? "1" : "0"}`);
       }
-    });
+      const summaries = await getLegSummariesAction(gameId);
+      if (summaries.ok) setLegSummaries(summaries.summaries.map((l: LegSummaryWire) => ({...l, threeDA: l.dartsTotal ? l.pointsTotal / l.dartsTotal * 3 : null})));
+    })().catch(() => { if (!cancelled) setAlert("Could not load the score. Reload and try again."); })
+      .finally(() => { if (!cancelled) setLoading(false); });
+    return () => { cancelled = true; };
   }, [gameId]);
 
   const finishHint = useMemo(() => {
@@ -194,205 +127,39 @@ export default function ScoringPage() {
     setInputScore(next.slice(0, 3));
   };
 
-  const resetLegState = () => {
-    setVisits([]);
-    setOppRemaining(START_SCORE);
-    setAlert(null);
-    setInputScore("");
-    setThrowLog([]);
-    setOppRemainingStack([]);
-    setLastThrowSide(null);
-    const legIndex = wgdLegs + oppLegs;
-    setActiveSide(getStarter(legIndex));
-  };
-
-  const switchSide = () => setActiveSide((prev) => (prev === "west" ? "opponent" : "west"));
-
-  const addLegSummary = (winner: "west" | "opponent", legVisits: Visit[]) => {
-    const dartsTotal = legVisits.reduce((s, v) => s + v.darts, 0);
-    const points = legVisits.reduce((s, v) => s + (v.isBust ? 0 : v.score), 0);
-    const threeDA = dartsTotal ? (points / dartsTotal) * 3 : null;
-    // First 9 darts avg (first 3 visits = 9 darts); ignore if <9 darts recorded
-    const firstThreeVisits = legVisits.slice(0, 3);
-    const dartsFirst9 = firstThreeVisits.reduce((s, v) => s + v.darts, 0);
-    const pointsFirst9 = firstThreeVisits.reduce((s, v) => s + (v.isBust ? 0 : v.score), 0);
-    const firstNine = dartsFirst9 === 9 ? (pointsFirst9 / dartsFirst9) * 3 : null;
-    const buckets = { "26": 0, "60+": 0, "80+": 0, "100+": 0, "120+": 0, "140+": 0, "170+": 0, "180": 0 };
-    legVisits.forEach((v) => {
-      const s = v.score;
-      if (s === 26) buckets["26"]++;
-      if (s >= 60 && s < 80) buckets["60+"]++;
-      if (s >= 80 && s < 100) buckets["80+"]++;
-      if (s >= 100 && s < 120) buckets["100+"]++;
-      if (s >= 120 && s < 140) buckets["120+"]++;
-      if (s >= 140 && s < 170) buckets["140+"]++;
-      if (s >= 170 && s < 180) buckets["170+"]++;
-      if (s === 180) buckets["180"]++;
-    });
-    setLegSummaries((prev) => [
-      ...prev,
-      {
-        winner,
-        dartsTotal,
-        pointsTotal: points,
-        threeDA,
-        firstNine,
-        firstNinePoints: dartsFirst9 === 9 ? pointsFirst9 : null,
-        firstNineDarts: dartsFirst9 === 9 ? dartsFirst9 : null,
-        buckets
+  const submitVisit = async (score: number, side: "west" | "opponent", darts = 3) => {
+    if (!gameId || !gameMeta) return;
+    const res = await recordVisitAction(gameId, score, darts, side === "west" ? "west_green" : "opponent", gameMeta.revision, crypto.randomUUID());
+    if (!res.ok) { setAlert(res.message); return; }
+    applyState(res);
+    setInputScore(""); setFinishPrompt(null); setAlert(null);
+    if (res.meta?.status === "completed") {
+      const summaries = await getLegSummariesAction(gameId);
+      if (summaries.ok) setLegSummaries(summaries.summaries.map((l: LegSummaryWire) => ({...l, threeDA: l.dartsTotal ? l.pointsTotal / l.dartsTotal * 3 : null})));
+      if ((res.meta.legs?.west ?? 0) + (res.meta.legs?.opp ?? 0) < 2) {
+        const next = await newLegAction(gameId);
+        if (!next.ok) { setAlert(next.message || "Could not start the next leg. Reload to retry."); return; }
+        router.replace(`/scoring?game=${next.gameId}${fixtureId ? `&fixture=${fixtureId}` : ""}&home=${isHome ? "1" : "0"}`);
       }
-    ]);
-  };
-
-  const finishLeg = async (winner: "west" | "opponent", legVisits: Visit[]) => {
-    addLegSummary(winner, legVisits);
-    const nextW = winner === "west" ? wgdLegs + 1 : wgdLegs;
-    const nextO = winner === "opponent" ? oppLegs + 1 : oppLegs;
-    setWgdLegs(nextW);
-    setOppLegs(nextO);
-    const totalLegs = nextW + nextO;
-    if (totalLegs >= 2) {
-      setMatchComplete(true);
-      setGameMeta((prev) => ({
-        ...(prev || {}),
-        status: "completed",
-        winner: winner === "west" ? "west_green" : "opponent",
-        legs: { west: nextW, opp: nextO }
-      }));
-      setFinishPrompt(null);
-      return;
     }
-    // start next leg (new game record) if possible, alternating starter
-    if (gameId) {
-      const resNew = await newLegAction(gameId);
-      if (resNew.ok && resNew.gameId) {
-        resetLegState();
-        // alternate starting side each leg
-        setActiveSide(getStarter(nextW + nextO));
-        setFinishPrompt(null);
-        setMatchComplete(false);
-        router.replace(`/scoring?game=${resNew.gameId}${fixtureId ? `&fixture=${fixtureId}` : ""}`);
-        return;
-      }
-      // Don't reset into the completed leg's game record — new visits would
-      // land on a finished leg. Surface the failure instead.
-      setAlert("Couldn't start the next leg — check your connection and reload this page.");
-      setFinishPrompt(null);
-      return;
-    }
-    resetLegState();
-    setFinishPrompt(null);
   };
-
   const addScore = (score: number) => {
-    if (!Number.isInteger(score) || score < 0 || score > 180) return;
-    if (activeSide === "west") {
-      if (gameId) {
-        const isFinish = isValidCheckoutLocal(remaining, score);
-        if (isFinish) {
-          setFinishPrompt({ score });
-          return;
-        }
-        startTransition(async () => {
-          const res = await recordVisitAction(gameId, score);
-          if (res.ok && res.visits) {
-            const mapped = res.visits.map((v: any) => ({
-              score: v.score,
-              darts: v.darts,
-              remainingAfter: v.remaining_after,
-              isBust: v.is_bust,
-              isCheckout: v.is_checkout
-            }));
-            setVisits(mapped);
-            setAlert(null);
-            if (res.meta) setGameMeta(res.meta);
-            setThrowLog((prev) => [...prev, "west"]);
-            setLastThrowSide("west");
-            switchSide();
-          } else if (!res.ok) {
-            setAlert(res.message ?? "Could not record the visit.");
-          }
-        });
-      } else {
-        const dartsUsed = 3;
-        const next = remaining - score;
-        const isCheckout = isValidCheckoutLocal(remaining, score);
-        const isBust = !isCheckout && (next < 0 || next === 1 || next === 0);
-        const remainingAfter = isBust ? remaining : next;
-        const visit: Visit = { score, darts: dartsUsed, remainingAfter, isBust, isCheckout };
-        const newVisits = [...visits, visit];
-        setVisits(newVisits);
-        if (remainingAfter === 0 && isCheckout) {
-          setAlert("Leg completed - mock mode");
-          finishLeg("west", newVisits);
-        } else {
-          setAlert(null);
-          switchSide();
-        }
-        setThrowLog((prev) => [...prev, "west"]);
-        setLastThrowSide("west");
-      }
-    } else {
-      // opponent tracked locally only
-      const next = oppRemaining - score;
-      const isCheckout = isValidCheckoutLocal(oppRemaining, score);
-      const isBust = !isCheckout && (next < 0 || next === 1 || next === 0);
-      const remainingAfter = isBust ? oppRemaining : next;
-      setOppRemainingStack((st) => [...st, oppRemaining]);
-      setOppRemaining(remainingAfter);
-      if (isCheckout && remainingAfter === 0) {
-        setAlert("Leg completed - Opponent");
-        // Mark the leg lost before starting the next one, so the server-side
-        // leg counts are correct when the new leg's page loads.
-        startTransition(async () => {
-          if (gameId) await setOpponentWinAction(gameId);
-          await finishLeg("opponent", visits);
-        });
-        setOppRemaining(START_SCORE);
-      } else setAlert(null);
-      switchSide();
-      setThrowLog((prev) => [...prev, "opponent"]);
-      setLastThrowSide("opponent");
+    if (pending || !gameMeta || isCompleted || !Number.isInteger(score) || score < 0 || score > 180) return;
+    const currentRemaining = activeSide === "west" ? remaining : oppRemaining;
+    if (isValidCheckoutLocal(currentRemaining, score)) {
+      setFinishPrompt({score, side: activeSide}); return;
     }
-    setInputScore("");
+    startTransition(() => submitVisit(score, activeSide));
   };
-
   const undo = () => {
-    if (!throwLog.length) return;
-    const newLog = throwLog.slice(0, -1);
-    const last = throwLog[throwLog.length - 1];
-
-    if (last === "west") {
-      if (gameId) {
-        startTransition(async () => {
-          const res = await undoLastVisitAction(gameId);
-          if (res.ok && res.visits) {
-            const mapped = res.visits.map((v: any) => ({
-              score: v.score,
-              darts: v.darts,
-              remainingAfter: v.remaining_after,
-              isBust: v.is_bust,
-              isCheckout: v.is_checkout
-            }));
-            setVisits(mapped);
-          } else {
-            setVisits((prev) => prev.slice(0, -1));
-          }
-        });
-      } else {
-        setVisits((prev) => prev.slice(0, -1));
-      }
-      setActiveSide("west");
-    } else if (last === "opponent") {
-      const prevRem = oppRemainingStack[oppRemainingStack.length - 1] ?? START_SCORE;
-      setOppRemainingStack((st) => st.slice(0, -1));
-      setOppRemaining(prevRem);
-      setActiveSide("opponent");
-    }
-
-    setThrowLog(newLog);
-    setLastThrowSide(newLog.length ? newLog[newLog.length - 1] : null);
-    setAlert(null);
+    if (!gameId || !gameMeta || pending) return;
+    startTransition(async () => {
+      const res = await undoLastVisitAction(gameId, gameMeta.revision);
+      if (!res.ok) { setAlert(res.message); return; }
+      applyState(res); setAlert(null);
+      const summaries = await getLegSummariesAction(gameId);
+      if (summaries.ok) setLegSummaries(summaries.summaries.map((l: LegSummaryWire) => ({...l, threeDA: l.dartsTotal ? l.pointsTotal / l.dartsTotal * 3 : null})));
+    });
   };
 
   const legDots = (won: number) => (
@@ -558,26 +325,8 @@ export default function ScoringPage() {
                   key={d}
                   type="button"
                   className="keypad-key !text-lg"
-                  onClick={() => {
-                    if (!gameId) return;
-                    startTransition(async () => {
-                      const res = await recordVisitAction(gameId, finishPrompt.score, d);
-                      if (res.ok && res.visits) {
-                        const legVisits = res.visits.map((v: any) => ({
-                          score: v.score,
-                          darts: v.darts,
-                          remainingAfter: v.remaining_after,
-                          isBust: v.is_bust,
-                          isCheckout: v.is_checkout
-                        }));
-                        setVisits(legVisits);
-                        setAlert("Leg completed - West Green wins");
-                        await finishLeg("west", legVisits);
-                        setInputScore("");
-                      }
-                      setFinishPrompt(null);
-                    });
-                  }}
+                  disabled={pending || !canFinishFrom(finishPrompt.score, d)}
+                  onClick={() => startTransition(() => submitVisit(finishPrompt.score, finishPrompt.side, d))}
                 >
                   {d} dart{d > 1 ? "s" : ""}
                 </button>

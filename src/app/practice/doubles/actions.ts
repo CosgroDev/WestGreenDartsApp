@@ -1,4 +1,8 @@
 "use server";
+import { allRows } from "@/lib/database";
+import { stableRead } from "@/lib/stableRead";
+import { drillCommand, endDrill } from "@/lib/drillCommand";
+import { canFinishFrom } from "@/lib/scoringUtils";
 
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
@@ -17,7 +21,7 @@ export async function startDoublesGameAction(formData: FormData): Promise<void> 
 
   if (playerIds.length === 0) return;
 
-  const supabase = supabaseServer();
+  const supabase = await supabaseServer();
   if (!supabase) return;
 
   const { data: session, error } = await supabase
@@ -45,7 +49,11 @@ export async function startDoublesGameAction(formData: FormData): Promise<void> 
 }
 
 export async function loadDoublesStateAction(sessionId: string) {
-  const supabase = supabaseServer();
+  return stableRead("doubles_practice_sessions", sessionId, () => readState(sessionId));
+}
+
+async function readState(sessionId: string) {
+  const supabase = await supabaseServer();
   if (!supabase) return { ok: false as const };
 
   const [{ data: session }, { data: players }, { data: attempts }] = await Promise.all([
@@ -55,15 +63,14 @@ export async function loadDoublesStateAction(sessionId: string) {
       .select("*, player:player_id(name)")
       .eq("session_id", sessionId)
       .order("throw_order", { ascending: true }),
-    supabase
+    allRows(() => supabase
       .from("doubles_practice_attempts")
       .select("*")
       .eq("session_id", sessionId)
-      .order("id", { ascending: false })
-      .limit(15),
+      .order("id", { ascending: false })),
   ]);
 
-  if (!session) return { ok: false as const };
+  if (!session) throw new Error("Session not found");
   return {
     ok: true as const,
     session,
@@ -72,11 +79,11 @@ export async function loadDoublesStateAction(sessionId: string) {
   };
 }
 
-export async function recordDoublesAttemptAction(sessionId: string, dartHit: number) {
+export async function recordDoublesAttemptAction(sessionId: string, dartHit: number, revision?: number) {
   if (!Number.isInteger(dartHit) || dartHit < 0 || dartHit > 3) {
     return { ok: false, message: "Invalid dart" };
   }
-  const supabase = supabaseServer();
+  const supabase = await supabaseServer();
   if (!supabase) return { ok: false };
 
   const { data: session } = await supabase
@@ -87,6 +94,7 @@ export async function recordDoublesAttemptAction(sessionId: string, dartHit: num
   if (!session || session.status !== "in_progress") {
     return { ok: false, message: "Session not active" };
   }
+  if (revision !== undefined && revision !== session.revision) return {ok: false, message: "Session changed on another device. Reload before scoring again."};
 
   const { data: players } = await supabase
     .from("doubles_practice_players")
@@ -103,58 +111,25 @@ export async function recordDoublesAttemptAction(sessionId: string, dartHit: num
   const nextRound = active.round_index + 1;
   const { target: nextTarget, phase: nextPhase } = nextTargetForRound(nextRound, active.current_target);
 
-  // Record the attempt at the player's current target.
-  await supabase.from("doubles_practice_attempts").insert({
-    session_id: sessionId,
-    session_player_id: active.id,
-    round_index: active.round_index,
-    target: active.current_target,
-    phase: active.phase,
-    dart_hit: dartHit,
-    points,
-  });
-
-  // Advance the active player's independent progress + score.
-  await supabase
-    .from("doubles_practice_players")
-    .update({
-      round_index: nextRound,
-      current_target: nextTarget,
-      phase: nextPhase,
-      score: active.score + points,
-      hits: active.hits + (dartHit > 0 ? 1 : 0),
-      first_dart_hits: active.first_dart_hits + (dartHit === 1 ? 1 : 0),
-    })
-    .eq("id", active.id);
-
-  // Pass the turn to the next player in the rotation.
-  await supabase
-    .from("doubles_practice_sessions")
-    .update({ current_slot: (slot + 1) % slotCount })
-    .eq("id", sessionId);
+  const saved = await drillCommand("doubles", sessionId, revision ?? session.revision,
+    {round_index: active.round_index, target: active.current_target, phase: active.phase, dart_hit: dartHit, points},
+    {current_slot: (slot + 1) % slotCount}, active.id,
+    {round_index: nextRound, current_target: nextTarget, phase: nextPhase, score: active.score + points,
+     hits: active.hits + (dartHit > 0 ? 1 : 0), first_dart_hits: active.first_dart_hits + (dartHit === 1 ? 1 : 0)});
+  if (!saved.ok) return saved;
 
   revalidatePath("/practice/doubles");
   return { ok: true, points };
 }
 
-export async function endDoublesGameAction(sessionId: string) {
-  const supabase = supabaseServer();
-  if (!supabase) return { ok: false };
-  await supabase
-    .from("doubles_practice_sessions")
-    .update({ status: "completed", completed_at: new Date().toISOString() })
-    .eq("id", sessionId);
-  revalidatePath("/practice/doubles");
-  return { ok: true };
+export async function endDoublesGameAction(sessionId: string, revision?: number) {
+  const result = await endDrill("doubles", sessionId, "completed", revision);
+  if (result.ok) revalidatePath("/practice/doubles");
+  return result;
 }
 
-export async function abandonDoublesSessionAction(sessionId: string) {
-  const supabase = supabaseServer();
-  if (!supabase) return { ok: false };
-  await supabase
-    .from("doubles_practice_sessions")
-    .update({ status: "abandoned", completed_at: new Date().toISOString() })
-    .eq("id", sessionId);
-  revalidatePath("/practice/doubles");
-  return { ok: true };
+export async function abandonDoublesSessionAction(sessionId: string, revision?: number) {
+  const result = await endDrill("doubles", sessionId, "abandoned", revision);
+  if (result.ok) revalidatePath("/practice/doubles");
+  return result;
 }

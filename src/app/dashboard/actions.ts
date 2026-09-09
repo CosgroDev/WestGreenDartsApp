@@ -42,7 +42,7 @@ export async function generateSeasonAiSummaryAction(seasonId: string): Promise<S
   const id = seasonId || (await getSeasons()).find((s) => s.is_current)?.id || "";
   if (!id) return { ok: false, reason: "no_data" };
 
-  const supabase = supabaseServer();
+  const supabase = await supabaseServer();
   if (!supabase) return { ok: false, reason: "error", message: "Supabase not configured" };
 
   const season = await getSeasonToDate(id);

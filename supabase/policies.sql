@@ -1,27 +1,17 @@
--- RLS policies sketch for single-team v1
-alter table public.players enable row level security;
-alter table public.seasons enable row level security;
-alter table public.fixtures enable row level security;
-alter table public.games enable row level security;
-alter table public.scoring_events enable row level security;
-
--- Expect JWT contains team_id claim; adjust to your JWT structure
-create policy "team read access" on public.players
-for select using (auth.jwt() ->> 'team_id' = team_id::text);
-create policy "team write access" on public.players
-for insert using (auth.jwt() ->> 'team_id' = team_id::text)
-with check (auth.jwt() ->> 'team_id' = team_id::text);
-
--- Repeat for other tables (fixtures, games, scoring_events) after adjusting claim names.
-
--- RPC to validate PIN and return signed token (implement in Supabase SQL):
--- create or replace function auth_pin(pin_input text)
--- returns table(token text) language plpgsql as $$
--- declare match_count int;
--- begin
---   select count(*) into match_count from pins where active = true and pin_hash = crypt(pin_input, pin_hash);
---   if match_count = 1 then
---     token := auth.sign_jwt(json_build_object('team_id', (select team_id from pins where active = true limit 1)));
---     return next;
---   end if;
--- end $$;
+-- The application uses a verified team session and server-side service-role
+-- access. No public client reads/writes are needed. Never expose that key.
+do $$
+declare t text;
+begin
+ foreach t in array array['teams','pins','players','seasons','fixtures','games','scoring_events',
+ 'practice_sessions','practice_games','practice_events','game_121_sessions','game_121_turns',
+ 'checkout_practice_sessions','checkout_practice_attempts','doubles_practice_sessions',
+ 'doubles_practice_players','doubles_practice_attempts'] loop
+  if to_regclass('public.'||t) is not null then
+   execute format('alter table public.%I enable row level security',t);
+   execute format('revoke all on public.%I from anon, authenticated',t);
+   execute format('grant all on public.%I to service_role',t);
+  end if;
+ end loop;
+end $$;
+grant usage,select on all sequences in schema public to service_role;

@@ -1,3 +1,5 @@
+import { allRows } from "@/lib/database";
+import { canFinishFrom } from "@/lib/scoringUtils";
 import { supabaseServer } from "@/lib/supabaseServer";
 
 export type Visit = {
@@ -59,11 +61,12 @@ function summariseLeg(gameId: string, winner: LegSummary["winner"], visits: Visi
   visits.forEach((v) => {
     // a visit that started on a finishable number counts as a checkout attempt
     const remainingBefore = v.isBust ? v.remainingAfter : v.remainingAfter + v.score;
-    if (remainingBefore <= 170) {
+    if (canFinishFrom(remainingBefore)) {
       checkoutAttempts += 1;
       if (v.isCheckout) checkoutHits += 1;
     }
     if (v.isCheckout) highFinish = highFinish === null ? v.score : Math.max(highFinish, v.score);
+    if (v.isBust) return;
     if (v.score === 26) bands.twentySix += 1;
     if (v.score >= 60) bands.sixtyPlus += 1;
     if (v.score >= 80) bands.eightyPlus += 1;
@@ -93,7 +96,7 @@ function summariseLeg(gameId: string, winner: LegSummary["winner"], visits: Visi
  * legacy rows, fixture + player + opponent), mirroring the fixture page.
  */
 export async function getMatchSummary(gameId: string): Promise<MatchSummary | null> {
-  const supabase = supabaseServer();
+  const supabase = await supabaseServer();
   if (!supabase) return null;
 
   const { data: game, error: gameErr } = await supabase
@@ -125,12 +128,13 @@ export async function getMatchSummary(gameId: string): Promise<MatchSummary | nu
   );
   if (!legsGames.length) return null;
 
-  const { data: events } = await supabase
+  const { data: events } = await allRows(() => supabase
     .from("scoring_events")
     .select("game_id, score, darts, remaining_after, is_bust, is_checkout, throw_index")
+    .eq("thrower", "west_green")
     .in("game_id", legsGames.map((g: any) => g.id))
     .eq("is_deleted", false)
-    .order("throw_index", { ascending: true });
+    .order("throw_index", { ascending: true }).order("id", { ascending: true }));
 
   const eventsByGame = new Map<string, Visit[]>();
   (events || []).forEach((e: any) => {
@@ -212,7 +216,7 @@ export async function getMatchSummary(gameId: string): Promise<MatchSummary | nu
 export async function getMatchAiReview(
   gameId: string
 ): Promise<{ review: string | null; reviewAt: string | null }> {
-  const supabase = supabaseServer();
+  const supabase = await supabaseServer();
   if (!supabase) return { review: null, reviewAt: null };
 
   const { data, error } = await supabase
@@ -276,7 +280,7 @@ export type FixtureTeamSummary = {
  * breakdown. Returns null until at least one match is complete.
  */
 export async function getFixtureTeamSummary(fixtureId: string): Promise<FixtureTeamSummary | null> {
-  const supabase = supabaseServer();
+  const supabase = await supabaseServer();
   if (!supabase) return null;
 
   const [{ data: fixture }, { data: games, error }] = await Promise.all([

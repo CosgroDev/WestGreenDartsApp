@@ -1,10 +1,14 @@
 import { cookies } from "next/headers";
 import { createClient } from "@supabase/supabase-js";
+import { requireSession } from "./auth";
+import { issueSession, SESSION_SECONDS } from "./session";
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-export function supabaseServer() {
+// Only the PIN exchange uses this unauthenticated factory. All application
+// reads/writes must use supabaseServer, which validates the signed session.
+export function pinAuthClient() {
   if (!supabaseUrl || !serviceRoleKey) {
     return null;
   }
@@ -20,13 +24,18 @@ export function supabaseServer() {
   });
 }
 
-export function setSessionCookie(token: string) {
-  const cookieStore = cookies();
-  cookieStore.set("wgd_session", token, {
+export async function supabaseServer() {
+  await requireSession();
+  return pinAuthClient();
+}
+
+export async function setSessionCookie() {
+  const cookieStore = await cookies();
+  cookieStore.set("wgd_session", await issueSession(), {
     httpOnly: true,
     sameSite: "lax",
-    secure: true,
-    maxAge: 60 * 60 * 24 * 30,
+    secure: process.env.NODE_ENV === "production",
+    maxAge: SESSION_SECONDS,
     path: "/"
   });
 }

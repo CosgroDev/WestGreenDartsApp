@@ -25,7 +25,7 @@ export async function generateAiReviewAction(gameId: string): Promise<AiReviewRe
     return { ok: false, reason: "not_configured" };
   }
 
-  const supabase = supabaseServer();
+  const supabase = await supabaseServer();
 
   // A completed match never changes — generate the review once, then read it
   // back rather than regenerating on every visit.

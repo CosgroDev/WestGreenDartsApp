@@ -1,4 +1,4 @@
-﻿
+
 "use server";
 
 import { randomUUID } from "crypto";
@@ -29,7 +29,7 @@ export async function generateTeamAiReviewAction(fixtureId: string): Promise<Tea
     return { ok: false, reason: "not_configured" };
   }
 
-  const supabase = supabaseServer();
+  const supabase = await supabaseServer();
   if (!supabase) return { ok: false, reason: "error", message: "Supabase not configured" };
 
   // The review is the night's summary — generate it once, then read it back.
@@ -119,15 +119,17 @@ export async function createGameAction(prevState: any, formData: FormData) {
 
   if (!fixtureId || !opponent) return { ok: false, message: "Fixture and opponent are required" };
 
-  const supabase = supabaseServer();
+  const supabase = await supabaseServer();
   if (!supabase) return { ok: false, message: "Supabase not configured" };
 
+  const { data: fixture, error: fixtureError } = await supabase.from("fixtures").select("home").eq("id", fixtureId).eq("team_id", TEAM_ID).single();
+  if (fixtureError || !fixture) return { ok: false, message: "Fixture not found" };
   const { error } = await supabase.from("games").insert({
     team_id: TEAM_ID,
     fixture_id: fixtureId,
     west_green_player_id: playerId || null,
     opponent_player: opponent,
-    west_green_starts: false,
+    west_green_starts: !fixture.home,
     // Each created game is its own match; legs added later share this id.
     match_id: randomUUID()
   });
@@ -146,7 +148,7 @@ export async function deleteMatchAction(formData: FormData): Promise<void> {
 
   if (!fixtureId || (!matchId && !opponent)) return;
 
-  const supabase = supabaseServer();
+  const supabase = await supabaseServer();
   if (!supabase) return;
 
   // Find leg IDs for this match. Prefer the stable match_id; fall back to the

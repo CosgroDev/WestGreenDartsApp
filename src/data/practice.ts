@@ -1,4 +1,6 @@
-﻿import { supabaseServer } from "@/lib/supabaseServer";
+import { allRows, rowsForIds } from "@/lib/database";
+import { canFinishFrom } from "@/lib/scoringUtils";
+import { supabaseServer } from "@/lib/supabaseServer";
 
 export type PracticeSession = {
   id: string;
@@ -30,7 +32,7 @@ export async function createPracticeSession(params: {
   startScore: number;
   legsToPlay: number;
 }): Promise<{ ok: boolean; sessionId?: string; gameId?: string; message?: string }> {
-  const supabase = supabaseServer();
+  const supabase = await supabaseServer();
   if (!supabase) return { ok: false, message: "Supabase not configured" };
 
   const { data, error } = await supabase
@@ -59,7 +61,7 @@ export async function createPracticeSession(params: {
 }
 
 export async function getPracticeSessions(): Promise<PracticeSession[]> {
-  const supabase = supabaseServer();
+  const supabase = await supabaseServer();
   if (!supabase) return [];
 
   const { data, error } = await supabase
@@ -102,18 +104,18 @@ export type PracticePlayerStat = {
 };
 
 export async function getPracticePlayerStats(): Promise<PracticePlayerStat[]> {
-  const supabase = supabaseServer();
+  const supabase = await supabaseServer();
   if (!supabase) return [];
 
-  const { data: sessions } = await supabase
+  const { data: sessions } = await allRows(() => supabase
     .from("practice_sessions")
-    .select("id, player_a_id, player_b_id, player_a:player_a_id(name), player_b:player_b_id(name)");
+    .select("id, player_a_id, player_b_id, player_a:player_a_id(name), player_b:player_b_id(name)").order("id", { ascending: true }));
   if (!sessions?.length) return [];
 
-  const { data: games } = await supabase
+  const { data: games } = await allRows(() => supabase
     .from("practice_games")
     .select("id, session_id, winner")
-    .eq("status", "completed");
+    .eq("status", "completed").order("id", { ascending: true }));
   if (!games?.length) return [];
 
   const sessionMap = new Map(sessions.map((s: any) => [s.id, s]));
@@ -153,16 +155,17 @@ export async function getPracticePlayerStats(): Promise<PracticePlayerStat[]> {
   }
 
   const allGameIds = games.map((g: any) => g.id);
-  const { data: events } = await supabase
+  const events = await rowsForIds(allGameIds, ids => supabase
     .from("practice_events")
-    .select("game_id, thrower, score, darts, is_checkout")
-    .in("game_id", allGameIds)
+    .select("game_id, thrower, score, darts, is_bust, is_checkout")
+    .in("game_id", ids)
     .eq("is_deleted", false)
-    .order("throw_index", { ascending: true });
+    .order("throw_index", { ascending: true }).order("id", { ascending: true }));
 
   if (events) {
     const first3Count = new Map<string, number>();
-    for (const e of events as any[]) {
+    for (let e of events as any[]) {
+      if (e.is_bust) e = {...e, score: 0};
       const gp = gameToPlayers.get(e.game_id);
       if (!gp) continue;
       const pid = e.thrower === "player_a" ? gp.player_a : gp.player_b;
@@ -205,7 +208,7 @@ export async function getPracticePlayerStats(): Promise<PracticePlayerStat[]> {
 }
 
 export async function getPracticeGame(id: string) {
-  const supabase = supabaseServer();
+  const supabase = await supabaseServer();
   if (!supabase) return null;
 
   const { data, error } = await supabase

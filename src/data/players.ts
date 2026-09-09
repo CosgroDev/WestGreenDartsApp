@@ -11,7 +11,7 @@ export type Player = {
 };
 
 export async function getPlayers(): Promise<Player[]> {
-  const supabase = supabaseServer();
+  const supabase = await supabaseServer();
   if (!supabase) return mockPlayers;
 
   // Try extended fields; if columns missing, fall back to minimal selection.

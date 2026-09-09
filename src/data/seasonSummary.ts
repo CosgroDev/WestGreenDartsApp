@@ -1,3 +1,5 @@
+import { allRows } from "@/lib/database";
+import { matchKey } from "@/lib/matchKey";
 import { supabaseServer } from "@/lib/supabaseServer";
 
 // A fixture is a night of up to 6 singles matches (each West Green player vs
@@ -48,16 +50,16 @@ export type SeasonToDate = {
  * dashboard uses to decide when the AI season summary needs regenerating.
  */
 export async function getSeasonToDate(seasonId: string): Promise<SeasonToDate | null> {
-  const supabase = supabaseServer();
+  const supabase = await supabaseServer();
   if (!supabase || !seasonId) return null;
 
-  const { data: games, error } = await supabase
+  const { data: games, error } = await allRows(() => supabase
     .from("games")
     .select(
-      "id, fixture_id, west_green_player_id, opponent_player, winner, status, created_at, fixtures!inner(id, opponent, home, starts_at, season_id)"
+      "id, match_id, fixture_id, west_green_player_id, opponent_player, winner, status, created_at, fixtures!inner(id, opponent, home, starts_at, season_id)"
     )
     .eq("deleted", false)
-    .eq("fixtures.season_id", seasonId);
+    .eq("fixtures.season_id", seasonId).order("id", { ascending: true }));
   if (error || !games) return null;
 
   // Group games -> fixtures -> matches (player + opponent), like the fixture page.
@@ -73,7 +75,7 @@ export async function getSeasonToDate(seasonId: string): Promise<SeasonToDate | 
   for (const list of byFixture.values()) {
     const matches = new Map<string, any[]>();
     list.forEach((g: any) => {
-      const key = `${g.west_green_player_id || "none"}|${(g.opponent_player || "").trim().toLowerCase()}`;
+      const key = matchKey(g);
       const arr = matches.get(key) ?? [];
       arr.push(g);
       matches.set(key, arr);
@@ -138,7 +140,7 @@ export async function getSeasonToDate(seasonId: string): Promise<SeasonToDate | 
 export async function getStoredSeasonSummary(
   seasonId: string
 ): Promise<{ summary: string | null; at: string | null; fixtures: number | null }> {
-  const supabase = supabaseServer();
+  const supabase = await supabaseServer();
   if (!supabase || !seasonId) return { summary: null, at: null, fixtures: null };
 
   const { data, error } = await supabase

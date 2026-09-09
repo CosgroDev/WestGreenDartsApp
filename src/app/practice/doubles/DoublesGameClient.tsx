@@ -1,6 +1,7 @@
 "use client";
+import { useAsyncTask } from "@/lib/useAsyncTask";
 
-import { useEffect, useState, useTransition } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { DOUBLES_SEQUENCE } from "@/lib/doublesPractice";
 import {
@@ -31,6 +32,7 @@ type Attempt = {
 };
 
 type Session = {
+  revision: number;
   current_slot: number;
   status: string;
 };
@@ -43,21 +45,20 @@ export default function DoublesGameClient({ sessionId }: { sessionId: string }) 
   // How many darts have been thrown-and-missed this visit (0..2 → next dart index).
   const [dartIndex, setDartIndex] = useState(0);
   const [confirmEnd, setConfirmEnd] = useState(false);
-  const [pending, startTransition] = useTransition();
+  const [pending, startTransition] = useAsyncTask();
 
-  const loadState = () => {
-    startTransition(async () => {
+  const loadState = async () => {
       const res = await loadDoublesStateAction(sessionId);
+      if (!res.ok) throw new Error("Could not load the session");
       if (res.ok) {
         setSession(res.session as Session);
         setPlayers(res.players as PlayerRow[]);
         setAttempts(res.attempts as Attempt[]);
       }
-    });
   };
 
   useEffect(() => {
-    loadState();
+    startTransition(loadState);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sessionId]);
 
@@ -65,8 +66,8 @@ export default function DoublesGameClient({ sessionId }: { sessionId: string }) 
     if (!session || session.status !== "in_progress" || pending) return;
     setDartIndex(0);
     startTransition(async () => {
-      const res = await recordDoublesAttemptAction(sessionId, dartHit);
-      if (!res?.ok) return;
+      const res = await recordDoublesAttemptAction(sessionId, dartHit, session.revision);
+      if (!res?.ok) throw new Error("message" in res ? res.message : "Could not save the score");
       const reload = await loadDoublesStateAction(sessionId);
       if (reload.ok) {
         setSession(reload.session as Session);
@@ -87,14 +88,16 @@ export default function DoublesGameClient({ sessionId }: { sessionId: string }) 
 
   const endGame = () => {
     startTransition(async () => {
-      await endDoublesGameAction(sessionId);
-      loadState();
+      const result = await endDoublesGameAction(sessionId, session?.revision);
+      if (!result.ok) throw new Error(result.message ?? "Could not finish the session");
+      await loadState();
     });
   };
 
   const quit = () => {
     startTransition(async () => {
-      await abandonDoublesSessionAction(sessionId);
+      const result = await abandonDoublesSessionAction(sessionId, session?.revision);
+      if (!result.ok) throw new Error(result.message ?? "Could not finish the session");
       router.push("/practice/doubles");
     });
   };

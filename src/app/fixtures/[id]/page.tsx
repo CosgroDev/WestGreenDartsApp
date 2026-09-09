@@ -1,4 +1,4 @@
-﻿export const dynamic = "force-dynamic";
+export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 import Link from "next/link";
@@ -10,7 +10,7 @@ import { deleteMatchAction } from "./actions";
 import { CreateGameForm } from "./CreateGameClient";
 import { TeamAiReview } from "./TeamAiReview";
 
-type Props = { params: { id: string } };
+type Props = { params: Promise<{ id: string }> };
 
 type MatchGroup = {
   matchKey: string;
@@ -30,7 +30,8 @@ type MatchGroup = {
   twentySix: number;
 };
 
-export default async function FixtureDetailPage({ params }: Props) {
+export default async function FixtureDetailPage({ params: paramsPromise }: Props) {
+  const params = await paramsPromise;
   const [fixture, players, games] = await Promise.all([
     getFixtureById(params.id),
     getPlayers(),
@@ -88,7 +89,9 @@ export default async function FixtureDetailPage({ params }: Props) {
       { threeDaTotal: 0, threeDaCount: 0, first9Total: 0, first9Count: 0, t26: 0 }
     );
 
-    const threeDA = agg.threeDaCount > 0 ? agg.threeDaTotal / agg.threeDaCount : null;
+    const points = sorted.reduce((n, g) => n + g.total_points, 0);
+    const darts = sorted.reduce((n, g) => n + g.total_darts, 0);
+    const threeDA = darts > 0 ? points / darts * 3 : null;
     const firstNine = agg.first9Count > 0 ? agg.first9Total / agg.first9Count : null;
     const twentySix = agg.t26;
 

@@ -1,7 +1,8 @@
 "use server";
+import { stableRead } from "@/lib/stableRead";
 
 import { revalidatePath } from "next/cache";
-import { randomUUID } from "crypto";
+import { scoringCommand } from "@/lib/scoringCommand";
 import { supabaseServer } from "@/lib/supabaseServer";
 import { finishRoutes } from "@/lib/finishRoutes";
 import { canFinishFrom } from "@/lib/scoringUtils";
@@ -34,19 +35,19 @@ export type LegSummaryWire = {
 };
 
 async function fetchVisits(gameId: string) {
-  const supabase = supabaseServer();
+  const supabase = await supabaseServer();
   if (!supabase) return [] as Visit[];
 
   const { data, error } = await supabase
     .from("scoring_events")
     .select("id, score, darts, remaining_after, is_bust, is_checkout")
     .eq("game_id", gameId)
+    .eq("thrower", "west_green")
     .eq("is_deleted", false)
     .order("throw_index", { ascending: true });
 
   if (error || !data) {
-    console.warn("fetchVisits fallback", error?.message);
-    return [];
+    throw new Error(error?.message || "Could not load visits");
   }
   return data as Visit[];
 }
@@ -64,6 +65,7 @@ function buildLegSummary(winner: "west" | "opponent", visits: Visit[]): LegSumma
   const firstNine = dartsFirst9 === 9 ? (pointsFirst9 / dartsFirst9) * 3 : null;
   const buckets = { "26": 0, "60+": 0, "80+": 0, "100+": 0, "120+": 0, "140+": 0, "170+": 0, "180": 0 };
   visits.forEach((v) => {
+    if (v.is_bust) return;
     const s = v.score;
     if (s === 26) buckets["26"]++;
     if (s >= 60 && s < 80) buckets["60+"]++;
@@ -87,7 +89,7 @@ function buildLegSummary(winner: "west" | "opponent", visits: Visit[]): LegSumma
 }
 
 export async function getLegSummariesAction(gameId: string) {
-  const supabase = supabaseServer();
+  const supabase = await supabaseServer();
   if (!supabase) return { ok: false, summaries: [] as LegSummaryWire[] };
 
   const { data: game, error: gameErr } = await supabase
@@ -128,21 +130,36 @@ export async function getLegSummariesAction(gameId: string) {
 }
 
 export async function loadGameStateAction(gameId: string) {
+  return stableRead("games", gameId, () => readState(gameId));
+}
+
+async function readState(gameId: string) {
   const visits = await fetchVisits(gameId);
   const remaining = computeRemaining(visits);
   const finishHint = remaining >= 2 && remaining <= 170 ? finishRoutes[remaining] ?? null : null;
-  const supabase = supabaseServer();
+  const supabase = await supabaseServer();
   let meta: any = null;
   if (supabase) {
     const { data: game } = await supabase
       .from("games")
       .select(
-        "id, fixture_id, status, winner, darts_thrown, opponent_player, west_green_player_id, match_id, players:west_green_player_id(name)"
+        "id, fixture_id, status, winner, darts_thrown, opponent_player, west_green_player_id, match_id, revision, west_green_starts, players:west_green_player_id(name)"
       )
       .eq("id", gameId)
       .single();
     if (game) {
       meta = game;
+      const { data: events, error: eventsError } = await supabase.from("scoring_events")
+        .select("id, thrower, remaining_after").eq("game_id", gameId).eq("is_deleted", false).order("throw_index");
+      if (eventsError) throw new Error(eventsError.message);
+      meta.throwLog = (events || []).map(e => e.thrower === "opponent" ? "opponent" : "west");
+      const opponentEvents = (events || []).filter(e => e.thrower === "opponent");
+      meta.opponentRemaining = opponentEvents.length ? opponentEvents[opponentEvents.length - 1].remaining_after : 501;
+      meta.activeSide = events?.length ? (events[events.length - 1].thrower === "opponent" ? "west" : "opponent") : (game.west_green_starts ? "west" : "opponent");
+      if (game.status === "completed") {
+        const { data: next } = await supabase.from("games").select("id").eq("match_id", game.match_id).eq("deleted", false).eq("status", "in_progress").limit(1).maybeSingle();
+        meta.nextGameId = next?.id;
+      }
       // Count legs for this match within the fixture
       const matchQuery = supabase
         .from("games")
@@ -171,186 +188,27 @@ export async function loadGameStateAction(gameId: string) {
   return { ok: true, visits, remaining, finishHint, meta };
 }
 
-export async function recordVisitAction(gameId: string, score: number, dartsOverride?: number) {
-  if (!Number.isInteger(score) || score < 0 || score > 180) {
-    return { ok: false, message: "Score must be 0-180" };
-  }
-  const supabase = supabaseServer();
-  if (!supabase) return { ok: false, message: "Supabase not configured" };
-
-  const { data: gameRow, error: gameRowErr } = await supabase
-    .from("games")
-    .select("id, status, fixture_id")
-    .eq("id", gameId)
-    .single();
-  if (gameRowErr || !gameRow) return { ok: false, message: "Game not found" };
-  if (gameRow.status !== "in_progress") {
-    return { ok: false, message: "This leg is already completed — reload the page to continue." };
-  }
-
-  const existing = await fetchVisits(gameId);
-  const remaining = computeRemaining(existing);
-  const next = remaining - score;
-  const isCheckout = next === 0 && canFinishFrom(remaining);
-  const isBust = !isCheckout && (next < 0 || next === 1 || next === 0);
-  const remainingAfter = isBust ? remaining : next;
-  const dartsUsed = isCheckout ? dartsOverride ?? 3 : 3;
-
-  // Next throw_index must account for soft-deleted (undone) events too,
-  // otherwise a new visit reuses an undone visit's index and ordering breaks.
-  const { data: lastEvent } = await supabase
-    .from("scoring_events")
-    .select("throw_index")
-    .eq("game_id", gameId)
-    .order("throw_index", { ascending: false })
-    .limit(1)
-    .maybeSingle();
-
-  const { error } = await supabase.from("scoring_events").insert({
-    team_id: TEAM_ID,
-    game_id: gameId,
-    throw_index: (lastEvent?.throw_index ?? 0) + 1,
-    score,
-    darts: dartsUsed,
-    remaining_after: remainingAfter,
-    is_bust: isBust,
-    is_checkout: isCheckout
-  });
-
-  if (error) {
-    return { ok: false, message: error.message };
-  }
-
-  const visits = await fetchVisits(gameId);
-  const newRemaining = computeRemaining(visits);
-  const finishHint = newRemaining >= 2 && newRemaining <= 170 ? finishRoutes[newRemaining] ?? null : null;
-
-  // Mark game complete if checked out
-  let meta = null;
-  if (isCheckout && newRemaining === 0) {
-    const totalDarts = visits.reduce((sum, v) => sum + v.darts, 0);
-    const finishScore = score;
-    await supabase
-      .from("games")
-      .update({
-        status: "completed",
-        winner: "west_green",
-        darts_thrown: totalDarts,
-        completed_at: new Date().toISOString()
-      })
-      .eq("id", gameId);
-    // update high_finish if column exists
-    // update high_finish only if column exists
-    const { error: hfErr } = await supabase.from("games").update({ high_finish: finishScore }).eq("id", gameId);
-    if (hfErr && hfErr.code !== "42703") {
-      console.warn("high_finish update failed", hfErr.message);
-    }
-    meta = { status: "completed", winner: "west_green", darts_thrown: totalDarts };
-    revalidateAllDashboards();
-    if (gameRow.fixture_id) revalidatePath(`/fixtures/${gameRow.fixture_id}`);
-  }
-
-  revalidatePath(`/scoring?game=${gameId}`);
-  return { ok: true, visits, remaining: newRemaining, finishHint, meta };
-}
-
-export async function setOpponentWinAction(gameId: string) {
-  const supabase = supabaseServer();
-  if (!supabase) return { ok: false, message: "Supabase not configured" };
-  const { error } = await supabase
-    .from("games")
-    .update({ status: "completed", winner: "opponent", completed_at: new Date().toISOString() })
-    .eq("id", gameId)
-    .eq("status", "in_progress");
-  if (error) return { ok: false, message: error.message };
-  revalidatePath(`/scoring?game=${gameId}`);
+export async function recordVisitAction(gameId: string, score: number, dartsOverride = 3, side: "west_green" | "opponent" = "west_green", revision?: number, requestId?: string): Promise<any> {
+  if (!Number.isInteger(score) || score < 0 || score > 180 || !Number.isInteger(dartsOverride) || dartsOverride < 1 || dartsOverride > 3) return { ok: false, message: "Invalid score or dart count" };
+  const result = await scoringCommand(gameId, false, "record", { side, score, darts: dartsOverride, revision, requestId });
+  if (!result.ok) return result;
   revalidateAllDashboards();
-  const { data: gameRow } = await supabase.from("games").select("fixture_id").eq("id", gameId).single();
-  if (gameRow?.fixture_id) revalidatePath(`/fixtures/${gameRow.fixture_id}`);
-  return { ok: true, meta: { status: "completed", winner: "opponent" } };
+  const state = await loadGameStateAction(gameId);
+  if (state.meta?.fixture_id) revalidatePath(`/fixtures/${state.meta.fixture_id}`);
+  return state;
 }
 
-export async function newLegAction(gameId: string) {
-  const supabase = supabaseServer();
-  if (!supabase) return { ok: false, message: "Supabase not configured" };
-
-  const { data: game, error: fetchError } = await supabase
-    .from("games")
-    .select("fixture_id, west_green_player_id, opponent_player, west_green_starts, match_id")
-    .eq("id", gameId)
-    .single();
-  if (fetchError || !game) return { ok: false, message: fetchError?.message || "Game not found" };
-
-  // Legs of a match share its match_id; adopt one for legacy games without it.
-  let matchId = game.match_id;
-  if (!matchId) {
-    matchId = randomUUID();
-    await supabase.from("games").update({ match_id: matchId }).eq("id", gameId);
-  }
-
-  const { data, error } = await supabase
-    .from("games")
-    .insert({
-      team_id: TEAM_ID,
-      fixture_id: game.fixture_id,
-      west_green_player_id: game.west_green_player_id,
-      opponent_player: game.opponent_player,
-      west_green_starts: !game.west_green_starts, // alternate starts
-      match_id: matchId
-    })
-    .select("id")
-    .single();
-
-  if (error || !data) return { ok: false, message: error?.message || "Could not start new leg" };
-
-  revalidatePath(`/fixtures/${game.fixture_id}`);
-  return { ok: true, gameId: data.id, fixtureId: game.fixture_id };
+export async function newLegAction(gameId: string): Promise<any> {
+  const result = await scoringCommand(gameId, false, "new_leg");
+  if (!result.ok) return result;
+  return { ok: true, gameId: result.next_game_id };
 }
 
-export async function undoLastVisitAction(gameId: string) {
-  const supabase = supabaseServer();
-  if (!supabase) return { ok: false, message: "Supabase not configured" };
-
-  const { data: latest, error: findError } = await supabase
-    .from("scoring_events")
-    .select("id, is_checkout")
-    .eq("game_id", gameId)
-    .eq("is_deleted", false)
-    .order("throw_index", { ascending: false })
-    .limit(1)
-    .single();
-
-  if (findError) {
-    return { ok: false, message: findError.message };
-  }
-
-  if (latest) {
-    const { error } = await supabase.from("scoring_events").update({ is_deleted: true }).eq("id", latest.id);
-    if (error) return { ok: false, message: error.message };
-
-    // Undoing the checkout visit must also reopen the game, otherwise the leg
-    // stays marked completed with a winner and stale darts_thrown.
-    if (latest.is_checkout) {
-      const { error: reopenErr } = await supabase
-        .from("games")
-        .update({ status: "in_progress", winner: null, darts_thrown: null, completed_at: null })
-        .eq("id", gameId)
-        .eq("status", "completed")
-        .eq("winner", "west_green");
-      if (reopenErr) return { ok: false, message: reopenErr.message };
-      const { error: hfErr } = await supabase.from("games").update({ high_finish: null }).eq("id", gameId);
-      if (hfErr && hfErr.code !== "42703") {
-        console.warn("high_finish reset failed", hfErr.message);
-      }
-      revalidateAllDashboards();
-      const { data: gameRow } = await supabase.from("games").select("fixture_id").eq("id", gameId).single();
-      if (gameRow?.fixture_id) revalidatePath(`/fixtures/${gameRow.fixture_id}`);
-    }
-  }
-
-  const visits = await fetchVisits(gameId);
-  const remaining = computeRemaining(visits);
-  const finishHint = remaining >= 2 && remaining <= 170 ? finishRoutes[remaining] ?? null : null;
-  revalidatePath(`/scoring?game=${gameId}`);
-  return { ok: true, visits, remaining, finishHint };
+export async function undoLastVisitAction(gameId: string, revision?: number): Promise<any> {
+  const result = await scoringCommand(gameId, false, "undo", { revision });
+  if (!result.ok) return result;
+  revalidateAllDashboards();
+  const state = await loadGameStateAction(gameId);
+  if (state.meta?.fixture_id) revalidatePath(`/fixtures/${state.meta.fixture_id}`);
+  return state;
 }

@@ -1,3 +1,4 @@
+import { allRows } from "@/lib/database";
 import { supabaseServer } from "@/lib/supabaseServer";
 
 export type Fixture = {
@@ -26,17 +27,17 @@ export type FixtureDetail = {
 };
 
 export async function getFixtures(): Promise<Fixture[]> {
-  const supabase = supabaseServer();
+  const supabase = await supabaseServer();
   if (!supabase) return [];
 
-  const { data, error } = await supabase
+  const { data, error } = await allRows(() => supabase
     .from("fixtures")
     .select(
       `id, starts_at, opponent, venue, notes, home,
        seasons(name),
        games:games(status,winner,deleted)`
     )
-    .order("starts_at", { ascending: true });
+    .order("starts_at", { ascending: true }).order("id", { ascending: true }));
 
   if (error || !data) return [];
 
@@ -73,7 +74,7 @@ export async function getFixtures(): Promise<Fixture[]> {
 }
 
 export async function getFixtureById(id: string): Promise<FixtureDetail | null> {
-  const supabase = supabaseServer();
+  const supabase = await supabaseServer();
   if (!supabase) return null;
 
   const { data, error } = await supabase
@@ -108,7 +109,7 @@ export async function getTeamRecord(seasonIds?: string[]): Promise<{
   legsFor: number;
   legsAgainst: number;
 }> {
-  const supabase = supabaseServer();
+  const supabase = await supabaseServer();
   if (!supabase)
     return { legWins: 0, legLosses: 0, legDraws: 0, legsFor: 0, legsAgainst: 0 };
 

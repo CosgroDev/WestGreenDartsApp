@@ -2,7 +2,8 @@ import Link from "next/link";
 import { getPlayers } from "@/data/players";
 import { createPlayerAction, setPlayerActiveAction } from "./actions";
 
-export default async function PlayersPage({ searchParams }: { searchParams?: { error?: string; success?: string } }) {
+export default async function PlayersPage({ searchParams: paramsPromise }: { searchParams?: Promise<{ error?: string; success?: string }> }) {
+  const searchParams = await paramsPromise;
   const players = await getPlayers();
   const error = searchParams?.error;
   const success = searchParams?.success;

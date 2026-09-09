@@ -17,7 +17,7 @@ export async function createFixtureAction(_prevState: any, formData: FormData) {
     return { ok: false, message: "Season, date/time, and opponent are required" };
   }
 
-  const supabase = supabaseServer();
+  const supabase = await supabaseServer();
   if (!supabase) return { ok: false, message: "Supabase not configured" };
 
   const { error } = await supabase.from("fixtures").insert({
@@ -39,7 +39,7 @@ export async function createFixtureAction(_prevState: any, formData: FormData) {
 export async function deleteFixtureAction(formData: FormData): Promise<void> {
   const fixtureId = formData.get("fixtureId") as string | null;
   if (!fixtureId) return;
-  const supabase = supabaseServer();
+  const supabase = await supabaseServer();
   if (!supabase) return;
 
   // Fetch all games (deleted or not) for this fixture

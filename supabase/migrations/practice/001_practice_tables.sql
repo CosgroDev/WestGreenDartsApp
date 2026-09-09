@@ -1,4 +1,4 @@
-﻿-- Practice module tables
+-- Practice module tables
 create table if not exists practice_sessions (
   id uuid primary key default gen_random_uuid(),
   team_id uuid not null,

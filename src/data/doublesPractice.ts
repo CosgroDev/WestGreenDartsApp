@@ -1,3 +1,4 @@
+import { allRows, rowsForIds } from "@/lib/database";
 import { supabaseServer } from "@/lib/supabaseServer";
 import { DOUBLES_SEQUENCE } from "@/lib/doublesPractice";
 
@@ -13,29 +14,29 @@ export type DoublesPlayerStat = {
 };
 
 export async function getDoublesPlayerStats(): Promise<DoublesPlayerStat[]> {
-  const supabase = supabaseServer();
+  const supabase = await supabaseServer();
   if (!supabase) return [];
 
   // Only completed games count toward stats.
-  const { data: sessions } = await supabase
+  const { data: sessions } = await allRows(() => supabase
     .from("doubles_practice_sessions")
     .select("id")
-    .eq("status", "completed");
+    .eq("status", "completed").order("id", { ascending: true }));
   if (!sessions?.length) return [];
 
   const sessionIds = (sessions as any[]).map((s) => s.id);
 
-  const { data: players } = await supabase
+  const players = await rowsForIds(sessionIds, ids => supabase
     .from("doubles_practice_players")
     .select("id, session_id, player_id, score, player:player_id(name)")
-    .in("session_id", sessionIds);
+    .in("session_id", ids).order("id", { ascending: true }));
   if (!players?.length) return [];
 
   const playerRowIds = (players as any[]).map((p) => p.id);
-  const { data: attempts } = await supabase
+  const attempts = await rowsForIds(playerRowIds, ids => supabase
     .from("doubles_practice_attempts")
     .select("session_player_id, target, dart_hit")
-    .in("session_player_id", playerRowIds);
+    .in("session_player_id", ids).order("id", { ascending: true }));
 
   type Acc = {
     name: string;

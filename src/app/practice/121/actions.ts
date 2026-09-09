@@ -1,4 +1,8 @@
 "use server";
+import { allRows } from "@/lib/database";
+import { stableRead } from "@/lib/stableRead";
+import { drillCommand, endDrill } from "@/lib/drillCommand";
+import { canFinishFrom } from "@/lib/scoringUtils";
 
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
@@ -10,7 +14,7 @@ export async function start121GameAction(formData: FormData): Promise<void> {
   const playerId = (formData.get("playerId") as string) || null;
   // When checked, base advances on any finish within 9 darts (not just Turn 1).
   const advanceBaseOnAnyFinish = formData.get("advanceBaseOnAnyFinish") === "on";
-  const supabase = supabaseServer();
+  const supabase = await supabaseServer();
   if (!supabase) return;
 
   const { data, error } = await supabase
@@ -32,7 +36,11 @@ export async function start121GameAction(formData: FormData): Promise<void> {
 }
 
 export async function load121StateAction(sessionId: string) {
-  const supabase = supabaseServer();
+  return stableRead("game_121_sessions", sessionId, () => readState(sessionId));
+}
+
+async function readState(sessionId: string) {
+  const supabase = await supabaseServer();
   if (!supabase) return { ok: false as const };
 
   const [{ data: session }, { data: turns }] = await Promise.all([
@@ -41,23 +49,22 @@ export async function load121StateAction(sessionId: string) {
       .select("*, player:player_id(name)")
       .eq("id", sessionId)
       .single(),
-    supabase
+    allRows(() => supabase
       .from("game_121_turns")
       .select("*")
       .eq("session_id", sessionId)
-      .order("id", { ascending: false })
-      .limit(15),
+      .order("id", { ascending: false })),
   ]);
 
-  if (!session) return { ok: false as const };
+  if (!session) throw new Error("Session not found");
   return { ok: true as const, session, turns: (turns ?? []) as any[] };
 }
 
-export async function record121TurnAction(sessionId: string, score: number) {
+export async function record121TurnAction(sessionId: string, score: number, revision?: number) {
   if (!Number.isInteger(score) || score < 0 || score > 180) {
     return { ok: false, message: "Invalid score" };
   }
-  const supabase = supabaseServer();
+  const supabase = await supabaseServer();
   if (!supabase) return { ok: false };
 
   const { data: session } = await supabase
@@ -69,11 +76,12 @@ export async function record121TurnAction(sessionId: string, score: number) {
   if (!session || session.status !== "in_progress") {
     return { ok: false, message: "Session not active" };
   }
+  if (revision !== undefined && revision !== session.revision) return {ok: false, message: "Session changed on another device. Reload before scoring again."};
 
   const remainingBefore: number = session.remaining;
   const diff = remainingBefore - score;
   // Bust: score takes you below 0 or leaves exactly 1 (can't finish on 1)
-  const isBust = score > 0 && (diff < 0 || diff === 1);
+  const isBust = diff < 0 || diff === 1 || (diff === 0 && !canFinishFrom(remainingBefore));
   const remainingAfter = isBust ? remainingBefore : Math.max(0, diff);
   const finished = remainingAfter === 0;
 
@@ -118,41 +126,20 @@ export async function record121TurnAction(sessionId: string, score: number) {
     }
   }
 
-  await supabase.from("game_121_turns").insert({
-    session_id: sessionId,
-    checkout: session.current_checkout,
-    base_checkout: session.base_checkout,
-    turn_number: session.current_turn,
-    score,
-    remaining_before: remainingBefore,
-    remaining_after: remainingAfter,
-    is_bust: isBust,
-    result,
+  const saved = await drillCommand("121", sessionId, revision ?? session.revision, {
+    score, remaining_after: remainingAfter, is_bust: isBust, result
+  }, {
+    base_checkout: newBase, current_checkout: nextCheckout, current_turn: nextTurn,
+    remaining: nextRemaining, status: newStatus, completed_at: completedAt
   });
-
-  await supabase
-    .from("game_121_sessions")
-    .update({
-      base_checkout: newBase,
-      current_checkout: nextCheckout,
-      current_turn: nextTurn,
-      remaining: nextRemaining,
-      status: newStatus,
-      completed_at: completedAt,
-    })
-    .eq("id", sessionId);
+  if (!saved.ok) return saved;
 
   revalidatePath("/practice/121");
   return { ok: true, result };
 }
 
-export async function abandon121SessionAction(sessionId: string) {
-  const supabase = supabaseServer();
-  if (!supabase) return { ok: false };
-  await supabase
-    .from("game_121_sessions")
-    .update({ status: "abandoned", completed_at: new Date().toISOString() })
-    .eq("id", sessionId);
-  revalidatePath("/practice/121");
-  return { ok: true };
+export async function abandon121SessionAction(sessionId: string, revision?: number) {
+  const result = await endDrill("121", sessionId, "abandoned", revision);
+  if (result.ok) revalidatePath("/practice/121");
+  return result;
 }

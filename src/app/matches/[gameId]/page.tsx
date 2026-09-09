@@ -7,7 +7,7 @@ import { getMatchSummary, getMatchAiReview } from "@/data/matchSummary";
 import { analyseMatch } from "@/lib/matchInsights";
 import { AiReview } from "./AiReview";
 
-type Props = { params: { gameId: string } };
+type Props = { params: Promise<{ gameId: string }> };
 
 const visitTone = (score: number, isBust: boolean, isCheckout: boolean) => {
   if (isBust) return "bg-red-50 text-red-700 border-red-200";
@@ -19,7 +19,8 @@ const visitTone = (score: number, isBust: boolean, isCheckout: boolean) => {
   return "bg-slate-50 text-slate-700 border-slate-200";
 };
 
-export default async function MatchSummaryPage({ params }: Props) {
+export default async function MatchSummaryPage({ params: paramsPromise }: Props) {
+  const params = await paramsPromise;
   const [match, aiReview] = await Promise.all([
     getMatchSummary(params.gameId),
     getMatchAiReview(params.gameId)

@@ -1,6 +1,8 @@
 "use client";
+import { useAsyncTask } from "@/lib/useAsyncTask";
+import { canFinishFrom } from "@/lib/scoringUtils";
 
-import { useEffect, useState, useTransition } from "react";
+import { useEffect, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import type { LegStats } from "@/lib/scoringUtils";
 import {
@@ -87,11 +89,12 @@ export default function PracticeScoringClient() {
   const [activeSide, setActiveSide] = useState<"a" | "b">("a");
   const [finishHintA, setFinishHintA] = useState<string | null>(null);
   const [finishHintB, setFinishHintB] = useState<string | null>(null);
-  const [pending, startTransition] = useTransition();
+  const [pending, startTransition] = useAsyncTask();
   const [meta, setMeta] = useState<any>(null);
   const [alert, setAlert] = useState<string | null>(null);
   const [statsA, setStatsA] = useState<LegStats | null>(null);
   const [statsB, setStatsB] = useState<LegStats | null>(null);
+  const [finishScore, setFinishScore] = useState<number | null>(null);
   const [confirmDelete, setConfirmDelete] = useState(false);
 
   const applyState = (res: any) => {
@@ -101,6 +104,8 @@ export default function PracticeScoringClient() {
     setFinishHintA(res.finishHintA ?? null);
     setFinishHintB(res.finishHintB ?? null);
     setMeta(res.meta ?? null);
+    const last = res.visits?.[res.visits.length - 1];
+    setActiveSide(last ? (last.thrower === "player_a" ? "b" : "a") : ((res.meta?.leg_index ?? 1) % 2 ? "a" : "b"));
     setStatsA(res.statsA ?? null);
     setStatsB(res.statsB ?? null);
   };
@@ -130,17 +135,21 @@ export default function PracticeScoringClient() {
   };
   const clearInput = () => setInputScore(0);
 
-  const submitScore = () => {
-    if (!gameId || gameStatus === "completed") return;
-    const score = inputScore;
-    clearInput();
+  const submitScore = (darts = 3, checkoutScore?: number) => {
+    if (!gameId || !meta || gameStatus === "completed") return;
+    if (pending) return;
+    const score = checkoutScore ?? inputScore;
+    const remaining = activeSide === "a" ? remainingA : remainingB;
+    if (checkoutScore === undefined && score === remaining && canFinishFrom(remaining)) { setFinishScore(score); return; }
     startTransition(async () => {
-      const res = await recordPracticeVisitAction(gameId, activeSide, score, undefined);
+      const res = await recordPracticeVisitAction(gameId, activeSide, score, darts, meta?.revision, crypto.randomUUID());
       if (!res.ok) {
         setAlert((res as any).message ?? "Error recording score");
         return;
       }
       setAlert(null);
+      clearInput();
+      setFinishScore(null);
       const reload = await loadPracticeStateAction(gameId);
       applyState(reload);
       if (reload.ok && reload.meta?.status !== "completed") {
@@ -152,9 +161,11 @@ export default function PracticeScoringClient() {
   const undo = () => {
     if (!gameId) return;
     startTransition(async () => {
-      const res = await undoLastPracticeVisitAction(gameId);
+      const res = await undoLastPracticeVisitAction(gameId, meta?.revision);
+      if (!res.ok) { setAlert(res.message); return; }
       const reload = await loadPracticeStateAction(gameId);
       applyState(reload);
+      setAlert(null);
       const thrower = (res as any).undidThrower;
       if (thrower === "player_a") setActiveSide("a");
       else if (thrower === "player_b") setActiveSide("b");
@@ -170,7 +181,8 @@ export default function PracticeScoringClient() {
   const deleteSession = () => {
     if (!sessionId) return;
     startTransition(async () => {
-      await deletePracticeSessionFromScoringAction(sessionId);
+      const deleted = await deletePracticeSessionFromScoringAction(sessionId);
+      if (!deleted.ok) { setAlert(deleted.message || "Could not delete session"); return; }
       router.push("/practice");
     });
   };
@@ -205,6 +217,8 @@ export default function PracticeScoringClient() {
         </div>
 
         <div className="card flex flex-col gap-2">
+          {alert && <p role="alert" className="text-sm text-red-700">{alert}</p>}
+          <button onClick={undo} disabled={pending} className="btn-secondary">Undo checkout</button>
           {sessionStatus === "completed" ? (
             <>
               <p className="text-sm font-semibold text-slate-700">Session complete</p>
@@ -348,6 +362,11 @@ export default function PracticeScoringClient() {
 
       {alert && <div className="text-sm text-red-600 rounded-md bg-red-50 px-3 py-2">{alert}</div>}
 
+      {finishScore !== null && <div className="rounded-md bg-emerald-50 p-3">
+        <p>How many darts on the checkout?</p>
+        {[1, 2, 3].map(d => <button key={d} className="btn-secondary m-1" disabled={pending || !canFinishFrom(finishScore, d)} onClick={() => submitScore(d, finishScore)}>{d} dart{d > 1 ? "s" : ""}</button>)}
+        <button className="btn-secondary" onClick={() => setFinishScore(null)}>Cancel</button>
+      </div>}
       {/* Numpad */}
       <div className="grid grid-cols-3 gap-2">
         {[1, 2, 3, 4, 5, 6, 7, 8, 9, 0].map((n) => (
@@ -362,7 +381,7 @@ export default function PracticeScoringClient() {
         ))}
         <button
           className="rounded-md bg-emerald-600 text-white py-3 font-semibold hover:bg-emerald-700 disabled:opacity-50"
-          onClick={submitScore}
+          onClick={() => submitScore()}
           disabled={pending}
         >
           Enter

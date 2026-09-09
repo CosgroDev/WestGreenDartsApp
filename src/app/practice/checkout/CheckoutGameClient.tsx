@@ -1,6 +1,8 @@
 "use client";
+import { useAsyncTask } from "@/lib/useAsyncTask";
+import { canFinishFrom } from "@/lib/scoringUtils";
 
-import { useEffect, useMemo, useState, useTransition } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { finishRoutes } from "@/lib/finishRoutes";
 import {
   loadCheckoutStateAction,
@@ -16,6 +18,7 @@ type Attempt = {
 };
 
 type Session = {
+  revision: number;
   current_target: number;
   attempt_index: number;
   status: string;
@@ -26,36 +29,36 @@ export default function CheckoutGameClient({ sessionId }: { sessionId: string })
   const [session, setSession] = useState<Session | null>(null);
   const [attempts, setAttempts] = useState<Attempt[]>([]);
   const [confirmEnd, setConfirmEnd] = useState(false);
-  const [pending, startTransition] = useTransition();
+  const [pending, startTransition] = useAsyncTask();
 
-  const loadState = () => {
-    startTransition(async () => {
+  const loadState = async () => {
       const res = await loadCheckoutStateAction(sessionId);
+      if (!res.ok) throw new Error("Could not load the session");
       if (res.ok) {
         setSession(res.session as Session);
         setAttempts(res.attempts as Attempt[]);
       }
-    });
   };
 
   useEffect(() => {
-    loadState();
+    startTransition(loadState);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sessionId]);
 
   const record = (success: boolean, dartsUsed: number) => {
     if (!session || session.status !== "in_progress" || pending) return;
     startTransition(async () => {
-      const res = await recordCheckoutAttemptAction(sessionId, success, dartsUsed);
-      if (!res?.ok) return;
-      loadState();
+      const res = await recordCheckoutAttemptAction(sessionId, success, dartsUsed, session.revision);
+      if (!res?.ok) throw new Error("message" in res ? res.message : "Could not save the score");
+      await loadState();
     });
   };
 
   const endGame = () => {
     startTransition(async () => {
-      await endCheckoutGameAction(sessionId);
-      loadState();
+      const result = await endCheckoutGameAction(sessionId, session?.revision);
+      if (!result.ok) throw new Error(result.message ?? "Could not finish the session");
+      await loadState();
     });
   };
 
@@ -163,7 +166,7 @@ export default function CheckoutGameClient({ sessionId }: { sessionId: string })
             <button
               key={d}
               onClick={() => record(true, d)}
-              disabled={pending}
+              disabled={pending || !canFinishFrom(session.current_target, d)}
               className="rounded-md bg-blue-600 py-4 text-lg font-bold text-white hover:bg-blue-700 disabled:opacity-50"
             >
               {d} dart{d > 1 ? "s" : ""}
