@@ -102,7 +102,10 @@ from public.scoring_events e join public.games g on g.id=e.game_id
 where not e.is_deleted and not e.is_bust and not g.deleted and e.thrower='west_green'
 group by e.game_id,e.team_id;
 
-create or replace view public.player_stats_view as
+-- PostgreSQL cannot change a view column's type with CREATE OR REPLACE. The
+-- previous averages were bigint; recreate these views so averages stay numeric.
+drop view if exists public.player_stats_view;
+create view public.player_stats_view as
 with legs as (
  select g.id,g.west_green_player_id,g.winner,
   coalesce(sum(case when e.is_bust then 0 else e.score end),0) as points,
@@ -121,7 +124,8 @@ select p.id as player_id,p.name,count(l.id) as legs_played,
  sum(l.hits)::numeric/nullif(sum(l.attempts),0)*100 as checkout_pct
 from public.players p left join legs l on l.west_green_player_id=p.id group by p.id,p.name;
 
-create or replace view public.team_stats_view as
+drop view if exists public.team_stats_view;
+create view public.team_stats_view as
 with legs as (
  select g.id,g.team_id,g.winner,
   coalesce(sum(case when e.is_bust then 0 else e.score end),0) as points,
