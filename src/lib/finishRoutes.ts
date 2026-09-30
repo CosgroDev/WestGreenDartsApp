@@ -1,4 +1,4 @@
-// Minimal finish routes for 2–170 (subset for demo; expand later)
+// Preferred checkout routes, supplemented below for every valid three-dart finish.
 export const finishRoutes: Record<number, string> = {
   170: "T20 T20 Bull",
   167: "T20 T19 Bull",
@@ -86,3 +86,33 @@ export const finishRoutes: Record<number, string> = {
   4: "D2",
   2: "D1"
 };
+
+// Keep the familiar preferred routes above; fill missing scores with a valid
+// double-out route, trying one dart, then two, then three.
+const doubles = [20, 16, 18, 12, 10, 8, 14, 6, 4, 2, 1, 19, 17, 15, 13, 11, 9, 7, 5, 3]
+  .map((n) => ({ score: n * 2, label: `D${n}` }));
+const finishingDarts = [...doubles, { score: 50, label: "Bull" }];
+const setupDarts = [
+  ...Array.from({ length: 20 }, (_, i) => ({ score: (20 - i) * 3, label: `T${20 - i}` })),
+  ...Array.from({ length: 20 }, (_, i) => ({ score: 20 - i, label: `S${20 - i}` })),
+  ...doubles,
+  { score: 25, label: "25" },
+  { score: 50, label: "Bull" }
+];
+
+for (const finish of finishingDarts) {
+  finishRoutes[finish.score] ??= finish.label;
+}
+for (const setup of setupDarts) {
+  for (const finish of finishingDarts) {
+    finishRoutes[setup.score + finish.score] ??= `${setup.label} ${finish.label}`;
+  }
+}
+for (const first of setupDarts) {
+  for (const second of setupDarts) {
+    for (const finish of finishingDarts) {
+      finishRoutes[first.score + second.score + finish.score] ??=
+        `${first.label} ${second.label} ${finish.label}`;
+    }
+  }
+}
