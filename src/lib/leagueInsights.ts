@@ -1,4 +1,4 @@
-import { calculateLeagueStandings, getLiveLeagueData, TARGET_TEAM, TARGET_LEAGUE } from "./liveLeague";
+import { calculateLeagueStandings, getLiveLeagueData, TARGET_TEAM, TARGET_LEAGUE, type LeagueStanding } from "./liveLeague";
 
 export type InsightResult = {
   id: string; week: number | null; homeId: string; awayId: string;
@@ -61,6 +61,96 @@ export function backtest(teamIds: string[], results: InsightResult[]) {
     baselineLegError: count ? baselineError / count : null };
 }
 
+
+type RemainingFixture = { id: string; week: number | null; homeId: string; awayId: string };
+export function getHistoricalLegErrors(teamIds: string[], results: InsightResult[]) {
+  const dated = results.filter(r => r.week !== null);
+  const weeks = [...new Set(dated.map(r => r.week!))].sort((a, b) => a - b);
+  const errors: number[] = [];
+  for (const week of weeks) {
+    const training = dated.filter(r => r.week! < week);
+    if (training.length < 20) continue;
+    const fitted = fitStrengths(teamIds, training);
+    for (const r of dated.filter(r => r.week === week)) {
+      errors.push(r.homeScore - predictedHomeShare(fitted, r.homeId, r.awayId) * (r.homeScore + r.awayScore));
+    }
+  }
+  return errors;
+}
+function seededRandom(seed: string) {
+  let value = 2166136261;
+  for (const char of seed) value = Math.imul(value ^ char.charCodeAt(0), 16777619);
+  return () => {
+    value += 0x6D2B79F5;
+    let t = Math.imul(value ^ value >>> 15, value | 1);
+    t ^= t + Math.imul(t ^ t >>> 7, t | 61);
+    return ((t ^ t >>> 14) >>> 0) / 4294967296;
+  };
+}
+
+export function projectSeason(
+  standings: LeagueStanding[], remaining: RemainingFixture[], model: Model,
+  matchLegs: number, targetId: string, teamOrder: string[], residuals: number[]
+) {
+  const order = new Map(teamOrder.map((id, i) => [id, i]));
+  const rank = (rows: LeagueStanding[]) => rows.sort((a, b) =>
+    b.points - a.points || b.legDiff - a.legDiff || b.legsFor - a.legsFor ||
+    (order.get(a.teamId) ?? 0) - (order.get(b.teamId) ?? 0))
+    .map((r, i) => ({ ...r, position: i + 1 }));
+  const simulate = (sample?: () => number) => {
+    const rows = standings.map(row => ({ ...row }));
+    const byId = new Map(rows.map(r => [r.teamId, r]));
+    for (const f of remaining) {
+      const home = byId.get(f.homeId), away = byId.get(f.awayId);
+      if (!home || !away) throw new Error("Unknown projected fixture team");
+      const expected = predictedHomeShare(model, f.homeId, f.awayId) * matchLegs;
+      const hs = sample ? Math.max(0, Math.min(matchLegs, Math.round(expected + sample()))) : expected;
+      const as = matchLegs - hs;
+      home.legsFor += hs; home.legsAgainst += as; home.played++;
+      away.legsFor += as; away.legsAgainst += hs; away.played++;
+    }
+    for (const row of rows) {
+      row.points = row.legsFor - row.deduction;
+      row.legDiff = row.legsFor - row.legsAgainst;
+    }
+    return rank(rows);
+  };
+  const projected = simulate().map(row => {
+    const current = standings.find(t => t.teamId === row.teamId)!;
+    return { ...row, currentPosition: current.position, currentPoints: current.points,
+      remaining: row.played - current.played, additionalLegs: row.legsFor - current.legsFor };
+  });
+  const target = projected.find(t => t.teamId === targetId)!;
+  const finished = remaining.length === 0;
+  const iterations = finished ? 1 : residuals.length >= 20 ? 2000 : 0;
+  const positions: number[] = [], points: number[] = [];
+  const mean = residuals.length ? residuals.reduce((a, b) => a + b, 0) / residuals.length : 0;
+  const random = seededRandom(JSON.stringify({
+    scores: standings.map(r => [r.teamId, r.legsFor, r.legsAgainst, r.deduction]),
+    fixtures: remaining.map(r => [r.id, r.homeId, r.awayId]), matchLegs, residuals
+  }));
+  for (let i = 0; i < iterations; i++) {
+    const rows = simulate(finished ? undefined : () => residuals[Math.floor(random() * residuals.length)] - mean);
+    const team = rows.find(t => t.teamId === targetId)!;
+    positions.push(team.position); points.push(team.points);
+  }
+  const counts = standings.map((_, i) => ({
+    position: i + 1, count: positions.filter(p => p === i + 1).length
+  })).filter(r => r.count).map(r => ({ ...r, fraction: r.count / iterations }));
+  const likely = [...counts].sort((a, b) => b.count - a.count ||
+    Math.abs(a.position - target.position) - Math.abs(b.position - target.position) || a.position - b.position)[0];
+  const quantile = (values: number[], fraction: number) => {
+    const sorted = [...values].sort((a, b) => a - b);
+    return sorted[Math.floor((sorted.length - 1) * fraction)];
+  };
+  return {
+    table: projected, target, iterations, residualSample: residuals.length,
+    mostFrequentPosition: likely?.position ?? null, distribution: counts,
+    positionRange: iterations ? { low: quantile(positions, 0.1), high: quantile(positions, 0.9) } : null,
+    pointsRange: iterations ? { low: quantile(points, 0.1), high: quantile(points, 0.9) } : null
+  };
+}
+
 export function buildLeagueInsights(data: Awaited<ReturnType<typeof getLiveLeagueData>>) {
   const { league, teams, fixtures, weekDates } = data;
   const standings = calculateLeagueStandings(league.id, teams, fixtures, weekDates);
@@ -104,17 +194,45 @@ export function buildLeagueInsights(data: Awaited<ReturnType<typeof getLiveLeagu
   const future = eligible.filter(f => !f.played && typeof f.week === "number")
     .sort((a, b) => a.week! - b.week! || a.id.localeCompare(b.id));
   const lastPlayedWeek = Math.max(-1, ...results.filter(r => r.week !== null).map(r => r.week!));
-  const forecasts = future.filter(f => f.week! > lastPlayedWeek &&
-    (f.home_team_id === target.teamId || f.away_team_id === target.teamId)).map(f => {
+  const remainingFixtures = eligible.filter(f => !f.played)
+    .sort((a, b) => (a.week ?? Number.MAX_SAFE_INTEGER) - (b.week ?? Number.MAX_SAFE_INTEGER) || a.id.localeCompare(b.id));
+  const historicalErrors = getHistoricalLegErrors(ids, results);
+  const fixtureError = historicalErrors.length >= 20 ? [...historicalErrors].sort((a, b) => a - b) : [];
+  const forecasts = remainingFixtures.filter(f =>
+    f.home_team_id === target.teamId || f.away_team_id === target.teamId).map(f => {
       const home = f.home_team_id === target.teamId;
       const opponentId = home ? f.away_team_id! : f.home_team_id!;
       const share = predictedHomeShare(model, f.home_team_id!, f.away_team_id!);
       const targetShare = home ? share : 1 - share;
       const enough = samples(target.teamId) >= 5 && samples(opponentId) >= 5;
-      return { id: f.id, week: f.week!, opponentId, opponent: names.get(opponentId)!, home,
+      const expectedLegs = enough && matchLegs !== null ? targetShare * matchLegs : null;
+      const meanError = fixtureError.length ? fixtureError.reduce((a, b) => a + b, 0) / fixtureError.length : 0;
+      const errors = home ? fixtureError : fixtureError.map(e => -e).reverse();
+      const band = expectedLegs !== null && errors.length ? {
+        low: Math.max(0, Math.min(matchLegs!, expectedLegs + errors[Math.floor((errors.length - 1) * 0.1)] - (home ? meanError : -meanError))),
+        high: Math.max(0, Math.min(matchLegs!, expectedLegs + errors[Math.floor((errors.length - 1) * 0.9)] - (home ? meanError : -meanError)))
+      } : null;
+      return { id: f.id, week: f.week ?? null, opponentId, opponent: names.get(opponentId)!, home,
+        unresolved: f.week == null || f.week <= lastPlayedWeek,
         sample: samples(opponentId), share: enough ? targetShare : null,
-        expectedLegs: enough && matchLegs !== null ? targetShare * matchLegs : null };
+        expectedLegs, expectedAgainst: expectedLegs !== null ? matchLegs! - expectedLegs : null, band };
     });
+  const missingPlayedScores = eligible.filter(f => f.played).length - results.length;
+  const insufficientTeams = ids.filter(id => samples(id) < 5 &&
+    remainingFixtures.some(f => f.home_team_id === id || f.away_team_id === id));
+  const sourceCapped = fixtures.length >= 500 || weekDates.length >= 300;
+  const projectionUnavailable = sourceCapped ? "The source record limit was reached; the full remaining schedule may be missing."
+    : missingPlayedScores ? "Some completed fixtures have missing or invalid scores."
+    : matchLegs === null ? "There is no consistent match length in the recorded results."
+    : insufficientTeams.length ? "Some teams have fewer than five completed games; a full-league forecast is not reliable yet."
+    : null;
+  // Verify a complete home-and-away round robin from source fixtures, rather
+  // than inventing missing games. Non-standard schedules are labelled conditional.
+  const coverageVerified = ids.every(homeId => ids.every(awayId => homeId === awayId ||
+    eligible.filter(f => f.home_team_id === homeId && f.away_team_id === awayId).length === 1));
+  const projection = projectionUnavailable ? null : projectSeason(standings,
+    remainingFixtures.map(f => ({ id: f.id, week: f.week ?? null, homeId: f.home_team_id!, awayId: f.away_team_id! })),
+    model, matchLegs!, target.teamId, teams.filter(t => ids.includes(t.id)).map(t => t.id), historicalErrors);
   const opponents = stats.filter(t => t.teamId !== target.teamId).map(t => {
     const direct = results.filter(r => (r.homeId === target.teamId && r.awayId === t.teamId) ||
       (r.awayId === target.teamId && r.homeId === t.teamId));
@@ -136,6 +254,7 @@ export function buildLeagueInsights(data: Awaited<ReturnType<typeof getLiveLeagu
     .filter(r => r.homeId === target.teamId || r.awayId === target.teamId)
     .reduce((sum, r) => sum + (model.strengths[r.homeId === target.teamId ? r.awayId : r.homeId] || 0), 0) / targetStats.played : null;
   return { league: TARGET_LEAGUE, targetTeam: TARGET_TEAM, targetId: target.teamId, checkedAt: data.checkedAt,
+    projection, projectionUnavailable, coverageVerified, remainingMatches: remainingFixtures.length,
     source: data.source, teams: stats.map(t => ({ ...t, adjustedStrength: model.strengths[t.teamId] })), results, forecasts, opponents, validation, matchLegs,
     scheduleStrength, adjustedStrength: model.strengths[target.teamId],
     omittedResults: eligible.filter(f => f.played).length - results.length,

@@ -76,8 +76,25 @@ assert.deepEqual(insights.teams.map(({position,team,points})=>({position,team,po
 console.log("LIVE_INSIGHTS_PARITY_PASS",JSON.stringify({
  results:insights.results.length,teams:insights.teams.length,west:insights.teams.find(t=>t.teamId===insights.targetId),
  forecasts:insights.forecasts,validation:insights.validation,omitted:insights.omittedResults,
+ projection:insights.projection,coverageVerified:insights.coverageVerified,remainingMatches:insights.remainingMatches,
  adjustedStrength:insights.adjustedStrength,scheduleStrength:insights.scheduleStrength
 }));
+if(insights.projection){
+ const p=insights.projection;
+ assert.equal(p.table.length,rendered.length);
+ assert.equal(p.table.reduce((s,r)=>s+r.remaining,0),insights.remainingMatches*2);
+ assert.ok(Math.abs(p.table.reduce((s,r)=>s+r.additionalLegs,0)-insights.remainingMatches*insights.matchLegs)<1e-7);
+ const sourceRemaining=fixtures.filter(f=>f.league_id===league.id&&!f.played&&
+  !weekDates.find(w=>w.league_id===league.id&&w.week===f.week)?.tournament_name&&
+  computed.some(t=>t.teamId===f.home_team_id)&&computed.some(t=>t.teamId===f.away_team_id)&&f.home_team_id!==f.away_team_id);
+ assert.equal(insights.remainingMatches,sourceRemaining.length);
+ assert.equal(p.target.remaining,sourceRemaining.filter(f=>f.home_team_id===insights.targetId||f.away_team_id===insights.targetId).length);
+ for(const row of p.table) assert.ok(Math.abs(row.points-(row.legsFor-row.deduction))<1e-7);
+ console.log("LIVE_SEASON_PROJECTION_AND_LEG_TOTALS_PASS",JSON.stringify({
+  target:p.target,positionRange:p.positionRange,pointsRange:p.pointsRange,
+  distribution:p.distribution,coverageVerified:insights.coverageVerified,remainingMatches:insights.remainingMatches
+ }));
+}
 await writeFile("league-investigation/live-insights.json",JSON.stringify(insights,null,2));
 console.log("LIVE_CONTEXT",JSON.stringify(result,null,2));
 await writeFile("league-investigation/live-result.json",JSON.stringify(result,null,2));
@@ -130,6 +147,7 @@ try {
  const servedInsights=await insightResponse.json();
  assert.deepEqual(servedInsights.teams,insights.teams);
  assert.deepEqual(servedInsights.forecasts,insights.forecasts);
+ assert.deepEqual(servedInsights.projection,insights.projection);
  const manualResponse=await fetch("http://localhost:3100/api/league-insights?refresh=1",{headers:{Cookie:"wgd_session="+cookie}});
  assert.equal(manualResponse.status,200);
  const manualData=await manualResponse.json();
@@ -139,7 +157,18 @@ try {
  console.log("MANUAL_REFRESH_AND_SHARED_CACHE_PASS");
  await dashboard.getByRole("link",{name:"League insights →",exact:true}).click();
  await dashboard.getByRole("heading",{name:"How we compare",exact:true}).waitFor();
- assert.equal(await dashboard.locator("table").first().locator("tbody tr").count(),rendered.length);
+ await dashboard.getByRole("heading",{name:"End-of-season projection",exact:true}).waitFor();
+ await dashboard.getByRole("heading",{name:"Remaining fixture legs analysis",exact:true}).waitFor();
+ if(insights.projection){
+  await dashboard.getByText("Projected final league table",{exact:true}).click();
+  const projectedTable=dashboard.getByRole("table",{name:"Projected final league table",exact:true});
+  assert.equal(await projectedTable.locator("tbody tr").count(),rendered.length);
+  const rows=await projectedTable.locator("tbody tr").evaluateAll(rows=>rows.map(row=>{
+   const c=[...row.querySelectorAll("th,td")];return {position:Number(c[0].innerText.split(".")[0]),points:Number(c[4].innerText)};
+  }));
+  assert.deepEqual(rows,insights.projection.table.map(r=>({position:r.position,points:Number(r.points.toFixed(1))})));
+  console.log("MOBILE_PROJECTED_TABLE_PARITY_PASS");
+ }
  const refreshed=dashboard.waitForResponse(r=>r.url().includes("/api/league-insights?refresh=1")&&r.status()===200);
  await dashboard.getByRole("button",{name:"Refresh",exact:true}).click();
  await refreshed;

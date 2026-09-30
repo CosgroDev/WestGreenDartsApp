@@ -30,9 +30,11 @@ fixture equivalents). Outputs are clamped to 5–95%. Deduction points are exclu
 from strength. At least five completed fixtures per participant are required.
 Expected legs are supplied only if all valid observed games have the same total;
 otherwise only expected leg share is displayed. No exact score, match win odds,
-promotion probability or final position is claimed.
-Upcoming fixtures must be later than the latest played league week. Earlier
-unplayed fixtures are counted as unresolved, rather than mislabelled upcoming.
+promotion probability is claimed. Final positions are now shown as conditional
+projections from the whole remaining schedule (see below).
+All unplayed league fixtures, including earlier unresolved and undated games, are
+now included in remaining-fixture analysis and season projection. They are labelled
+as unresolved rather than claimed to be upcoming.
 
 ## Accuracy and limits
 Walk-forward backtest fits only strictly earlier weeks, after 20 training games.
@@ -55,3 +57,33 @@ The Verify live league insights workflow compares the actual implementation with
 browser-captured source records and all rendered standings, exercises authenticated
 and unauthenticated API calls, navigates the mobile page, switches opponents,
 checks horizontal overflow and saves mobile/desktop screenshots and live JSON.
+
+## End-of-season projection and legs analysis
+Each West Green remaining fixture shows expected legs for and against, a leg-share
+bar, and a middle-80% empirical error band where at least 20 backtest errors exist.
+A consistent observed match length is required for score forecasts.
+All remaining eligible league fixtures are projected together. Both teams receive
+complementary scores, preserving total available legs. Starting official legs for/
+against and deductions are retained; ranks sort by points, leg difference, legs
+for, and original Team API order for exact ties. Fractional values are expected
+points, not official results. Completed seasons simply retain their final table.
+
+Forecasts include earlier unresolved and undated unplayed fixtures. We verify
+exactly one home and one away fixture per opponent from the source. If this does
+not hold, the page labels the projection conditional on the supplied schedule;
+it does not invent games. Forecasts are suppressed if source caps are reached,
+played scores are missing/invalid, match lengths differ, or an active team has
+fewer than five completed games.
+
+For uncertainty, 2,000 repeatable scenarios sample centred whole-match residuals
+from strict earlier-week backtesting, then round/clamp each home score to 0–match
+length and award the complementary away score. Teams' fitted strengths remain
+fixed. The UI shows the most frequent finish, scenario percentages and the middle
+80% position/points range. This does not assume independent legs; it does assume
+independent future match errors, and does not capture line-up changes, correlated
+team slumps, parameter uncertainty, new deductions or schedule changes.
+Scenario percentages are not calibrated real-world probabilities.
+New tests cover schedule-wide leg conservation, deductions/ties/stable order,
+earlier fixtures, insufficient/truncated/inconsistent data, deterministic ranges,
+and completed seasons. Browser verification checks live remaining-fixture counts,
+leg totals, projected API/table parity and mobile rendering.
