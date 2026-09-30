@@ -38,6 +38,8 @@ export function LeagueSnapshot() {
     return () => { active = false; window.clearInterval(interval); controller?.abort(); };
   }, [refresh]);
 
+  const stale = context !== null && Date.now() - Date.parse(context.checkedAt) > 10 * 60 * 1000;
+
   return (
     <section className="card" aria-labelledby="league-snapshot-title">
       <div className="flex items-center justify-between gap-3">
@@ -73,8 +75,8 @@ export function LeagueSnapshot() {
           <p className="mt-2 text-xs text-slate-600">Source checked {new Date(context.checkedAt).toLocaleString("en-GB")} · refreshes every 5 minutes</p>
         </>
       )}
-      {failed && <p role="status" className="mt-3 text-sm text-amber-800">
-        {context ? "Refresh failed. Showing the last retrieved table." : "The live league table is temporarily unavailable. Please try again."}
+      {(failed || stale) && <p role="status" className="mt-3 text-sm text-amber-800">
+        {context ? stale ? "This table is over ten minutes old. Showing the last retrieved result while the source refreshes." : "Refresh failed. Showing the last retrieved table." : "The live league table is temporarily unavailable. Please try again."}
       </p>}
       {!context && !failed && <p role="status" className="mt-3 text-sm text-slate-600">Loading live standings…</p>}
       <a href={LEAGUE_SOURCE} target="_blank" rel="noopener noreferrer" className="mt-3 inline-block text-sm text-emerald-800 underline">View full league table ↗</a>
