@@ -25,6 +25,7 @@ page.on("response",response=>{
  const entity=new URL(url).pathname.split("/").pop();
  if(!["League","Team","Fixture"].includes(entity))return;
  pending.push((async()=>{
+  if (captured[entity]) return;
   captured[entity]=await response.json();
   const headers=await req.allHeaders();
   console.log("PUBLIC_BROWSER_REQUEST",req.method(),url,response.status(),JSON.stringify({
@@ -34,8 +35,8 @@ page.on("response",response=>{
  })());
 });
 await page.goto("https://barnsley-darts-flow.base44.app/",{waitUntil:"networkidle",timeout:60000});
-await page.getByRole("heading",{name:TARGET_LEAGUE,exact:true}).waitFor();
-const heading=page.getByRole("heading",{name:TARGET_LEAGUE,exact:true});
+await page.getByRole("heading",{name:new RegExp("^"+TARGET_LEAGUE+"$","i")}).waitFor();
+const heading=page.getByRole("heading",{name:new RegExp("^"+TARGET_LEAGUE+"$","i")});
 const table=heading.locator("xpath=ancestor::div[.//table][1]").locator("table");
 const rendered=await table.locator("tbody tr").evaluateAll(rows=>rows.map(row=>{
  const c=[...row.querySelectorAll("td")];
