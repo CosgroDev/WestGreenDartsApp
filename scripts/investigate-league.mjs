@@ -15,6 +15,8 @@ page.on("response",response=>{
  if(req.resourceType()==="script"&&url.includes("/assets/index-")){
   pending.push((async()=>{
    const text=await response.text();
+   const home=text.indexOf("function sD(");
+   console.log("HOME_SOURCE", text.slice(home, home+12000));
    const start=text.indexOf("function nD("),end=text.indexOf("const F=",start);
    console.log("SOURCE_CALCULATION",url,text.slice(start,end));
    await writeFile("league-investigation/source-calculation.txt",url+"\n"+text.slice(start,end));
