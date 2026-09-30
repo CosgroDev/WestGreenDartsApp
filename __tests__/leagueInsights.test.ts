@@ -55,7 +55,7 @@ test("forecasts require five samples, include earlier unplayed games and variabl
     fixture("new", "w", "b", null, null, 7, false),
     fixture("missed", "w", "a", null, null, 1, false)]));
   expect(result.forecasts[0].expectedLegs).toBeGreaterThan(6);
-  expect(result.forecasts[1].share).toBeNull();
+  expect(result.forecasts.find(f => f.id === "new")?.share).toBeNull();
   expect(result.unresolvedFixtures).toBe(1);
   expect(result.forecasts).toHaveLength(3);
   expect(result.forecasts.find(f => f.id === "missed")?.unresolved).toBe(true);
