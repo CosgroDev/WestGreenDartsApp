@@ -14,6 +14,7 @@ const fetchData = jest.mocked(getLiveLeagueData);
 beforeEach(() => {
   jest.useFakeTimers();
   mockValue = null;
+  delete (globalThis as typeof globalThis & { __westGreenLeagueSource?: unknown }).__westGreenLeagueSource;
   jest.clearAllMocks();
 });
 afterEach(() => { jest.useRealTimers(); });
