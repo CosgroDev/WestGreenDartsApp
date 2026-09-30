@@ -24,7 +24,7 @@ export const finishRoutes: Record<number, string> = {
   141: "T20 T19 D12",
   140: "T20 T20 D10",
   138: "T20 T18 D12",
-  137: "T19 T18 D12",
+  137: "T19 T16 D16",
   136: "T20 T20 D8",
   134: "T20 T14 D16",
   132: "T20 T16 D12",
