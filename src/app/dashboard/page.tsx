@@ -11,6 +11,7 @@ import { ExportLinks } from "./ExportLinks";
 import { ScoringBreakdown } from "./ScoringBreakdown";
 import { Leaderboard } from "./Leaderboard";
 import { HonoursBoard } from "./HonoursBoard";
+import { LeagueSnapshot } from "./LeagueSnapshot";
 import { SeasonAiSummary } from "./SeasonAiSummary";
 import { getSeasons } from "@/data/seasons";
 import { getFixtures } from "@/data/fixtures";
@@ -163,6 +164,8 @@ export default async function DashboardPage() {
           </Link>
         </div>
       </section>
+
+      <LeagueSnapshot />
 
       {seasonToDate && seasonToDate.anomalies.length > 0 && (
         <section className="card !border-red-200 !bg-red-50">
