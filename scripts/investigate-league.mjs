@@ -103,7 +103,7 @@ try {
  await panel.locator("tbody tr").first().waitFor();
  const panelRows=await panel.locator("tbody tr").evaluateAll(rows=>rows.map(row=>{
   const c=[...row.querySelectorAll("td,th")];
-  return {position:Number(c[0].innerText),team:c[1].innerText.replace(" (West Green)","").trim(),points:Number(c[2].innerText)};
+  return {position:Number(c[0].innerText),team:c[1].innerText.trim(),points:Number(c[2].innerText)};
  }));
  assert.deepEqual(panelRows,result.standings.map(({position,team,points})=>({position,team,points})));
  assert.ok(await panel.locator("tbody tr").filter({hasText:"West Green"}).getAttribute("class").then(c=>c.includes("bg-emerald-50")));

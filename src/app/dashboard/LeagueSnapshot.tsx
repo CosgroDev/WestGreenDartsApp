@@ -63,9 +63,9 @@ export function LeagueSnapshot() {
               </thead>
               <tbody>
                 {context.standings.map(row => (
-                  <tr key={row.teamId} className={row.target ? "bg-emerald-50 font-bold text-emerald-900" : "border-b border-slate-200 text-slate-800"}>
+                  <tr key={row.teamId} aria-current={row.target ? "true" : undefined} className={row.target ? "bg-emerald-50 font-bold text-emerald-900" : "border-b border-slate-200 text-slate-800"}>
                     <td className="px-2 py-3">{row.position}</td>
-                    <th scope="row" className="px-2 py-3 text-left font-inherit">{row.team}{row.target && <span className="sr-only"> (West Green)</span>}</th>
+                    <th scope="row" className="px-2 py-3 text-left ">{row.team}</th>
                     <td className="px-2 py-3 text-right tabular-nums">{row.points}</td>
                   </tr>
                 ))}
