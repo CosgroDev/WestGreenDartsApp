@@ -2,10 +2,12 @@ import { unstable_cache, revalidateTag } from "next/cache";
 import { getLiveLeagueData } from "@/lib/liveLeague";
 import { shouldRefreshLeague } from "@/lib/leagueRefresh";
 
-const TAG = "live-league-source-v2";
+const TAG = "live-league-source-v3";
 // Both pages share a persistent source cache. No age-based expiration outside
 // match nights: navigation alone must not cause repeated off-window source calls.
-const read = unstable_cache(getLiveLeagueData, [TAG], { revalidate: false, tags: [TAG] });
+// A bound loader has a stable function identity string across Next route bundles.
+// The explicit versioned key identifies this source; bump it if its schema changes.
+const read = unstable_cache(getLiveLeagueData.bind(null), [TAG], { revalidate: false, tags: [TAG] });
 let pending: ReturnType<typeof getLiveLeagueData> | null = null;
 let pendingForce = false;
 
