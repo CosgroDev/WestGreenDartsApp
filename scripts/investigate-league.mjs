@@ -16,7 +16,7 @@ page.on("response",response=>{
   pending.push((async()=>{
    const text=await response.text();
    const home=text.indexOf("function sD(");
-   console.log("HOME_SOURCE", text.slice(home, home+12000));
+   console.log("HOME_SOURCE", text.slice(home, text.indexOf("function oD(",home)));
    const start=text.indexOf("function nD("),end=text.indexOf("const F=",start);
    console.log("SOURCE_CALCULATION",url,text.slice(start,end));
    await writeFile("league-investigation/source-calculation.txt",url+"\n"+text.slice(start,end));
@@ -25,7 +25,7 @@ page.on("response",response=>{
   })());
  }
  const entity=new URL(url).pathname.split("/").pop();
- if(!["League","Team","Fixture"].includes(entity))return;
+ if(!["League","Team","Fixture","WeekDate"].includes(entity))return;
  pending.push((async()=>{
   if (captured[entity]) return;
   captured[entity]=await response.json();
@@ -51,10 +51,10 @@ console.log("TEAM_FIXTURES_TEXT",(await page.locator("body").innerText()).slice(
 await page.getByRole("link",{name:"League Tables",exact:true}).click();
 await page.waitForTimeout(1000);
 await Promise.allSettled(pending);
-const leagues=captured.League,teams=captured.Team,fixtures=captured.Fixture;
-assert.ok(leagues&&teams&&fixtures,"Required browser data was not captured");
+const leagues=captured.League,teams=captured.Team,fixtures=captured.Fixture,weekDates=captured.WeekDate;
+assert.ok(leagues&&teams&&fixtures&&weekDates,"Required browser data was not captured");
 const league=leagues.find(l=>l.name.toLowerCase()===TARGET_LEAGUE.toLowerCase());
-const computed=calculateLeagueStandings(league.id,teams,fixtures);
+const computed=calculateLeagueStandings(league.id,teams,fixtures,weekDates);
 assert.deepEqual(computed.map(({position,team,played,legsFor,legsAgainst,points})=>({position,team,played,legsFor,legsAgainst,points})),rendered);
 console.log("BROWSER_PARITY_PASS",rendered.length,"rows");
 console.log("RAW_WEST_GREEN",JSON.stringify(teams.find(t=>t.name==="West Green"),(key,value)=>["code","created_by","created_by_id"].includes(key)?undefined:value));

@@ -7,10 +7,11 @@ export const TARGET_TEAM = "West Green";
 export type League = { id: string; name: string };
 export type LeagueTeam = { id: string; name: string; league_id: string; number?: number | null; points_deduction?: number | null };
 export type LeagueFixture = {
-  id: string; league_id: string; played?: boolean | null;
+  id: string; league_id: string; week?: number | null; played?: boolean | null;
   home_team_id?: string | null; away_team_id?: string | null;
   home_score?: number | null; away_score?: number | null;
 };
+export type LeagueWeekDate = { id: string; league_id: string; week?: number | null; tournament_name?: string | null };
 export type LeagueStanding = {
   position: number; teamId: string; team: string; points: number;
   played: number; legsFor: number; legsAgainst: number;
@@ -27,9 +28,15 @@ const normalise = (value: string) => value.trim().replace(/\s+/g, " ").toLowerCa
 // Port of rD in the public site's index-eIT8_834.js, investigated 2026-09-30.
 // Preserve input team order when every comparator ties: JS sort is stable.
 export function calculateLeagueStandings(
-  leagueId: string, teams: LeagueTeam[], fixtures: LeagueFixture[]
+  leagueId: string, teams: LeagueTeam[], fixtures: LeagueFixture[], weekDates: LeagueWeekDate[] = []
 ): LeagueStanding[] {
-  const leagueFixtures = fixtures.filter(f => f.league_id === leagueId);
+  const leagueFixtures = fixtures.filter(f => {
+    if (f.league_id !== leagueId) return false;
+    // The homepage excludes tournament weeks before passing fixtures to rD.
+    // Use the first matching WeekDate, exactly as the source's Array.find.
+    const week = weekDates.find(w => w.league_id === leagueId && w.week === f.week);
+    return !week?.tournament_name;
+  });
   const standings = teams
     .filter(t => t.league_id === leagueId && t.number !== 14 && !t.name.toLowerCase().includes("no game"))
     .map(team => {
@@ -57,8 +64,8 @@ export function getLeagueWindow(standings: LeagueStanding[], targetTeam = TARGET
     .map(row => row.teamId === matches[0].teamId ? { ...row, target: true as const } : row);
 }
 
-type Entity = League | LeagueTeam | LeagueFixture;
-async function readEntities<T extends Entity>(path: string, kind: "League" | "Team" | "Fixture"): Promise<T[]> {
+type Entity = League | LeagueTeam | LeagueFixture | LeagueWeekDate;
+async function readEntities<T extends Entity>(path: string, kind: "League" | "Team" | "Fixture" | "WeekDate"): Promise<T[]> {
   const response = await fetch(BASE44_API + path, {
     headers: { Accept: "application/json" },
     cache: "no-store",
@@ -73,9 +80,9 @@ async function readEntities<T extends Entity>(path: string, kind: "League" | "Te
       throw new Error(`Invalid or duplicate ${kind} record`);
     }
     ids.add(row.id);
-    if (kind !== "Fixture" && typeof row.name !== "string") throw new Error(`Invalid ${kind} name`);
+    if ((kind === "League" || kind === "Team") && typeof row.name !== "string") throw new Error(`Invalid ${kind} name`);
     if (kind !== "League" && typeof row.league_id !== "string") throw new Error(`Invalid ${kind} league link`);
-    for (const field of kind === "Team" ? ["points_deduction", "number"] : kind === "Fixture" ? ["home_score", "away_score"] : []) {
+    for (const field of kind === "Team" ? ["points_deduction", "number"] : kind === "Fixture" ? ["home_score", "away_score", "week"] : kind === "WeekDate" ? ["week"] : []) {
       if (row[field] != null && (typeof row[field] !== "number" || !Number.isFinite(row[field]))) {
         throw new Error(`Invalid ${kind} ${field}`);
       }
@@ -86,18 +93,19 @@ async function readEntities<T extends Entity>(path: string, kind: "League" | "Te
 }
 
 export async function getWestGreenLeagueContext(): Promise<LeagueContext> {
-  // These are the exact three requests used for the source's home table.
+  // These are the exact four requests used for the source's home table.
   // Keep its global fixture limit/order to reproduce the source, rather than
   // silently changing standings by loading a different set of fixtures.
-  const [leagues, teams, fixtures] = await Promise.all([
+  const [leagues, teams, fixtures, weekDates] = await Promise.all([
     readEntities<League>("League", "League"),
     readEntities<LeagueTeam>("Team", "Team"),
-    readEntities<LeagueFixture>("Fixture?sort=-updated_date&limit=500", "Fixture")
+    readEntities<LeagueFixture>("Fixture?sort=-updated_date&limit=500", "Fixture"),
+    readEntities<LeagueWeekDate>("WeekDate?sort=-created_date&limit=300", "WeekDate")
   ]);
   const matches = leagues.filter(l => normalise(l.name) === normalise(TARGET_LEAGUE));
   if (matches.length !== 1) throw new Error("The target league could not be uniquely identified");
   const league = matches[0];
-  const standings = getLeagueWindow(calculateLeagueStandings(league.id, teams, fixtures));
+  const standings = getLeagueWindow(calculateLeagueStandings(league.id, teams, fixtures, weekDates));
   const target = standings.find(row => row.target)!;
   return {
     league: TARGET_LEAGUE, leagueId: league.id, targetTeam: TARGET_TEAM,

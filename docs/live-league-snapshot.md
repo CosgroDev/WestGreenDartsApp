@@ -22,20 +22,21 @@ team from names on each fetch rather than relying on these record IDs.
 
 ## Exact requests
 
-All three table requests use GET and return JSON arrays:
+All four table requests use GET and return JSON arrays:
 
 1. `https://barnsley-darts-flow.base44.app/api/apps/69c9134c04089b8c59d07d0e/entities/League`
 2. `https://barnsley-darts-flow.base44.app/api/apps/69c9134c04089b8c59d07d0e/entities/Team`
 3. `https://barnsley-darts-flow.base44.app/api/apps/69c9134c04089b8c59d07d0e/entities/Fixture?sort=-updated_date&limit=500`
 
+4. `https://barnsley-darts-flow.base44.app/api/apps/69c9134c04089b8c59d07d0e/entities/WeekDate?sort=-created_date&limit=300`
+
 League and Team have no query parameters. Fixture uses descending update time
 and a global limit of 500, exactly as `Fixture.list("-updated_date", 500)`
 in the site's home-page code. The initial investigation returned 2 leagues,
-28 teams and 393 fixtures.
+28 teams, 393 fixtures and 85 WeekDate records.
 
-The home page also loads `Stat?sort=-created_date&limit=300` for individual
-achievements and `WeekDate?sort=-created_date&limit=300` for dates. Neither
-affects standings, so our integration does not load them. No separate standings
+The home page also loads `Stat?sort=-created_date&limit=300` it does not affect standings. WeekDate is
+essential: tournament weeks are excluded from the table before aggregation. No separate standings
 entity/request was used: the table is computed client-side.
 
 ## Relevant raw response fields
@@ -80,7 +81,10 @@ League records provide `id` and `name`. Teams and fixtures link through
 
 The bundle's `rD` table component:
 
-1. Takes teams and fixtures for the league.
+1. Takes teams and fixtures for the league. For each fixture, the homepage finds
+   the first WeekDate record with matching league_id and week. If that record has
+   a truthy tournament_name, the fixture is excluded, even if marked played.
+   Tournament and knockout results therefore do not contribute league points.
 2. Excludes teams whose number is 14 or whose lower-case name contains "no game".
 3. For each team, includes fixtures marked `played` where it is home or away.
 4. Counts those fixtures as played; sums its own scores as legs for and opposing
@@ -136,7 +140,7 @@ application's API route still requires its existing signed team session.
 This is an undocumented third-party API. Changes to entity permissions, schema,
 app ID, record names, or the source's calculation may require an update.
 The source's 500-fixture cap is deliberately preserved for parity; if the source
-grows beyond it, its displayed table may itself omit results. Do not increase
+grows beyond these limits, its displayed table may itself omit results. Do not increase
 our cap alone without verifying the website's behaviour.
 
 The app refreshes on opening the dashboard and every five minutes while visible.

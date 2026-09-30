@@ -46,7 +46,7 @@ describe("live API reader", () => {
         ? [{ id: "l", name: TARGET_LEAGUE.toUpperCase() }]
         : String(url).endsWith("/Team")
         ? [team("west", { name: "West Green" })]
-        : [fixture("f", "west", "X", 8, 4)]
+        : String(url).includes("/WeekDate?") ? [] : [fixture("f", "west", "X", 8, 4)]
     } as Response));
     const result = await getWestGreenLeagueContext();
     expect(result).toMatchObject({ leagueId: "l", targetPosition: 1, targetPoints: 8 });
@@ -58,4 +58,13 @@ describe("live API reader", () => {
     global.fetch = jest.fn(async () => ({ ok: true, json: async () => ({ data: [] }) } as Response));
     await expect(getWestGreenLeagueContext()).rejects.toThrow("Unexpected");
   });
+});
+
+it("excludes tournament weeks using WeekDate's first matching league/week record", () => {
+  const fixtures = [fixture("league", "A", "X", 7, 5, { week: 1 }), fixture("cup", "A", "X", 4, 5, { week: 2 })];
+  const weeks = [{ id: "w1", league_id: "l", week: 1, tournament_name: "" }, { id: "w2", league_id: "l", week: 2, tournament_name: "Team KO" }];
+  expect(calculateLeagueStandings("l", [team("A")], fixtures, weeks)[0]).toMatchObject({ points: 7, played: 1 });
+  // The source uses find, not any matching record or a set of tournament weeks.
+  const duplicates = [{ id: "first", league_id: "l", week: 2, tournament_name: "" }, ...weeks];
+  expect(calculateLeagueStandings("l", [team("A")], fixtures, duplicates)[0].points).toBe(11);
 });
