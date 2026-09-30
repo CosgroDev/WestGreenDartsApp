@@ -3,10 +3,10 @@ import { getCachedLeagueContext } from "@/data/leagueSnapshot";
 
 export const dynamic = "force-dynamic";
 
-export async function GET() {
+export async function GET(request: Request) {
   await requireSession();
   try {
-    return Response.json(await getCachedLeagueContext(), { headers: { "Cache-Control": "private, no-store" } });
+    return Response.json(await getCachedLeagueContext(new URL(request.url).searchParams.get("refresh") === "1"), { headers: { "Cache-Control": "private, no-store" } });
   } catch {
     return Response.json({ error: "Live league standings are temporarily unavailable" }, {
       status: 502, headers: { "Cache-Control": "private, no-store" }

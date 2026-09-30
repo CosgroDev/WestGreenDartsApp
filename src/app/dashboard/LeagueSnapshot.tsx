@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { isLeagueRefreshWindow, LEAGUE_REFRESH_INTERVAL_MS, LEAGUE_REFRESH_DESCRIPTION } from "@/lib/leagueRefresh";
 import { LEAGUE_SOURCE, TARGET_LEAGUE, type LeagueContext } from "@/lib/liveLeague";
 
 export function LeagueSnapshot() {
@@ -14,14 +15,14 @@ export function LeagueSnapshot() {
     let active = true;
     let busy = false;
     let controller: AbortController | null = null;
-    const load = async () => {
+    const load = async (force = false) => {
       if (busy) return;
       busy = true;
       controller = new AbortController();
       const timeout = window.setTimeout(() => controller?.abort(), 15000);
       if (active) setLoading(true);
       try {
-        const response = await fetch("/api/league-snapshot", { cache: "no-store", signal: controller.signal });
+        const response = await fetch("/api/league-snapshot" + (force ? "?refresh=1" : ""), { cache: "no-store", signal: controller.signal });
         if (!response.ok) throw new Error("League unavailable");
         const data = await response.json() as LeagueContext;
         if (!Array.isArray(data.standings) || !data.standings.some(row => row.target)) throw new Error("Invalid standings");
@@ -34,12 +35,12 @@ export function LeagueSnapshot() {
         if (active) setLoading(false);
       }
     };
-    void load();
-    const interval = window.setInterval(() => { if (document.visibilityState === "visible") void load(); }, 300000);
+    void load(refresh > 0);
+    const interval = window.setInterval(() => { if (document.visibilityState === "visible" && isLeagueRefreshWindow()) void load(); }, LEAGUE_REFRESH_INTERVAL_MS);
     return () => { active = false; window.clearInterval(interval); controller?.abort(); };
   }, [refresh]);
 
-  const stale = context !== null && Date.now() - Date.parse(context.checkedAt) > 10 * 60 * 1000;
+  const stale = context !== null && isLeagueRefreshWindow() && Date.now() - Date.parse(context.checkedAt) > 10 * 60 * 1000;
 
   return (
     <section className="card" aria-labelledby="league-snapshot-title">
@@ -73,9 +74,10 @@ export function LeagueSnapshot() {
               </tbody>
             </table>
           </div>
-          <p className="mt-2 text-xs text-slate-600">Source checked {new Date(context.checkedAt).toLocaleString("en-GB")} · refreshes every 5 minutes</p>
+          <p className="mt-2 text-xs text-slate-600">Source checked {new Date(context.checkedAt).toLocaleString("en-GB")}</p>
         </>
       )}
+      <p className="mt-2 text-xs text-slate-600">{LEAGUE_REFRESH_DESCRIPTION}</p>
       {(failed || stale) && <p role="status" className="mt-3 text-sm text-amber-800">
         {context ? stale ? "This table is over ten minutes old. Showing the last retrieved result while the source refreshes." : "Refresh failed. Showing the last retrieved table." : "The live league table is temporarily unavailable. Please try again."}
       </p>}

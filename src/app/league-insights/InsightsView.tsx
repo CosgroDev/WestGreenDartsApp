@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
+import { isLeagueRefreshWindow, LEAGUE_REFRESH_INTERVAL_MS, LEAGUE_REFRESH_DESCRIPTION } from "@/lib/leagueRefresh";
 import type { LeagueInsights, InsightResult } from "@/lib/leagueInsights";
 const pct = (value: number | null) => value === null ? "—" : (value * 100).toFixed(1) + "%";
 const pp = (value: number | null) => value === null ? "—" : (value >= 0 ? "+" : "") + (value * 100).toFixed(1) + "pp";
@@ -13,13 +14,13 @@ export function InsightsView() {
   useEffect(() => {
     let active = true, busy = false;
     let controller: AbortController | null = null;
-    async function load() {
+    async function load(force = false) {
       if (busy) return;
       busy = true; controller = new AbortController();
       const timer = window.setTimeout(() => controller?.abort(), 20000);
       setLoading(true);
       try {
-        const response = await fetch("/api/league-insights", { cache: "no-store", signal: controller.signal });
+        const response = await fetch("/api/league-insights" + (force ? "?refresh=1" : ""), { cache: "no-store", signal: controller.signal });
         if (!response.ok) throw new Error("Unavailable");
         const result = await response.json() as LeagueInsights;
         if (!Array.isArray(result.teams) || !result.teams.some(t => t.teamId === result.targetId)) throw new Error("Invalid insights");
@@ -27,13 +28,13 @@ export function InsightsView() {
       } catch { if (active) setError(true); }
       finally { window.clearTimeout(timer); busy = false; if (active) setLoading(false); }
     }
-    void load();
-    const interval = window.setInterval(() => { if (document.visibilityState === "visible") void load(); }, 300000);
+    void load(refresh > 0);
+    const interval = window.setInterval(() => { if (document.visibilityState === "visible" && isLeagueRefreshWindow()) void load(); }, LEAGUE_REFRESH_INTERVAL_MS);
     return () => { active = false; controller?.abort(); window.clearInterval(interval); };
   }, [refresh]);
   const target = data?.teams.find(t => t.teamId === data.targetId);
   const opponent = data?.opponents.find(t => t.teamId === selected) ?? data?.opponents[0];
-  const stale = data && Date.now() - Date.parse(data.checkedAt) > 600000;
+  const stale = data && isLeagueRefreshWindow() && Date.now() - Date.parse(data.checkedAt) > 600000;
   return <>
     <section className="card">
       <div className="flex items-start justify-between gap-3">
@@ -41,8 +42,9 @@ export function InsightsView() {
           <p className="mt-1 text-xs text-slate-600">{data ? "Source checked " + new Date(data.checkedAt).toLocaleString("en-GB") : "Loading live results…"}</p></div>
         <button className="btn-secondary text-sm" disabled={loading} onClick={() => setRefresh(n => n + 1)}>{loading ? "Checking…" : "Refresh"}</button>
       </div>
+      <p className="mt-2 text-xs text-slate-600">{LEAGUE_REFRESH_DESCRIPTION}</p>
       {(error || stale) && <p role="status" className="mt-3 text-sm text-amber-800">{data ? "Showing the last retrieved results. The source has not refreshed successfully yet." : "Live results are temporarily unavailable. Please try again."}</p>}
-      <p className="mt-3 text-sm text-slate-600">League match scores, refreshed every five minutes. Form uses league week order; tournament games and byes are excluded. Other teams’ dart averages and checkouts are not supplied by this source.</p>
+      <p className="mt-3 text-sm text-slate-600">League match scores. Form uses league week order; tournament games and byes are excluded. Other teams’ dart averages and checkouts are not supplied by this source.</p>
     </section>
     {data && target && <>
       <section className="grid grid-cols-2 gap-3" aria-label="West Green performance">

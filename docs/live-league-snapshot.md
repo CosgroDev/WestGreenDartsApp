@@ -170,3 +170,4 @@ compared all 14 rows, including the deduction, and separately checked the server
 reader's dynamic window. Subsequent verification also starts our production
 Next server with a temporary local test session, checks signed-session protection
 and API parity, and checks the rendered snapshot at a 390-pixel mobile viewport.
+\n\n## Scheduled refresh (updated)\nBoth snapshot and insights share persistent source data. Automatic checks run every\nfive minutes only Monday 20:00 through Tuesday 23:59 Europe/London while a page is\nopen and visible. Off-window navigation uses cached data; a cold cache fills once.\nManual Refresh always requests ?refresh=1, invalidates the shared source tag and\nawaits a fresh upstream response. Scheduled age checks also run server-side.\nThis supersedes the earlier unconditional five-minute cache descriptions.\n

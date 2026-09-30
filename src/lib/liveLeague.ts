@@ -108,8 +108,8 @@ export async function getLiveLeagueData() {
   return { league, teams, fixtures, weekDates, checkedAt: new Date().toISOString(), source: LEAGUE_SOURCE };
 }
 
-export async function getWestGreenLeagueContext(): Promise<LeagueContext> {
-  const { league, teams, fixtures, weekDates, checkedAt } = await getLiveLeagueData();
+export function buildLeagueContext(data: Awaited<ReturnType<typeof getLiveLeagueData>>): LeagueContext {
+  const { league, teams, fixtures, weekDates, checkedAt } = data;
   const standings = getLeagueWindow(calculateLeagueStandings(league.id, teams, fixtures, weekDates));
   const target = standings.find(row => row.target)!;
   return {
@@ -117,4 +117,8 @@ export async function getWestGreenLeagueContext(): Promise<LeagueContext> {
     targetPosition: target.position, targetPoints: target.points,
     standings, checkedAt, source: LEAGUE_SOURCE
   };
+}
+
+export async function getWestGreenLeagueContext(): Promise<LeagueContext> {
+  return buildLeagueContext(await getLiveLeagueData());
 }
