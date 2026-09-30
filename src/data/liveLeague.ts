@@ -4,7 +4,7 @@ import { shouldRefreshLeague } from "@/lib/leagueRefresh";
 
 const TAG = "live-league-source-v4";
 type Data = Awaited<ReturnType<typeof getLiveLeagueData>>;
-type State = { data?: Data; pending?: Promise<Data>; forced?: boolean };
+type State = { data?: Data; handoffUntil?: number; pending?: Promise<Data>; forced?: boolean };
 const shared = globalThis as typeof globalThis & { __westGreenLeagueSource?: State };
 const state = () => shared.__westGreenLeagueSource ??= {};
 
@@ -12,7 +12,7 @@ const state = () => shared.__westGreenLeagueSource ??= {};
 // shared across route bundles while the persistent cache is being repopulated.
 async function loadSource() {
   const current = state();
-  if (current.data) return current.data;
+  if (current.data && Date.now() < (current.handoffUntil || 0)) return current.data;
   return getLiveLeagueData();
 }
 // Bound callbacks retain a stable identity across compiled route bundles.
@@ -27,15 +27,15 @@ export async function getCachedLiveLeagueData(force = false): Promise<Data> {
   }
   current.forced = force;
   const load = async () => {
-    const data = force ? undefined : current.data ?? await read();
+    const data = force ? undefined : await read();
     if (data && !shouldRefreshLeague(data.checkedAt)) {
-      current.data = data;
       return data;
     }
     // Manual and scheduled refresh await a genuine no-store source request.
     // Invalidate only after success, preserving the old cache on source failure.
     const fresh = await getLiveLeagueData();
     current.data = fresh;
+    current.handoffUntil = Date.now() + 15000;
     revalidateTag(TAG);
     return fresh;
   };
