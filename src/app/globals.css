@@ -261,8 +261,10 @@ textarea {
   border: 1px solid rgba(255, 212, 59, 0.45);
   background: linear-gradient(120deg, rgba(255, 212, 59, 0.14), rgba(250, 176, 5, 0.06));
   color: var(--gold);
-  padding: 10px 14px;
-  font-weight: 700;
+  padding: 16px 18px;
+  font-size: clamp(1.25rem, 5vw, 1.5rem);
+  line-height: 1.4;
+  font-weight: 800;
   animation: finish-pulse 1.8s ease-in-out infinite;
 }
 
@@ -320,4 +322,33 @@ textarea {
   background: var(--green);
   border-color: var(--green);
   box-shadow: 0 0 10px rgba(18, 184, 134, 0.7);
+}
+
+/* Garden pea celebration: the portal stays above app chrome without blocking taps. */
+.pea-rain {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.garden-pea {
+  position: absolute;
+  top: -32px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 32% 28%, #c5ee83, #78b832 38%, #36801d 78%);
+  box-shadow: inset -2px -3px 4px rgba(20, 65, 10, 0.35), 0 2px 3px rgba(0, 0, 0, 0.2);
+  animation-name: pea-fall;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+}
+
+@keyframes pea-fall {
+  from { transform: translate3d(0, -32px, 0) rotate(0deg); }
+  to { transform: translate3d(24px, calc(100vh + 64px), 0) rotate(360deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pea-rain { display: none; }
 }

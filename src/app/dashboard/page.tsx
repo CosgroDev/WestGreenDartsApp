@@ -3,6 +3,7 @@ export const revalidate = 0;
 
 import Link from "next/link";
 import { getPlayerCards, getTeamCard } from "@/data/stats";
+import { compareLeaderboardPlayers } from "@/lib/leaderboard";
 import { getPlayerForm } from "@/data/form";
 import { FormPills } from "@/components/FormPills";
 import { BarChartCard } from "./BarChartCard";
@@ -31,13 +32,8 @@ export default async function DashboardPage() {
     getTeamCard(currentSeasonId || undefined),
     getPlayerForm()
   ]);
-  const winPctOf = (p: (typeof players)[number]) => (p.legs_played > 0 ? p.legs_won / p.legs_played : 0);
-  const playersByLegs = [...players].sort(
-    (a, b) =>
-      (b.legs_won ?? 0) - (a.legs_won ?? 0) ||
-      winPctOf(b) - winPctOf(a) ||
-      (b.three_dart_avg ?? 0) - (a.three_dart_avg ?? 0)
-  );
+  const playersByWinPct = [...players].sort(compareLeaderboardPlayers);
+  const playersByLegs = [...players].sort((a, b) => b.legs_won - a.legs_won);
   const formById = new Map(playerForm.map((f) => [f.player_id, f.matches.map((m) => m.result)]));
   const playersBy3da = [...players].sort((a, b) => (b.three_dart_avg ?? 0) - (a.three_dart_avg ?? 0));
   const playersByFirst9 = [...players].sort((a, b) => (b.first_nine_avg ?? 0) - (a.first_nine_avg ?? 0));
@@ -311,10 +307,10 @@ export default async function DashboardPage() {
 
       <section className="card">
         <h2 className="text-lg font-semibold mb-2">
-          Leaderboard <span className="text-xs font-normal text-slate-500">by legs won · tap a player for game-by-game</span>
+          Leaderboard <span className="text-xs font-normal text-slate-500">by leg win % · tap a player for game-by-game</span>
         </h2>
         <Leaderboard
-          players={playersByLegs}
+          players={playersByWinPct}
           formByPlayer={Object.fromEntries(formById)}
           seasonId={currentSeasonId}
         />
