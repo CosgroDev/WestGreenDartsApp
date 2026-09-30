@@ -35,7 +35,8 @@ and a global limit of 500, exactly as `Fixture.list("-updated_date", 500)`
 in the site's home-page code. The initial investigation returned 2 leagues,
 28 teams, 393 fixtures and 85 WeekDate records.
 
-The home page also loads `Stat?sort=-created_date&limit=300` it does not affect standings. WeekDate is
+The home page also loads `Stat?sort=-created_date&limit=300` for individual
+achievements; it does not affect standings. WeekDate is
 essential: tournament weeks are excluded from the table before aggregation. No separate standings
 entity/request was used: the table is computed client-side.
 
@@ -150,3 +151,22 @@ Previously loaded data remains visible with a refresh-failure message, or an
 unavailable message is shown if no result was obtained. The full source table
 link remains available. A future API/calc change should be investigated again
 using the supplied live verification script.
+
+## Verified live result
+
+At 2026-09-30 22:15 UTC, the public site and direct anonymous server fetch agreed:
+
+| Position | Team | Points |
+| --- | --- | --- |
+| 1 | Cons Club | 117 |
+| 2 | West Green | 117 |
+| 3 | Pack | 112 |
+| 4 | Staincross | 111 |
+| 5 | Higham B | 110 |
+
+These figures document a live verification run; they are not application data
+or a fallback. [Live browser/API verification run](https://github.com/CosgroDev/WestGreenDartsApp/actions/runs/36784447495)
+compared all 14 rows, including the deduction, and separately checked the server
+reader's dynamic window. Subsequent verification also starts our production
+Next server with a temporary local test session, checks signed-session protection
+and API parity, and checks the rendered snapshot at a 390-pixel mobile viewport.

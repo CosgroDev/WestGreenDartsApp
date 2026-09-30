@@ -1,6 +1,7 @@
 import { chromium } from "playwright";
 import ts from "typescript";
 import assert from "node:assert/strict";
+import { spawn } from "node:child_process";
 import { readFile, writeFile, mkdir } from "node:fs/promises";
 await mkdir("league-investigation",{recursive:true});
 const code=ts.transpileModule(await readFile("src/lib/liveLeague.ts","utf8"),{compilerOptions:{target:ts.ScriptTarget.ES2022,module:ts.ModuleKind.ES2022}}).outputText;
@@ -68,4 +69,49 @@ console.log("ANONYMOUS_SERVER_FETCH_PARITY_PASS");
 console.log("LIVE_CONTEXT",JSON.stringify(result,null,2));
 await writeFile("league-investigation/live-result.json",JSON.stringify(result,null,2));
 await writeFile("league-investigation/rendered-standings.json",JSON.stringify(rendered,null,2));
-await browser.close();
+// Exercise the application's real route and mobile dashboard with a temporary
+// signed local test session. No production credentials or database are used.
+const testSecret=crypto.randomUUID();
+const env={...process.env,SESSION_SECRET:testSecret,TEAM_ID:"league-smoke",PIN_HASH:"league-smoke"};
+const server=spawn("npm",["run","start","--","-p","3100"],{env,stdio:["ignore","pipe","pipe"]});
+server.stdout.on("data",chunk=>console.log("LOCAL_APP",String(chunk).trim()));
+server.stderr.on("data",chunk=>console.log("LOCAL_APP_ERROR",String(chunk).trim()));
+try {
+ let ready=false;
+ for(let attempt=0;attempt<30;attempt++){
+  try { const r=await fetch("http://localhost:3100/pin"); if(r.ok){ready=true;break;} } catch {}
+  await new Promise(resolve=>setTimeout(resolve,500));
+ }
+ assert.ok(ready,"Local production server did not become ready");
+ const payload="v1."+String(Math.floor(Date.now()/1000)+30*24*60*60)+"."+crypto.randomUUID();
+ const key=await crypto.subtle.importKey("raw",new TextEncoder().encode(testSecret),{name:"HMAC",hash:"SHA-256"},false,["sign"]);
+ const signed=await crypto.subtle.sign("HMAC",key,new TextEncoder().encode(payload+":league-smoke:league-smoke"));
+ const cookie=payload+"."+Array.from(new Uint8Array(signed),b=>b.toString(16).padStart(2,"0")).join("");
+ const unauth=await fetch("http://localhost:3100/api/league-snapshot",{redirect:"manual"});
+ assert.ok([302,303,307,308].includes(unauth.status),"Snapshot route must require a signed session");
+ const response=await fetch("http://localhost:3100/api/league-snapshot",{headers:{Cookie:"wgd_session="+cookie}});
+ assert.equal(response.status,200,"Application snapshot route must succeed");
+ const appResult=await response.json();
+ const shape=rows=>rows.map(({position,team,points,target})=>({position,team,points,target}));
+ assert.deepEqual(shape(appResult.standings),shape(result.standings));
+ console.log("APPLICATION_API_PARITY_PASS");
+ const local=await browser.newContext({viewport:{width:390,height:844}});
+ await local.addCookies([{name:"wgd_session",value:cookie,domain:"localhost",path:"/"}]);
+ const dashboard=await local.newPage();
+ await dashboard.goto("http://localhost:3100/dashboard",{waitUntil:"networkidle"});
+ const panel=dashboard.locator('section[aria-labelledby="league-snapshot-title"]');
+ await panel.locator("tbody tr").first().waitFor();
+ const panelRows=await panel.locator("tbody tr").evaluateAll(rows=>rows.map(row=>{
+  const c=[...row.querySelectorAll("td,th")];
+  return {position:Number(c[0].innerText),team:c[1].innerText.replace(" (West Green)","").trim(),points:Number(c[2].innerText)};
+ }));
+ assert.deepEqual(panelRows,result.standings.map(({position,team,points})=>({position,team,points})));
+ assert.ok(await panel.locator("tbody tr").filter({hasText:"West Green"}).getAttribute("class").then(c=>c.includes("bg-emerald-50")));
+ assert.equal(await dashboard.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth),true,"Mobile dashboard must not overflow horizontally");
+ await panel.screenshot({path:"league-investigation/application-mobile-snapshot.png"});
+ console.log("MOBILE_DASHBOARD_PARITY_PASS",JSON.stringify(panelRows));
+ await local.close();
+} finally {
+ server.kill("SIGTERM");
+ await browser.close();
+}
