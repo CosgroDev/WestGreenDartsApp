@@ -10,6 +10,7 @@ import { BarChartCard } from "./BarChartCard";
 import { ExportLinks } from "./ExportLinks";
 import { ScoringBreakdown } from "./ScoringBreakdown";
 import { Leaderboard } from "./Leaderboard";
+import { HonoursBoard } from "./HonoursBoard";
 import { SeasonAiSummary } from "./SeasonAiSummary";
 import { getSeasons } from "@/data/seasons";
 import { getFixtures } from "@/data/fixtures";
@@ -71,25 +72,6 @@ export default async function DashboardPage() {
       return { ...f, wins, streak, played: last5.length };
     })
     .sort((a, b) => b.wins - a.wins || b.streak - a.streak)[0];
-
-  const best = <T,>(arr: T[], value: (p: T) => number | null, dir: 1 | -1 = 1) =>
-    arr.reduce<T | null>((acc, p) => {
-      const v = value(p);
-      if (v === null) return acc;
-      if (acc === null) return p;
-      const a = value(acc);
-      return a === null || v * dir > a * dir ? p : acc;
-    }, null);
-  const highFinishLeader = best(players, (p) => p.high_finish);
-  const checkoutLeader = best(players, (p) => p.checkout_pct);
-  const fastestLeader = best(players, (p) => p.darts_per_leg_won, -1);
-  // Ton machine is rate-based so heavy schedules don't dominate:
-  // fewest darts thrown per 100+ visit (includes 140+ and 180s).
-  const tonsLeader = best(
-    players,
-    (p) => (p.hundred_plus > 0 && p.total_darts > 0 ? p.total_darts / p.hundred_plus : null),
-    -1
-  );
 
   const winRate = team.legs_played > 0 ? (team.legs_won / team.legs_played) * 100 : null;
 
@@ -238,51 +220,7 @@ export default async function DashboardPage() {
         </section>
       )}
 
-      {(highFinishLeader || checkoutLeader || fastestLeader || tonsLeader) && (
-        <section className="card">
-          <h2 className="text-lg font-semibold mb-3">Honours board</h2>
-          <div className="grid grid-cols-2 gap-2">
-            {highFinishLeader && (
-              <div className="rounded-2xl border border-amber-200 bg-amber-50 px-3 py-3">
-                <p className="text-[11px] font-semibold uppercase tracking-wide text-amber-700">🎯 Highest finish</p>
-                <p className="mt-1 text-2xl font-bold text-amber-700">{highFinishLeader.high_finish}</p>
-                <p className="text-xs text-slate-600">{highFinishLeader.name}</p>
-              </div>
-            )}
-            {checkoutLeader && (
-              <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-3 py-3">
-                <p className="text-[11px] font-semibold uppercase tracking-wide text-emerald-700">🧊 Coolest finisher</p>
-                <p className="mt-1 text-2xl font-bold text-emerald-700">
-                  {(checkoutLeader.checkout_pct ?? 0).toFixed(0)}%
-                </p>
-                <p className="text-xs text-slate-600">{checkoutLeader.name} · checkout rate</p>
-              </div>
-            )}
-            {fastestLeader && (
-              <div className="rounded-2xl border border-blue-200 bg-blue-50 px-3 py-3">
-                <p className="text-[11px] font-semibold uppercase tracking-wide text-blue-700">⚡ Fastest finisher</p>
-                <p className="mt-1 text-2xl font-bold text-blue-700">
-                  {(fastestLeader.darts_per_leg_won ?? 0).toFixed(1)}
-                </p>
-                <p className="text-xs text-slate-600">{fastestLeader.name} · darts per leg won</p>
-              </div>
-            )}
-            {tonsLeader && (
-              <div className="rounded-2xl border border-purple-200 bg-purple-50 px-3 py-3">
-                <p className="text-[11px] font-semibold uppercase tracking-wide text-purple-700">💯 Ton machine</p>
-                <p className="mt-1 text-2xl font-bold text-purple-700">
-                  {(tonsLeader.total_darts / tonsLeader.hundred_plus).toFixed(0)}
-                  <span className="text-sm font-semibold"> darts</span>
-                </p>
-                <p className="text-xs text-slate-600">
-                  {tonsLeader.name} · a 100+ every {(tonsLeader.total_darts / tonsLeader.hundred_plus).toFixed(0)} darts
-                  ({tonsLeader.hundred_plus} in total)
-                </p>
-              </div>
-            )}
-          </div>
-        </section>
-      )}
+      <HonoursBoard players={players} seasonName={currentSeason?.name} />
 
       {/* Scoring breakdown */}
       <section className="card">

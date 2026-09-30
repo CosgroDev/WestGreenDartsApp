@@ -1,4 +1,5 @@
 import { allRows, rowsForIds } from "@/lib/database";
+import { matchKey } from "@/lib/matchKey";
 import { canFinishFrom } from "@/lib/scoringUtils";
 import { supabaseServer } from "@/lib/supabaseServer";
 
@@ -35,6 +36,12 @@ export type PlayerCard = {
   hundred_forty_plus: number;
   darts_per_leg_won: number | null;
   total_darts: number;
+  matches_played: number;
+  scoring_visits: number;
+  checkout_attempts: number;
+  checkout_hits: number;
+  first_nine_legs: number;
+  recorded_wins: number;
 };
 
 export type TeamCard = {
@@ -80,8 +87,8 @@ export async function getPlayerCards(seasonId?: string, includeInactive = false)
       .from("games")
       .select(
         seasonId
-          ? "id, west_green_player_id, winner, status, completed_at, darts_thrown, fixtures!inner(season_id)"
-          : "id, west_green_player_id, winner, status, completed_at, darts_thrown"
+          ? "id, match_id, fixture_id, opponent_player, west_green_player_id, winner, status, completed_at, darts_thrown, fixtures!inner(season_id)"
+          : "id, match_id, fixture_id, opponent_player, west_green_player_id, winner, status, completed_at, darts_thrown"
       )
       .eq("deleted", false)
       .eq("status", "completed")
@@ -100,6 +107,8 @@ export async function getPlayerCards(seasonId?: string, includeInactive = false)
   const perPlayer = new Map<
     string,
     {
+      matches: Set<string>;
+      scoringVisits: number;
       played: number;
       won: number;
       high_finish: number | null;
@@ -123,6 +132,8 @@ export async function getPlayerCards(seasonId?: string, includeInactive = false)
     if (!pid) return;
     const entry =
       perPlayer.get(pid) || {
+        matches: new Set<string>(),
+        scoringVisits: 0,
         played: 0,
         won: 0,
         high_finish: null,
@@ -140,6 +151,7 @@ export async function getPlayerCards(seasonId?: string, includeInactive = false)
         wonDarts: [] as number[],
         gameIds: [] as string[]
       };
+    entry.matches.add(matchKey(g));
     entry.played += 1;
     if (g.winner === "west_green") {
       entry.won += 1;
@@ -174,6 +186,7 @@ export async function getPlayerCards(seasonId?: string, includeInactive = false)
       const entry = perPlayer.get(pid);
       if (!entry) return;
 
+      entry.scoringVisits += 1;
       if (typeof e.score === "number") entry.totalScore += e.score;
       if (typeof e.darts === "number") entry.totalDarts += e.darts;
       if (e.score === 26) entry.t26 += 1;
@@ -257,6 +270,12 @@ export async function getPlayerCards(seasonId?: string, includeInactive = false)
       hundred_forty_plus: val.t140plus,
       darts_per_leg_won,
       total_darts: val.totalDarts,
+      matches_played: val.matches.size,
+      scoring_visits: val.scoringVisits,
+      checkout_attempts: val.checkoutAttempts,
+      checkout_hits: val.checkoutHits,
+      first_nine_legs: val.first9Darts / 9,
+      recorded_wins: val.wonDarts.length,
     });
   }
 

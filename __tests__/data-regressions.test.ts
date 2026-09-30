@@ -32,6 +32,12 @@ it("aggregates real player cards without awarding bust points or opponent visits
   expect(card.one_eighty).toBe(2);
   expect(card.high_finish).toBe(141);
   expect(card.checkout_pct).toBe(50);
+  expect(card.matches_played).toBe(1);
+  expect(card.scoring_visits).toBe(4);
+  expect(card.checkout_attempts).toBe(2);
+  expect(card.checkout_hits).toBe(1);
+  expect(card.first_nine_legs).toBe(1);
+  expect(card.recorded_wins).toBe(0);
 });
 it("reports achieved 121 targets and leaves best checkout empty for a session with no finishes", async () => {
   database({game_121_sessions:[
@@ -47,6 +53,9 @@ it("counts repeated pairings as separate matches in form and season results", as
     status:'completed',deleted:false,winner:i<6?'west_green':'opponent',created_at:`2026-09-08T19:${String(i).padStart(2,'0')}:00Z`,
     fixtures:{id:'f',season_id:'s',opponent:'Visitors',home:true,starts_at:'2026-09-08T19:00:00Z'}}));
   database({players:[{id:'p',name:'Player',active:true}],games});
+  const [card] = await getPlayerCards("s");
+  expect(card.matches_played).toBe(6);
+  expect(card.legs_played).toBe(12);
   expect((await getPlayerForm())[0].matches).toHaveLength(6);
   const season=await getSeasonToDate('s');
   expect(season?.completedFixtures).toBe(1);
