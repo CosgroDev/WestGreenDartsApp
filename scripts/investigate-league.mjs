@@ -7,6 +7,9 @@ await mkdir("league-investigation",{recursive:true});
 const code=ts.transpileModule(await readFile("src/lib/liveLeague.ts","utf8"),{compilerOptions:{target:ts.ScriptTarget.ES2022,module:ts.ModuleKind.ES2022}}).outputText;
 await writeFile("league-investigation/liveLeague.mjs",code);
 const {getWestGreenLeagueContext,calculateLeagueStandings,BASE44_API,TARGET_LEAGUE}=await import("../league-investigation/liveLeague.mjs");
+const insightCode=ts.transpileModule(await readFile("src/lib/leagueInsights.ts","utf8"),{compilerOptions:{target:ts.ScriptTarget.ES2022,module:ts.ModuleKind.ES2022}}).outputText.replace('"./liveLeague"','"./liveLeague.mjs"');
+await writeFile("league-investigation/leagueInsights.mjs",insightCode);
+const {getLeagueInsights,buildLeagueInsights}=await import("../league-investigation/leagueInsights.mjs");
 const browser=await chromium.launch();
 const page=await browser.newPage();
 const captured={};
@@ -66,6 +69,16 @@ const result=await getWestGreenLeagueContext();
 assert.deepEqual(result.standings.map(({position,team,points})=>({position,team,points})),
  rendered.filter(row=>row.position>=Math.max(1,result.targetPosition-3)&&row.position<=result.targetPosition+3).map(({position,team,points})=>({position,team,points})));
 console.log("ANONYMOUS_SERVER_FETCH_PARITY_PASS");
+const insights=await getLeagueInsights();
+const fromBrowser=buildLeagueInsights({league,teams,fixtures,weekDates,checkedAt:insights.checkedAt,source:insights.source});
+assert.deepEqual(insights,fromBrowser);
+assert.deepEqual(insights.teams.map(({position,team,points})=>({position,team,points})),rendered.map(({position,team,points})=>({position,team,points})));
+console.log("LIVE_INSIGHTS_PARITY_PASS",JSON.stringify({
+ results:insights.results.length,teams:insights.teams.length,west:insights.teams.find(t=>t.teamId===insights.targetId),
+ forecasts:insights.forecasts,validation:insights.validation,omitted:insights.omittedResults,
+ adjustedStrength:insights.adjustedStrength,scheduleStrength:insights.scheduleStrength
+}));
+await writeFile("league-investigation/live-insights.json",JSON.stringify(insights,null,2));
 console.log("LIVE_CONTEXT",JSON.stringify(result,null,2));
 await writeFile("league-investigation/live-result.json",JSON.stringify(result,null,2));
 await writeFile("league-investigation/rendered-standings.json",JSON.stringify(rendered,null,2));
@@ -110,6 +123,23 @@ try {
  assert.equal(await dashboard.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth),true,"Mobile dashboard must not overflow horizontally");
  await panel.screenshot({path:"league-investigation/application-mobile-snapshot.png"});
  console.log("MOBILE_DASHBOARD_PARITY_PASS",JSON.stringify(panelRows));
+ const unauthInsights=await fetch("http://localhost:3100/api/league-insights",{redirect:"manual"});
+ assert.ok([302,303,307,308].includes(unauthInsights.status));
+ const insightResponse=await fetch("http://localhost:3100/api/league-insights",{headers:{Cookie:"wgd_session="+cookie}});
+ assert.equal(insightResponse.status,200);
+ const servedInsights=await insightResponse.json();
+ assert.deepEqual(servedInsights.teams,insights.teams);
+ assert.deepEqual(servedInsights.forecasts,insights.forecasts);
+ await dashboard.getByRole("link",{name:"League insights →",exact:true}).click();
+ await dashboard.getByRole("heading",{name:"How we compare",exact:true}).waitFor();
+ assert.equal(await dashboard.locator("table").first().locator("tbody tr").count(),rendered.length);
+ await dashboard.locator("#insight-opponent").selectOption(insights.opponents.at(-1).teamId);
+ await dashboard.getByRole("heading",{name:"Meetings this season",exact:true}).waitFor();
+ assert.equal(await dashboard.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth),true,"Mobile insights must not overflow");
+ await dashboard.screenshot({path:"league-investigation/application-mobile-insights.png",fullPage:true});
+ console.log("MOBILE_INSIGHTS_AND_AUTHENTICATED_API_PASS");
+ await dashboard.setViewportSize({width:1280,height:900});
+ await dashboard.screenshot({path:"league-investigation/application-desktop-insights.png",fullPage:true});
  await local.close();
 } finally {
  if (server.pid) {

@@ -165,6 +165,10 @@ export default async function DashboardPage() {
         </div>
       </section>
 
+      <Link href="/league-insights" className="card flex items-center justify-between gap-3">
+        <div><p className="font-semibold">League insights</p><p className="mt-1 text-sm text-slate-600">Team form, head-to-head results and upcoming fixture estimates</p></div>
+        <span className="text-emerald-800">→</span>
+      </Link>
       <LeagueSnapshot />
 
       {seasonToDate && seasonToDate.anomalies.length > 0 && (

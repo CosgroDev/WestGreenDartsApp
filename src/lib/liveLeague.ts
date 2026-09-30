@@ -92,7 +92,7 @@ async function readEntities<T extends Entity>(path: string, kind: "League" | "Te
   return rows as T[];
 }
 
-export async function getWestGreenLeagueContext(): Promise<LeagueContext> {
+export async function getLiveLeagueData() {
   // These are the exact four requests used for the source's home table.
   // Keep its global fixture limit/order to reproduce the source, rather than
   // silently changing standings by loading a different set of fixtures.
@@ -105,11 +105,16 @@ export async function getWestGreenLeagueContext(): Promise<LeagueContext> {
   const matches = leagues.filter(l => normalise(l.name) === normalise(TARGET_LEAGUE));
   if (matches.length !== 1) throw new Error("The target league could not be uniquely identified");
   const league = matches[0];
+  return { league, teams, fixtures, weekDates, checkedAt: new Date().toISOString(), source: LEAGUE_SOURCE };
+}
+
+export async function getWestGreenLeagueContext(): Promise<LeagueContext> {
+  const { league, teams, fixtures, weekDates, checkedAt } = await getLiveLeagueData();
   const standings = getLeagueWindow(calculateLeagueStandings(league.id, teams, fixtures, weekDates));
   const target = standings.find(row => row.target)!;
   return {
     league: TARGET_LEAGUE, leagueId: league.id, targetTeam: TARGET_TEAM,
     targetPosition: target.position, targetPoints: target.points,
-    standings, checkedAt: new Date().toISOString(), source: LEAGUE_SOURCE
+    standings, checkedAt, source: LEAGUE_SOURCE
   };
 }
