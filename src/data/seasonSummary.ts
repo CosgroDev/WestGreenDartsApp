@@ -49,11 +49,11 @@ export type SeasonToDate = {
  * leg count, most recent last. `completedFixtures` is the fingerprint the
  * dashboard uses to decide when the AI season summary needs regenerating.
  */
-export async function getSeasonToDate(seasonId: string): Promise<SeasonToDate | null> {
-  const supabase = await supabaseServer();
-  if (!supabase || !seasonId) return null;
+export async function getSeasonToDate(seasonId: string, sharedGames?: any[]): Promise<SeasonToDate | null> {
+  const supabase = sharedGames ? null : await supabaseServer();
+  if ((!supabase && !sharedGames) || !seasonId) return null;
 
-  const { data: games, error } = await allRows(() => supabase
+  const { data: games, error } = sharedGames ? { data: sharedGames, error: null } : await allRows(() => supabase!
     .from("games")
     .select(
       "id, match_id, fixture_id, west_green_player_id, opponent_player, winner, status, created_at, fixtures!inner(id, opponent, home, starts_at, season_id)"

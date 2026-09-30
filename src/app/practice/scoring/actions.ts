@@ -1,4 +1,5 @@
 "use server";
+import { practiceScoreSnapshot, missingSnapshotRPC } from "@/lib/scoreSnapshot";
 import { stableRead } from "@/lib/stableRead";
 import { scoringCommand } from "@/lib/scoringCommand";
 
@@ -23,7 +24,12 @@ async function fetchEvents(gameId: string) {
   return (data as any[]) || [];
 }
 
-export async function loadPracticeStateAction(gameId: string) {
+export async function loadPracticeStateAction(gameId: string): Promise<any> {
+  const db = await supabaseServer();
+  if (!db) return { ok: false, message: "Database not configured" };
+  const { data, error } = await db.rpc("wgd_score_snapshot", { p_game: gameId, p_team: process.env.TEAM_ID, p_practice: true });
+  if (!error) return practiceScoreSnapshot(data);
+  if (!missingSnapshotRPC(error, "wgd_score_snapshot")) return { ok: false, message: error.message };
   return stableRead("practice_games", gameId, () => readState(gameId));
 }
 
@@ -71,9 +77,11 @@ async function readState(gameId: string) {
 
 export async function recordPracticeVisitAction(gameId: string, side: "a" | "b", score: number, dartsOverride = 3, revision?: number, requestId?: string): Promise<any> {
   if (!Number.isInteger(score) || score < 0 || score > 180 || !Number.isInteger(dartsOverride) || dartsOverride < 1 || dartsOverride > 3 || !["a", "b"].includes(side)) return { ok: false, message: "Invalid score or dart count" };
-  const result = await scoringCommand(gameId, true, "record", {side: side === "a" ? "player_a" : "player_b", score, darts: dartsOverride, revision, requestId});
+  const result = await scoringCommand(gameId, true, "record", {side: side === "a" ? "player_a" : "player_b", score, darts: dartsOverride, revision, requestId, returnState: true});
   if (result.ok) revalidatePath("/practice");
-  return result;
+  if (!result.ok) return result;
+  const state = result.state ? practiceScoreSnapshot(result.state) : await loadPracticeStateAction(gameId);
+  return { ...state, undidThrower: result.undidThrower };
 }
 
 export async function deletePracticeSessionFromScoringAction(sessionId: string) {
@@ -86,8 +94,10 @@ export async function deletePracticeSessionFromScoringAction(sessionId: string) 
   return { ok: true };
 }
 
-export async function undoLastPracticeVisitAction(gameId: string, revision?: number): Promise<any> {
-  const result = await scoringCommand(gameId, true, "undo", {revision});
+export async function undoLastPracticeVisitAction(gameId: string, revision?: number, requestId?: string): Promise<any> {
+  const result = await scoringCommand(gameId, true, "undo", {revision, requestId, returnState: true});
   if (result.ok) revalidatePath("/practice");
-  return result;
+  if (!result.ok) return result;
+  const state = result.state ? practiceScoreSnapshot(result.state) : await loadPracticeStateAction(gameId);
+  return { ...state, undidThrower: result.undidThrower };
 }

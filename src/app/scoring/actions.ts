@@ -1,4 +1,5 @@
 "use server";
+import { leagueScoreSnapshot, missingSnapshotRPC } from "@/lib/scoreSnapshot";
 import { stableRead } from "@/lib/stableRead";
 
 import { revalidatePath } from "next/cache";
@@ -129,7 +130,12 @@ export async function getLegSummariesAction(gameId: string) {
   return { ok: true, summaries };
 }
 
-export async function loadGameStateAction(gameId: string) {
+export async function loadGameStateAction(gameId: string): Promise<any> {
+  const db = await supabaseServer();
+  if (!db) return { ok: false, message: "Database not configured" };
+  const { data, error } = await db.rpc("wgd_score_snapshot", { p_game: gameId, p_team: process.env.TEAM_ID, p_practice: false });
+  if (!error) return withSummaries(leagueScoreSnapshot(data));
+  if (!missingSnapshotRPC(error, "wgd_score_snapshot")) return { ok: false, message: error.message };
   return stableRead("games", gameId, () => readState(gameId));
 }
 
@@ -188,12 +194,19 @@ async function readState(gameId: string) {
   return { ok: true, visits, remaining, finishHint, meta };
 }
 
+function withSummaries(state: any) {
+  const summaries = (state.completedLegs ?? []).map((leg: any) => ({
+    ...buildLegSummary(leg.winner === "west_green" ? "west" : "opponent", leg.events), gameId: leg.id
+  }));
+  return { ...state, summaries };
+}
+
 export async function recordVisitAction(gameId: string, score: number, dartsOverride = 3, side: "west_green" | "opponent" = "west_green", revision?: number, requestId?: string): Promise<any> {
   if (!Number.isInteger(score) || score < 0 || score > 180 || !Number.isInteger(dartsOverride) || dartsOverride < 1 || dartsOverride > 3) return { ok: false, message: "Invalid score or dart count" };
-  const result = await scoringCommand(gameId, false, "record", { side, score, darts: dartsOverride, revision, requestId });
+  const result = await scoringCommand(gameId, false, "record", { side, score, darts: dartsOverride, revision, requestId, returnState: true });
   if (!result.ok) return result;
   revalidateAllDashboards();
-  const state = await loadGameStateAction(gameId);
+  const state = result.state ? withSummaries(leagueScoreSnapshot(result.state)) : await loadGameStateAction(gameId);
   if (state.meta?.fixture_id) revalidatePath(`/fixtures/${state.meta.fixture_id}`);
   return state;
 }
@@ -204,8 +217,8 @@ export async function newLegAction(gameId: string): Promise<any> {
   return { ok: true, gameId: result.next_game_id };
 }
 
-export async function undoLastVisitAction(gameId: string, revision?: number): Promise<any> {
-  const result = await scoringCommand(gameId, false, "undo", { revision });
+export async function undoLastVisitAction(gameId: string, revision?: number, requestId?: string): Promise<any> {
+  const result = await scoringCommand(gameId, false, "undo", { revision, requestId, returnState: true });
   if (!result.ok) return result;
   revalidateAllDashboards();
   const state = await loadGameStateAction(gameId);

@@ -1,5 +1,6 @@
 "use client";
-import { useAsyncTask } from "@/lib/useAsyncTask";
+import { useScoreTask } from "@/lib/useScoreTask";
+import { ScoreSaveStatus } from "@/components/ScoreSaveStatus";
 import { canFinishFrom } from "@/lib/scoringUtils";
 
 import { useEffect, useState } from "react";
@@ -89,7 +90,7 @@ export default function PracticeScoringClient() {
   const [activeSide, setActiveSide] = useState<"a" | "b">("a");
   const [finishHintA, setFinishHintA] = useState<string | null>(null);
   const [finishHintB, setFinishHintB] = useState<string | null>(null);
-  const [pending, startTransition] = useAsyncTask();
+  const { pending, run: startTransition, error: saveError, saved, retry: retrySave, clearError: clearSaveError } = useScoreTask();
   const [meta, setMeta] = useState<any>(null);
   const [alert, setAlert] = useState<string | null>(null);
   const [statsA, setStatsA] = useState<LegStats | null>(null);
@@ -114,6 +115,7 @@ export default function PracticeScoringClient() {
     if (!gameId) return;
     startTransition(async () => {
       const res = await loadPracticeStateAction(gameId);
+      if (!res.ok || !res.meta) throw new Error(res.message || "Could not load this game.");
       applyState(res);
     });
   }, [gameId]);
@@ -128,29 +130,28 @@ export default function PracticeScoringClient() {
   const activeFinishHint = activeSide === "a" ? finishHintA : finishHintB;
 
   const handleKey = (n: number) => {
+    if (pending || saveError) return;
     setInputScore((prev) => {
       const next = Number(`${prev}${n}`);
       return next > 180 ? prev : next;
     });
   };
-  const clearInput = () => setInputScore(0);
+  const clearInput = () => { if (!pending && !saveError) setInputScore(0); };
 
   const submitScore = (darts = 3, checkoutScore?: number) => {
     if (!gameId || !meta || gameStatus === "completed") return;
-    if (pending) return;
+    if (pending || saveError) return;
     const score = checkoutScore ?? inputScore;
     const remaining = activeSide === "a" ? remainingA : remainingB;
     if (checkoutScore === undefined && score === remaining && canFinishFrom(remaining)) { setFinishScore(score); return; }
+    const requestId = crypto.randomUUID();
     startTransition(async () => {
-      const res = await recordPracticeVisitAction(gameId, activeSide, score, darts, meta?.revision, crypto.randomUUID());
-      if (!res.ok) {
-        setAlert((res as any).message ?? "Error recording score");
-        return;
-      }
+      const res = await recordPracticeVisitAction(gameId, activeSide, score, darts, meta?.revision, requestId);
+      if (!res.ok) throw new Error(res.message ?? "Could not save the score.");
       setAlert(null);
       clearInput();
       setFinishScore(null);
-      const reload = await loadPracticeStateAction(gameId);
+      const reload = res;
       applyState(reload);
       if (reload.ok && reload.meta?.status !== "completed") {
         setActiveSide(activeSide === "a" ? "b" : "a");
@@ -160,15 +161,25 @@ export default function PracticeScoringClient() {
 
   const undo = () => {
     if (!gameId) return;
+    const requestId = crypto.randomUUID();
     startTransition(async () => {
-      const res = await undoLastPracticeVisitAction(gameId, meta?.revision);
-      if (!res.ok) { setAlert(res.message); return; }
-      const reload = await loadPracticeStateAction(gameId);
+      const res = await undoLastPracticeVisitAction(gameId, meta?.revision, requestId);
+      if (!res.ok) throw new Error(res.message || "Could not update the score.");
+      const reload = res;
       applyState(reload);
       setAlert(null);
       const thrower = (res as any).undidThrower;
       if (thrower === "player_a") setActiveSide("a");
       else if (thrower === "player_b") setActiveSide("b");
+    });
+  };
+
+  const reloadLatest = () => {
+    if (!gameId || pending) return;
+    startTransition(async () => {
+      const res = await loadPracticeStateAction(gameId);
+      if (!res.ok || !res.meta) throw new Error(res.message || "Could not reload the score.");
+      applyState(res); clearSaveError(); setAlert(null);
     });
   };
 
@@ -188,7 +199,7 @@ export default function PracticeScoringClient() {
   };
 
   if (!gameId) {
-    return <div className="card text-sm text-slate-600">Loading…</div>;
+    return <div className="card text-sm text-slate-600"><p>Loading…</p><ScoreSaveStatus pending={pending} saved={saved} error={saveError} retry={retrySave} reload={reloadLatest} /></div>;
   }
 
   // Post-leg summary
@@ -218,7 +229,7 @@ export default function PracticeScoringClient() {
 
         <div className="card flex flex-col gap-2">
           {alert && <p role="alert" className="text-sm text-red-700">{alert}</p>}
-          <button onClick={undo} disabled={pending} className="btn-secondary">Undo checkout</button>
+          <button onClick={undo} disabled={pending || saveError !== null} className="btn-secondary">Undo checkout</button>
           {sessionStatus === "completed" ? (
             <>
               <p className="text-sm font-semibold text-slate-700">Session complete</p>
@@ -318,7 +329,7 @@ export default function PracticeScoringClient() {
             className={`px-3 py-1 rounded-md text-sm font-semibold ${
               activeSide === "a" ? "bg-emerald-600 text-white" : "bg-slate-200 text-slate-800"
             }`}
-            onClick={() => setActiveSide("a")}
+            disabled={pending || saveError !== null} onClick={() => setActiveSide("a")}
           >
             {playerAName}
           </button>
@@ -326,7 +337,7 @@ export default function PracticeScoringClient() {
             className={`px-3 py-1 rounded-md text-sm font-semibold ${
               activeSide === "b" ? "bg-emerald-600 text-white" : "bg-slate-200 text-slate-800"
             }`}
-            onClick={() => setActiveSide("b")}
+            disabled={pending || saveError !== null} onClick={() => setActiveSide("b")}
           >
             {playerBName}
           </button>
@@ -360,12 +371,13 @@ export default function PracticeScoringClient() {
         </div>
       </div>
 
-      {alert && <div className="text-sm text-red-600 rounded-md bg-red-50 px-3 py-2">{alert}</div>}
+      {alert && <div role="alert" className="text-sm text-red-800 rounded-md bg-red-50 px-3 py-2">{alert}</div>}
+      <ScoreSaveStatus pending={pending} saved={saved} error={saveError} retry={retrySave} reload={reloadLatest} />
 
       {finishScore !== null && <div className="rounded-md bg-emerald-50 p-3">
         <p>How many darts on the checkout?</p>
-        {[1, 2, 3].map(d => <button key={d} className="btn-secondary m-1" disabled={pending || !canFinishFrom(finishScore, d)} onClick={() => submitScore(d, finishScore)}>{d} dart{d > 1 ? "s" : ""}</button>)}
-        <button className="btn-secondary" onClick={() => setFinishScore(null)}>Cancel</button>
+        {[1, 2, 3].map(d => <button key={d} className="btn-secondary m-1" disabled={pending || saveError !== null || !canFinishFrom(finishScore, d)} onClick={() => submitScore(d, finishScore)}>{d} dart{d > 1 ? "s" : ""}</button>)}
+        <button className="btn-secondary" disabled={pending || saveError !== null} onClick={() => setFinishScore(null)}>Cancel</button>
       </div>}
       {/* Numpad */}
       <div className="grid grid-cols-3 gap-2">

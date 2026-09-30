@@ -1,5 +1,6 @@
 "use client";
-import { useAsyncTask } from "@/lib/useAsyncTask";
+import { useScoreTask } from "@/lib/useScoreTask";
+import { ScoreSaveStatus } from "@/components/ScoreSaveStatus";
 
 export const dynamic = "force-dynamic";
 export const revalidate = false;
@@ -52,11 +53,12 @@ export default function ScoringPage() {
 
   const [celebration, setCelebration] = useState<{ kind: LegCelebration; sequence: number } | null>(null);
   const [visits, setVisits] = useState<Visit[]>([]);
-  const [saving, startTransition] = useAsyncTask();
+  const { pending: saving, run: startTransition, error: saveError, saved, retry: retrySave, clearError: clearSaveError } = useScoreTask();
   const [loading, setLoading] = useState(true);
   const pending = saving || loading;
   const [alert, setAlert] = useState<string | null>(null);
   const [gameMeta, setGameMeta] = useState<any>(null);
+  const inputLocked = pending || saveError !== null || !gameMeta;
   const [activeSide, setActiveSide] = useState<"west" | "opponent">("west");
   const [inputScore, setInputScore] = useState("");
   const [oppRemaining, setOppRemaining] = useState(START_SCORE);
@@ -114,7 +116,7 @@ export default function ScoringPage() {
         if (!next.ok) { setAlert(next.message); return; }
         router.replace(`/scoring?game=${next.gameId}${fixtureId ? `&fixture=${fixtureId}` : ""}&home=${isHome ? "1" : "0"}`);
       }
-      const summaries = await getLegSummariesAction(gameId);
+      const summaries = res.summaries ? { ok: true, summaries: res.summaries } : await getLegSummariesAction(gameId);
       if (summaries.ok) setLegSummaries(summaries.summaries.map((l: LegSummaryWire) => ({...l, threeDA: l.dartsTotal ? l.pointsTotal / l.dartsTotal * 3 : null})));
     })().catch(() => { if (!cancelled) setAlert("Could not load the score. Reload and try again."); })
       .finally(() => { if (!cancelled) setLoading(false); });
@@ -127,14 +129,15 @@ export default function ScoringPage() {
   }, [remaining]);
 
   const appendDigit = (d: number) => {
+    if (inputLocked) return;
     const next = (inputScore + d.toString()).replace(/^0+/, "");
     setInputScore(next.slice(0, 3));
   };
 
-  const submitVisit = async (score: number, side: "west" | "opponent", darts = 3) => {
+  const submitVisit = async (score: number, side: "west" | "opponent", darts: number, requestId: string) => {
     if (!gameId || !gameMeta) return;
-    const res = await recordVisitAction(gameId, score, darts, side === "west" ? "west_green" : "opponent", gameMeta.revision, crypto.randomUUID());
-    if (!res.ok) { setAlert(res.message); return; }
+    const res = await recordVisitAction(gameId, score, darts, side === "west" ? "west_green" : "opponent", gameMeta.revision, requestId);
+    if (!res.ok) throw new Error(res.message || "Could not save the score.");
     applyState(res);
     setInputScore(""); setFinishPrompt(null); setAlert(null);
     const kind = getLegCelebration(res.meta?.status, res.meta?.winner, mapVisits(res));
@@ -142,7 +145,7 @@ export default function ScoringPage() {
       setCelebration((previous) => ({ kind, sequence: (previous?.sequence ?? 0) + 1 }));
     }
     if (res.meta?.status === "completed") {
-      const summaries = await getLegSummariesAction(gameId);
+      const summaries = res.summaries ? { ok: true, summaries: res.summaries } : await getLegSummariesAction(gameId);
       if (summaries.ok) setLegSummaries(summaries.summaries.map((l: LegSummaryWire) => ({...l, threeDA: l.dartsTotal ? l.pointsTotal / l.dartsTotal * 3 : null})));
       if ((res.meta.legs?.west ?? 0) + (res.meta.legs?.opp ?? 0) < 2) {
         const next = await newLegAction(gameId);
@@ -152,21 +155,37 @@ export default function ScoringPage() {
     }
   };
   const addScore = (score: number) => {
-    if (pending || !gameMeta || isCompleted || !Number.isInteger(score) || score < 0 || score > 180) return;
+    if (inputLocked || !gameMeta || isCompleted || !Number.isInteger(score) || score < 0 || score > 180) return;
     const currentRemaining = activeSide === "west" ? remaining : oppRemaining;
     if (isValidCheckoutLocal(currentRemaining, score)) {
       setFinishPrompt({score, side: activeSide}); return;
     }
-    startTransition(() => submitVisit(score, activeSide));
+    const requestId = crypto.randomUUID();
+    startTransition(() => submitVisit(score, activeSide, 3, requestId));
   };
   const undo = () => {
-    if (!gameId || !gameMeta || pending) return;
+    if (!gameId || !gameMeta || inputLocked) return;
+    const requestId = crypto.randomUUID();
     startTransition(async () => {
-      const res = await undoLastVisitAction(gameId, gameMeta.revision);
-      if (!res.ok) { setAlert(res.message); return; }
+      const res = await undoLastVisitAction(gameId, gameMeta.revision, requestId);
+      if (!res.ok) throw new Error(res.message || "Could not update the score.");
       applyState(res); setAlert(null);
-      const summaries = await getLegSummariesAction(gameId);
+      const summaries = res.summaries ? { ok: true, summaries: res.summaries } : await getLegSummariesAction(gameId);
       if (summaries.ok) setLegSummaries(summaries.summaries.map((l: LegSummaryWire) => ({...l, threeDA: l.dartsTotal ? l.pointsTotal / l.dartsTotal * 3 : null})));
+    });
+  };
+
+  const reloadLatest = () => {
+    if (!gameId || pending) return;
+    startTransition(async () => {
+      const res = await loadGameStateAction(gameId);
+      if (!res.ok || !res.meta) throw new Error(res.message || "Could not reload the score.");
+      applyState(res); clearSaveError(); setAlert(null);
+      if (res.meta.status === "completed" && (res.meta.legs?.west ?? 0) + (res.meta.legs?.opp ?? 0) < 2) {
+        const next = res.meta.nextGameId ? { ok: true, gameId: res.meta.nextGameId } : await newLegAction(gameId);
+        if (!next.ok) throw new Error(next.message || "Could not start the next leg.");
+        router.replace(`/scoring?game=${next.gameId}${fixtureId ? `&fixture=${fixtureId}` : ""}&home=${isHome ? "1" : "0"}`);
+      }
     });
   };
 
@@ -208,7 +227,7 @@ export default function ScoringPage() {
           type="button"
           className={`score-panel ${activeSide === "west" && !isCompleted ? "active" : ""}`}
           onClick={() => setActiveSide("west")}
-          disabled={finishPrompt !== null || isCompleted}
+          disabled={inputLocked || finishPrompt !== null || isCompleted}
         >
           <p className="truncate text-sm font-semibold text-slate-700">{wgdName}</p>
           <p key={`w-${displayRemaining}`} className="score-remaining score-pop mt-1 text-6xl text-emerald-700">
@@ -244,7 +263,8 @@ export default function ScoringPage() {
           </span>
         </div>
       )}
-      {alert && <p className="text-center text-sm font-semibold text-emerald-700">{alert}</p>}
+      {alert && <div role="alert" className="text-sm text-red-800"><p>{alert}</p><button className="btn-secondary mt-2" disabled={pending} onClick={reloadLatest}>Reload latest score</button></div>}
+      <ScoreSaveStatus pending={saving} saved={saved} error={saveError} retry={retrySave} reload={reloadLatest} />
       {isCompleted && (
         <div className="flex flex-col gap-2">
           {gameId && (
@@ -278,7 +298,7 @@ export default function ScoringPage() {
                   type="button"
                   className="chip border border-slate-300 bg-slate-100 px-3.5 py-1.5 text-sm text-slate-700 transition hover:border-emerald-300 active:scale-95"
                   onClick={() => addScore(q)}
-                  disabled={pending}
+                  disabled={inputLocked}
                 >
                   {q}
                 </button>
@@ -287,7 +307,7 @@ export default function ScoringPage() {
 
             <div className="grid grid-cols-3 gap-2">
               {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((n) => (
-                <button key={n} type="button" className="keypad-key" onClick={() => appendDigit(n)}>
+                <button key={n} type="button" className="keypad-key" disabled={inputLocked} onClick={() => appendDigit(n)}>
                   {n}
                 </button>
               ))}
@@ -295,6 +315,7 @@ export default function ScoringPage() {
                 type="button"
                 className="keypad-key text-xl text-slate-500"
                 onClick={() => setInputScore((s) => s.slice(0, -1))}
+                disabled={inputLocked}
                 aria-label="Delete digit"
               >
                 ⌫
@@ -335,8 +356,8 @@ export default function ScoringPage() {
                   key={d}
                   type="button"
                   className="keypad-key !text-lg"
-                  disabled={pending || !canFinishFrom(finishPrompt.score, d)}
-                  onClick={() => startTransition(() => submitVisit(finishPrompt.score, finishPrompt.side, d))}
+                  disabled={inputLocked || !canFinishFrom(finishPrompt.score, d)}
+                  onClick={() => { const requestId = crypto.randomUUID(); startTransition(() => submitVisit(finishPrompt.score, finishPrompt.side, d, requestId)); }}
                 >
                   {d} dart{d > 1 ? "s" : ""}
                 </button>
@@ -345,6 +366,7 @@ export default function ScoringPage() {
             <button
               type="button"
               className="text-sm font-semibold text-red-600 underline"
+              disabled={inputLocked}
               onClick={() => setFinishPrompt(null)}
             >
               Cancel
