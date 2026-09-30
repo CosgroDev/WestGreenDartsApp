@@ -73,7 +73,7 @@ await writeFile("league-investigation/rendered-standings.json",JSON.stringify(re
 // signed local test session. No production credentials or database are used.
 const testSecret=crypto.randomUUID();
 const env={...process.env,SESSION_SECRET:testSecret,TEAM_ID:"league-smoke",PIN_HASH:"league-smoke"};
-const server=spawn("npm",["run","start","--","-p","3100"],{env,stdio:["ignore","pipe","pipe"]});
+const server=spawn("npm",["run","start","--","-p","3100"],{env,detached:true,stdio:["ignore","pipe","pipe"]});
 server.stdout.on("data",chunk=>console.log("LOCAL_APP",String(chunk).trim()));
 server.stderr.on("data",chunk=>console.log("LOCAL_APP_ERROR",String(chunk).trim()));
 try {
@@ -112,6 +112,11 @@ try {
  console.log("MOBILE_DASHBOARD_PARITY_PASS",JSON.stringify(panelRows));
  await local.close();
 } finally {
- server.kill("SIGTERM");
+ if (server.pid) {
+  try { process.kill(-server.pid,"SIGTERM"); } catch {}
+ }
+ server.stdout.destroy();
+ server.stderr.destroy();
+ server.unref();
  await browser.close();
 }
