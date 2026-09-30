@@ -8,8 +8,9 @@ import { useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { finishRoutes } from "@/lib/finishRoutes";
 import { canFinishFrom } from "@/lib/scoringUtils";
-import { isPeaCelebration } from "@/lib/scoringCelebration";
+import { getLegCelebration, type LegCelebration } from "@/lib/scoringCelebration";
 import { PeaCelebration } from "@/components/PeaCelebration";
+import { LogCelebration } from "@/components/LogCelebration";
 import {
   loadGameStateAction,
   recordVisitAction,
@@ -49,7 +50,7 @@ export default function ScoringPage() {
   const fixtureId = searchParams.get("fixture");
   const gameId = searchParams.get("game");
 
-  const [celebration, setCelebration] = useState(0);
+  const [celebration, setCelebration] = useState<{ kind: LegCelebration; sequence: number } | null>(null);
   const [visits, setVisits] = useState<Visit[]>([]);
   const [saving, startTransition] = useAsyncTask();
   const [loading, setLoading] = useState(true);
@@ -136,8 +137,9 @@ export default function ScoringPage() {
     if (!res.ok) { setAlert(res.message); return; }
     applyState(res);
     setInputScore(""); setFinishPrompt(null); setAlert(null);
-    if (isPeaCelebration(res.meta?.status, res.meta?.winner, mapVisits(res))) {
-      setCelebration((count) => count + 1);
+    const kind = getLegCelebration(res.meta?.status, res.meta?.winner, mapVisits(res));
+    if (kind) {
+      setCelebration((previous) => ({ kind, sequence: (previous?.sequence ?? 0) + 1 }));
     }
     if (res.meta?.status === "completed") {
       const summaries = await getLegSummariesAction(gameId);
@@ -178,7 +180,8 @@ export default function ScoringPage() {
 
   return (
     <main className="flex flex-col gap-3 fade-up">
-      {celebration > 0 && <PeaCelebration key={celebration} />}
+      {celebration?.kind === "peas" && <PeaCelebration key={celebration.sequence} />}
+      {celebration?.kind === "log" && <LogCelebration key={celebration.sequence} />}
       <header className="flex items-center justify-between gap-2">
         <a
           className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-slate-100 text-slate-700 hover:bg-slate-200"
