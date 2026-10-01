@@ -26,18 +26,22 @@ export type FixtureDetail = {
   aiTeamReviewAt: string | null;
 };
 
-export async function getFixtures(): Promise<Fixture[]> {
+export async function getFixtures(seasonId?: string, includeGames = true): Promise<Fixture[]> {
   const supabase = await supabaseServer();
   if (!supabase) return [];
 
-  const { data, error } = await allRows(() => supabase
+  const { data, error } = await allRows(() => {
+    let query = supabase
     .from("fixtures")
     .select(
       `id, starts_at, opponent, venue, notes, home,
-       seasons(name),
-       games:games(status,winner,deleted)`
+       seasons(name)
+       ${includeGames ? ", games:games(status,winner,deleted)" : ""}`
     )
-    .order("starts_at", { ascending: true }).order("id", { ascending: true }));
+    .order("starts_at", { ascending: true }).order("id", { ascending: true });
+    if (seasonId) query = query.eq("season_id", seasonId);
+    return query;
+  });
 
   if (error || !data) return [];
 
@@ -54,7 +58,7 @@ export async function getFixtures(): Promise<Fixture[]> {
       home: f.home,
       games_count: activeGames.length,
       games: activeGames,
-      status: (() => {
+      status: !includeGames ? undefined : (() => {
         // No games added yet → the fixture is merely scheduled/upcoming.
         if (activeGames.length === 0) return "scheduled";
         // Any game still being played → the fixture is actively in progress,

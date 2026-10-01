@@ -70,20 +70,40 @@ const TEAM_CARD_EMPTY: TeamCard = {
   one_eighty_count: 0,
 };
 
-export async function getPlayerCards(seasonId?: string, includeInactive = false): Promise<PlayerCard[]> {
-  const supabase = await supabaseServer();
-  if (!supabase) return [];
+export type SeasonStatisticsData = { players: any[]; games: any[]; events: any[] };
+export async function loadSeasonStatistics(seasonId?: string): Promise<SeasonStatisticsData> {
+  const db = await supabaseServer();
+  if (!db) return { players: [], games: [], events: [] };
+  const [playerRows, gameRows] = await Promise.all([
+    allRows(() => db.from("players").select("id, name, active").order("id")),
+    allRows(() => {
+      let query = db.from("games").select(
+        "id, match_id, fixture_id, opponent_player, west_green_player_id, winner, status, created_at, completed_at, darts_thrown, fixtures!inner(id, opponent, home, starts_at, season_id)"
+      ).eq("deleted", false).order("created_at").order("id");
+      if (seasonId) query = query.eq("fixtures.season_id", seasonId);
+      return query;
+    })
+  ]);
+  const games = gameRows.data;
+  const events = await fetchAllScoringEvents(db, games.filter(g => g.status === "completed").map(g => g.id),
+    "id, game_id, throw_index, score, darts, is_bust, is_checkout, remaining_after, is_deleted", "throw_index");
+  return { players: playerRows.data, games, events };
+}
 
-  const { data: activePlayers, error: playersErr } = await allRows(() => {
-    const query = supabase.from("players").select("id, name").order("id");
+export async function getPlayerCards(seasonId?: string, includeInactive = false, shared?: SeasonStatisticsData): Promise<PlayerCard[]> {
+  const supabase = shared ? null : await supabaseServer();
+  if (!supabase && !shared) return [];
+
+  const { data: activePlayers, error: playersErr } = shared ? { data: shared.players.filter(p => includeInactive || p.active === true), error: null } : await allRows(() => {
+    const query = supabase!.from("players").select("id, name").order("id");
     return includeInactive ? query : query.eq("active", true);
   });
   if (playersErr || !activePlayers || !activePlayers.length) return [];
   const activeIds = new Set(activePlayers.map((p: any) => p.id));
 
   // Completed games for active players, optionally scoped to a season via fixture join
-  const { data: games, error: gamesErr } = await allRows(() => {
-    let gamesQuery = supabase
+  const { data: games, error: gamesErr } = shared ? { data: shared.games.filter(g => g.status === "completed" && activeIds.has(g.west_green_player_id)), error: null } : await allRows(() => {
+    let gamesQuery = supabase!
       .from("games")
       .select(
         seasonId
@@ -165,10 +185,9 @@ export async function getPlayerCards(seasonId?: string, includeInactive = false)
 
   // Fetch scoring events for all those games
   const allGameIds = games.map((g: any) => g.id);
-  const events = await fetchAllScoringEvents(
-    supabase,
-    allGameIds,
-    "game_id, score, darts, is_bust, is_checkout, remaining_after, is_deleted"
+  const events = shared ? shared.events : await fetchAllScoringEvents(
+    supabase!, allGameIds,
+    "game_id, score, darts, is_bust, is_checkout, remaining_after, is_deleted", "throw_index"
   );
 
   if (events) {
@@ -430,13 +449,13 @@ export async function getPlayerGameLog(
   });
 }
 
-export async function getTeamCard(seasonId?: string): Promise<TeamCard> {
-  const supabase = await supabaseServer();
-  if (!supabase) return TEAM_CARD_EMPTY;
+export async function getTeamCard(seasonId?: string, shared?: SeasonStatisticsData): Promise<TeamCard> {
+  const supabase = shared ? null : await supabaseServer();
+  if (!supabase && !shared) return TEAM_CARD_EMPTY;
 
   // Fetch completed games (ignore deleted), optionally scoped to a season via fixture join
-  const { data: games, error: gamesErr } = await allRows(() => {
-    let gamesQuery = supabase
+  const { data: games, error: gamesErr } = shared ? { data: shared.games.filter(g => g.status === "completed"), error: null } : await allRows(() => {
+    let gamesQuery = supabase!
       .from("games")
       .select(
         seasonId
@@ -477,8 +496,8 @@ export async function getTeamCard(seasonId?: string): Promise<TeamCard> {
 
   if (games.length) {
     const gameIds = games.map((g: any) => g.id);
-    const events = await fetchAllScoringEvents(
-      supabase,
+    const events = shared ? shared.events : await fetchAllScoringEvents(
+      supabase!,
       gameIds,
       "score, darts, is_bust, is_checkout, remaining_after"
     );

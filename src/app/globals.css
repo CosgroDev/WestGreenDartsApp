@@ -395,3 +395,12 @@ textarea {
 @media (prefers-reduced-motion: reduce) {
   .log-celebration { display: none; }
 }
+
+/* Low-motion users keep the scores and hints without continuous visual effects. */
+@media (prefers-reduced-motion: reduce) {
+  .score-panel.active, .score-pop, .finish-banner, .fade-up, .shake { animation: none !important; }
+}
+button:disabled { cursor: wait; }
+button:focus-visible, summary:focus-visible, a:focus-visible, select:focus-visible {
+  outline: 2px solid var(--green); outline-offset: 3px;
+}

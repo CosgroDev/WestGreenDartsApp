@@ -104,7 +104,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         <nav className="bottom-nav" aria-label="Primary">
           <div className="bottom-nav-inner">
             {NAV_ITEMS.map((item) => {
-              const active = pathname === item.href || pathname.startsWith(`${item.href}/`);
+              const active = pathname === item.href || pathname.startsWith(`${item.href}/`) || (item.href === "/dashboard" && pathname === "/league-insights");
               return (
                 <Link key={item.href} href={item.href} className={`bottom-nav-item ${active ? "active" : ""}`}>
                   {item.icon}

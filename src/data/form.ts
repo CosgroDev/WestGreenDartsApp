@@ -23,23 +23,27 @@ export type PlayerForm = {
  * game (leg) records for one player vs one opponent within a fixture —
  * the same grouping the fixture detail page uses.
  */
-export async function getPlayerForm(): Promise<PlayerForm[]> {
-  const supabase = await supabaseServer();
-  if (!supabase) return [];
+export async function getPlayerForm(seasonId?: string, shared?: { players: any[]; games: any[] }): Promise<PlayerForm[]> {
+  const supabase = shared ? null : await supabaseServer();
+  if (!supabase && !shared) return [];
 
-  const { data: activePlayers, error: playersErr } = await allRows(() => supabase
+  const { data: activePlayers, error: playersErr } = shared ? { data: shared.players.filter(p => p.active === true), error: null } : await allRows(() => supabase!
     .from("players")
     .select("id, name")
     .eq("active", true).order("id", { ascending: true }));
   if (playersErr || !activePlayers || !activePlayers.length) return [];
 
-  const { data: games, error: gamesErr } = await allRows(() => supabase
-    .from("games")
-    .select("id, match_id, fixture_id, west_green_player_id, opponent_player, winner, status, created_at, completed_at")
-    .eq("deleted", false)
-    .eq("status", "completed")
-    .in("west_green_player_id", activePlayers.map((p: any) => p.id))
-    .order("created_at", { ascending: true }).order("id", { ascending: true }));
+  const activeIds = new Set(activePlayers.map((p: any) => p.id));
+  const { data: games, error: gamesErr } = shared ? {
+    data: shared.games.filter(g => activeIds.has(g.west_green_player_id)), error: null
+  } : await allRows(() => {
+    let query = supabase!.from("games")
+      .select("id, match_id, fixture_id, west_green_player_id, opponent_player, winner, status, created_at, completed_at, fixtures!inner(season_id)")
+      .eq("deleted", false).in("west_green_player_id", Array.from(activeIds))
+      .order("created_at", { ascending: true }).order("id", { ascending: true });
+    if (seasonId) query = query.eq("fixtures.season_id", seasonId);
+    return query;
+  });
   if (gamesErr || !games) return [];
 
   type Group = {
@@ -51,6 +55,7 @@ export async function getPlayerForm(): Promise<PlayerForm[]> {
     drawFlag: boolean;
     firstDate: string;
     lastDate: string;
+    completed: number; inProgress: boolean;
   };
   const groups = new Map<string, Group>();
   games.forEach((g: any) => {
@@ -66,8 +71,11 @@ export async function getPlayerForm(): Promise<PlayerForm[]> {
         oppWins: 0,
         drawFlag: false,
         firstDate: g.created_at,
-        lastDate: g.created_at
+        lastDate: g.created_at,
+        completed: 0, inProgress: false
       } as Group);
+    if (g.status !== "completed") { entry.inProgress = true; groups.set(key, entry); return; }
+    entry.completed++;
     if (g.winner === "west_green") entry.westWins += 1;
     else if (g.winner === "opponent") entry.oppWins += 1;
     // a single completed record with no winner is the legacy draw representation
@@ -94,6 +102,7 @@ export async function getPlayerForm(): Promise<PlayerForm[]> {
 
   const perPlayer = new Map<string, MatchResult[]>();
   groups.forEach((m) => {
+    if (m.inProgress || (m.completed < 2 && !m.drawFlag)) return;
     const result: "W" | "D" | "L" =
       m.drawFlag || m.westWins === m.oppWins ? "D" : m.westWins > m.oppWins ? "W" : "L";
     const list = perPlayer.get(m.player_id) || [];

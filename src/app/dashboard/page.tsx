@@ -2,11 +2,12 @@ export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 import Link from "next/link";
-import { getPlayerCards, getTeamCard } from "@/data/stats";
-import { compareLeaderboardPlayers } from "@/lib/leaderboard";
-import { getPlayerForm } from "@/data/form";
+import { getDashboardStatistics } from "@/data/dashboard";
+import { Suspense } from "react";
+import { ResumeMatch } from "./ResumeMatch";
+import { PerformanceCharts } from "./PerformanceCharts";
+import { buildPerformanceLeaderboard } from "@/lib/playerPerformance";
 import { FormPills } from "@/components/FormPills";
-import { BarChartCard } from "./BarChartCard";
 import { ExportLinks } from "./ExportLinks";
 import { ScoringBreakdown } from "./ScoringBreakdown";
 import { Leaderboard } from "./Leaderboard";
@@ -15,26 +16,18 @@ import { LeagueSnapshot } from "./LeagueSnapshot";
 import { SeasonAiSummary } from "./SeasonAiSummary";
 import { getSeasons } from "@/data/seasons";
 import { getFixtures } from "@/data/fixtures";
-import { getSeasonToDate, getStoredSeasonSummary } from "@/data/seasonSummary";
+import { getStoredSeasonSummary } from "@/data/seasonSummary";
 
 export default async function DashboardPage() {
-  const [seasons, fixtures] = await Promise.all([getSeasons(), getFixtures()]);
-  const currentSeason = seasons.find((s) => s.is_current);
+  const seasons = await getSeasons();
+  const currentSeason = seasons.find(s => s.is_current);
   const currentSeasonId = currentSeason?.id ?? "";
-
-  const [seasonToDate, storedSeasonSummary] = await Promise.all([
-    currentSeasonId ? getSeasonToDate(currentSeasonId) : Promise.resolve(null),
-    currentSeasonId
-      ? getStoredSeasonSummary(currentSeasonId)
-      : Promise.resolve({ summary: null, at: null, fixtures: null })
+  const [{ players, team, playerForm, seasonToDate }, storedSeasonSummary, fixtures] = await Promise.all([
+    getDashboardStatistics(currentSeasonId || undefined),
+    currentSeasonId ? getStoredSeasonSummary(currentSeasonId) : Promise.resolve({ summary: null, at: null, fixtures: null }),
+    getFixtures(undefined, false)
   ]);
-
-  const [players, team, playerForm] = await Promise.all([
-    getPlayerCards(currentSeasonId || undefined),
-    getTeamCard(currentSeasonId || undefined),
-    getPlayerForm()
-  ]);
-  const playersByWinPct = [...players].sort(compareLeaderboardPlayers);
+  const performance = buildPerformanceLeaderboard(players);
   const playersByLegs = [...players].sort((a, b) => b.legs_won - a.legs_won);
   const formById = new Map(playerForm.map((f) => [f.player_id, f.matches.map((m) => m.result)]));
   const playersBy3da = [...players].sort((a, b) => (b.three_dart_avg ?? 0) - (a.three_dart_avg ?? 0));
@@ -93,6 +86,8 @@ export default async function DashboardPage() {
           </a>
         )}
       </header>
+
+      <Suspense fallback={<div className="card text-sm text-slate-600" role="status">Checking for a live match…</div>}><ResumeMatch /></Suspense>
 
       <section className="grid grid-cols-1 gap-3">
         <div className="card">
@@ -194,8 +189,8 @@ export default async function DashboardPage() {
       )}
 
       {currentSeasonId && (
-        <section className="card !border-amber-200" style={{ boxShadow: "0 0 24px rgba(255, 212, 59, 0.08)" }}>
-          <h2 className="text-lg font-semibold mb-2">✨ AI season summary</h2>
+        <details className="card !border-amber-200" style={{ boxShadow: "0 0 24px rgba(255, 212, 59, 0.08)" }}>
+          <summary className="cursor-pointer text-lg font-semibold mb-2">✨ AI season summary</summary>
           <SeasonAiSummary
             seasonId={currentSeasonId}
             configured={Boolean(process.env.ANTHROPIC_API_KEY)}
@@ -204,7 +199,7 @@ export default async function DashboardPage() {
             initialAt={storedSeasonSummary.at}
             initialFixtures={storedSeasonSummary.fixtures}
           />
-        </section>
+        </details>
       )}
 
       {hotPlayer && hotPlayer.wins > 0 && (
@@ -252,10 +247,11 @@ export default async function DashboardPage() {
 
       <section className="card">
         <h2 className="text-lg font-semibold mb-2">
-          Leaderboard <span className="text-xs font-normal text-slate-500">by leg win % · tap a player for game-by-game</span>
+          Leaderboard <span className="text-xs font-normal text-slate-500">season performance · tap a player for game-by-game</span>
         </h2>
         <Leaderboard
-          players={playersByWinPct}
+          players={players}
+          performance={performance}
           formByPlayer={Object.fromEntries(formById)}
           seasonId={currentSeasonId}
         />
@@ -280,33 +276,18 @@ export default async function DashboardPage() {
         </section>
       )}
 
-      <section className="grid grid-cols-1 gap-3">
-        {legsWonData.length > 0 && (
-          <BarChartCard
-            title="Legs won"
-            subtitle="who's putting points on the board"
-            data={legsWonData}
-            color="#12b886"
-          />
-        )}
-        {checkoutData.length > 0 && (
-          <BarChartCard
-            title="Checkout %"
-            subtitle="composure on the doubles"
-            data={checkoutData}
-            color="#ffd43b"
-            suffix="%"
-          />
-        )}
-        <BarChartCard title="3-Dart Average" subtitle="overall scoring power" data={chartData} color="#2fc08a" />
-        <BarChartCard title="First 9 Average" subtitle="who starts a leg fastest" data={first9Data} color="#d9a52b" />
-        <BarChartCard title="26s Hit" subtitle="the wall of shame" data={t26Data} color="#9775fa" />
-      </section>
+      <PerformanceCharts charts={[
+        { title: "Legs won", subtitle: "who’s putting points on the board", data: legsWonData, color: "#12b886" },
+        { title: "Checkout %", subtitle: "composure on the doubles", data: checkoutData, color: "#ffd43b", suffix: "%" },
+        { title: "3-Dart Average", subtitle: "overall scoring power", data: chartData, color: "#2fc08a" },
+        { title: "First 9 Average", subtitle: "who starts a leg fastest", data: first9Data, color: "#d9a52b" },
+        { title: "26s Hit", subtitle: "the wall of shame", data: t26Data, color: "#9775fa" }
+      ]} />
 
-      <section className="card">
-        <h2 className="text-lg font-semibold mb-2">Exports</h2>
+      <details className="card">
+        <summary className="cursor-pointer text-lg font-semibold">Exports</summary>
         <ExportLinks seasons={seasons} fixtures={fixtures} currentSeasonId={currentSeasonId} />
-      </section>
+      </details>
     </main>
   );
 }

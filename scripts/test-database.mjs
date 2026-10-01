@@ -18,7 +18,9 @@ for (const folder of readdirSync('supabase/migrations', {withFileTypes: true}).f
 const migration = readFileSync('supabase/migrations/20260908193204_audit_scoring_and_access_fixes.sql', 'utf8');
 await db.exec(migration);
 await db.exec(migration);
-console.log('Schema and migration apply successfully, including a repeat application.');
+const snapshots=readFileSync('supabase/migrations/20261001090000_scoring_snapshots.sql','utf8');
+await db.exec(snapshots); await db.exec(snapshots);
+console.log('Schema and both migrations apply successfully, including repeat applications.');
 const team = randomUUID(), player = randomUUID(), fixture = randomUUID(), match = randomUUID();
 await db.query('insert into teams(id,name) values($1,$2)', [team,'Test team']);
 await db.query('insert into players(id,team_id,name) values($1,$2,$3)', [player,team,'Test player']);
@@ -101,9 +103,25 @@ await drill('doubles',ds,0,{round_index:0,target:1,phase:'sequence',dart_hit:1,p
  {round_index:1,current_target:2,phase:'sequence',score:3,hits:1,first_dart_hits:1});
 assert.equal((await db.query('select score from doubles_practice_players where id=$1',[dp])).rows[0].score,3);
 console.log('Completion failure rollback and atomic checkout, 121 and doubles commands pass.');
+// One write-and-state RPC returns coherent data and remains idempotent.
+const fresh=await game(), oneRequest=randomUUID();
+const fast=await db.query('select wgd_score_command_state($1,$2,0,$3,false,$4,$5,60,3) result',[fresh,team,oneRequest,'record','west_green']);
+assert.equal(fast.rows[0].result.state.meta.revision,1);
+assert.equal(fast.rows[0].result.state.events[0].remaining_after,441);
+await db.query('select wgd_score_command_state($1,$2,0,$3,false,$4,$5,60,3)',[fresh,team,oneRequest,'record','west_green']);
+assert.equal((await db.query('select count(*)::int n from scoring_events where game_id=$1',[fresh])).rows[0].n,1);
+await assert.rejects(db.query('select wgd_score_snapshot($1,$2,false)',[fresh,randomUUID()]),/Fixture not found/);
+const leagueState=(await db.query('select wgd_score_snapshot($1,$2,false) result',[fresh,team])).rows[0].result;
+assert.equal(leagueState.meta.players.name,'Test player');
+assert.equal(leagueState.events.length,1);
+const practiceState=(await db.query('select wgd_score_snapshot($1,$2,true) result',[pg2,team])).rows[0].result;
+assert.equal(practiceState.meta.practice_sessions.start_score,40);
+assert.equal(practiceState.meta.revision,2);
+console.log('Single-call score snapshots: coherent revisions, player metadata, retry deduplication and team isolation pass.');
 await db.exec('set role anon');
 await assert.rejects(db.query('select * from games'), /permission denied/);
 await assert.rejects(command(id,9,'west_green',0), /permission denied/);
+await assert.rejects(db.query('select wgd_score_snapshot($1,$2,false)',[fresh,team]),/permission denied/);
 await db.exec('reset role');
 console.log('Anonymous table access and scoring RPC access are denied.');
 await db.close();

@@ -41,10 +41,11 @@ export function predictedHomeShare(model: Model, homeId: string, awayId: string)
   return clamp(0.5 + (model.strengths[homeId] || 0) - (model.strengths[awayId] || 0) + model.home);
 }
 
-export function backtest(teamIds: string[], results: InsightResult[]) {
+function analysePastPredictions(teamIds: string[], results: InsightResult[]) {
   const dated = results.filter(r => r.week !== null);
   const weeks = [...new Set(dated.map(r => r.week!))].sort((a, b) => a - b);
   let count = 0, error = 0, baselineError = 0;
+  const residuals: number[] = [];
   for (const week of weeks) {
     const training = dated.filter(r => r.week! < week);
     if (training.length < 20) continue;
@@ -52,30 +53,22 @@ export function backtest(teamIds: string[], results: InsightResult[]) {
     const baseline = training.reduce((sum, r) => sum + r.homeScore / (r.homeScore + r.awayScore), 0) / training.length;
     for (const r of dated.filter(r => r.week === week)) {
       const total = r.homeScore + r.awayScore;
-      error += Math.abs(predictedHomeShare(model, r.homeId, r.awayId) * total - r.homeScore);
+      const residual = r.homeScore - predictedHomeShare(model, r.homeId, r.awayId) * total;
+      residuals.push(residual);
+      error += Math.abs(residual);
       baselineError += Math.abs(baseline * total - r.homeScore);
       count++;
     }
   }
-  return { matches: count, meanAbsoluteLegError: count ? error / count : null,
-    baselineLegError: count ? baselineError / count : null };
+  return { residuals, validation: { matches: count, meanAbsoluteLegError: count ? error / count : null,
+    baselineLegError: count ? baselineError / count : null } };
 }
-
-
+export function backtest(teamIds: string[], results: InsightResult[]) {
+  return analysePastPredictions(teamIds, results).validation;
+}
 type RemainingFixture = { id: string; week: number | null; homeId: string; awayId: string };
 export function getHistoricalLegErrors(teamIds: string[], results: InsightResult[]) {
-  const dated = results.filter(r => r.week !== null);
-  const weeks = [...new Set(dated.map(r => r.week!))].sort((a, b) => a - b);
-  const errors: number[] = [];
-  for (const week of weeks) {
-    const training = dated.filter(r => r.week! < week);
-    if (training.length < 20) continue;
-    const fitted = fitStrengths(teamIds, training);
-    for (const r of dated.filter(r => r.week === week)) {
-      errors.push(r.homeScore - predictedHomeShare(fitted, r.homeId, r.awayId) * (r.homeScore + r.awayScore));
-    }
-  }
-  return errors;
+  return analysePastPredictions(teamIds, results).residuals;
 }
 function seededRandom(seed: string) {
   let value = 2166136261;
@@ -196,7 +189,7 @@ export function buildLeagueInsights(data: Awaited<ReturnType<typeof getLiveLeagu
   const lastPlayedWeek = Math.max(-1, ...results.filter(r => r.week !== null).map(r => r.week!));
   const remainingFixtures = eligible.filter(f => !f.played)
     .sort((a, b) => (a.week ?? Number.MAX_SAFE_INTEGER) - (b.week ?? Number.MAX_SAFE_INTEGER) || a.id.localeCompare(b.id));
-  const historicalErrors = getHistoricalLegErrors(ids, results);
+  const { residuals: historicalErrors, validation } = analysePastPredictions(ids, results);
   const fixtureError = historicalErrors.length >= 20 ? [...historicalErrors].sort((a, b) => a - b) : [];
   const forecasts = remainingFixtures.filter(f =>
     f.home_team_id === target.teamId || f.away_team_id === target.teamId).map(f => {
@@ -248,7 +241,6 @@ export function buildLeagueInsights(data: Awaited<ReturnType<typeof getLiveLeagu
       .filter(r => r.target.played && r.opponent.played);
     return { teamId: t.teamId, team: t.team, direct, common };
   });
-  const validation = backtest(ids, results);
   const targetStats = stats.find(t => t.teamId === target.teamId)!;
   const scheduleStrength = targetStats.played ? results
     .filter(r => r.homeId === target.teamId || r.awayId === target.teamId)

@@ -44,11 +44,8 @@ export default async function FixturesPage({
 
   const defaultSeasonName = searchParams?.season || activeSeasonName || "all";
 
-  const fixturesAll = await getFixtures();
-  const fixtures =
-    seasonFilterName && seasonFilterName !== "all"
-      ? fixturesAll.filter((f) => f.season === seasonFilterName)
-      : fixturesAll;
+  const selectedSeasonId = seasonFilterName ? uniqueSeasons.find(s => s.name === seasonFilterName)?.id : undefined;
+  const fixtures = seasonFilterName && !selectedSeasonId ? [] : await getFixtures(selectedSeasonId);
   // derive record from the filtered fixtures (fixtures can draw, individual legs cannot)
   const completedGames = fixtures.flatMap((f) => f.games || []).filter((g) => g.status === "completed");
   const legWins = completedGames.filter((g) => g.winner === "west_green").length;
@@ -88,7 +85,7 @@ export default async function FixturesPage({
     .sort((a, b) => time(b) - time(a));
 
   // Suggested team for the next fixture, from recent form
-  const suggestion = upcoming ? suggestTeam(await getPlayerForm()) : null;
+  const suggestion = upcoming ? suggestTeam(await getPlayerForm(selectedSeasonId)) : null;
 
   const renderFixture = (fixture: (typeof fixtures)[number]) => (
     <div key={fixture.id} className="card hover:border-emerald-200 transition py-3">

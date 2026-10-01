@@ -1,4 +1,4 @@
-import { allRows } from "@/lib/database";
+import { allRows, rowsForIds } from "@/lib/database";
 import { supabaseServer } from "@/lib/supabaseServer";
 
 export type Game = {
@@ -39,16 +39,17 @@ export async function getGamesForFixture(fixtureId: string): Promise<Game[]> {
     return [];
   }
 
-  const gamesWithStats = await Promise.all(
-    gamesRaw.map(async (g: any) => {
-      const { data: events } = await allRows(() => supabase
-        .from("scoring_events")
-        .select("score, remaining_after, is_checkout, is_bust, is_deleted, darts")
-    .eq("thrower", "west_green")
-        .eq("game_id", g.id)
-        .order("throw_index", { ascending: true })
-        .order("id", { ascending: true }));
-      const activeEvents = (events || []).filter((e) => e.is_deleted !== true);
+  const events = await rowsForIds(gamesRaw.map((g: any) => g.id), ids => supabase
+    .from("scoring_events").select("game_id, score, remaining_after, is_checkout, is_bust, darts")
+    .in("game_id", ids).eq("thrower", "west_green").eq("is_deleted", false)
+    .order("throw_index", { ascending: true }).order("id", { ascending: true }));
+  const byGame = new Map<string, any[]>();
+  for (const event of events) {
+    const list = byGame.get(event.game_id) ?? [];
+    list.push(event); byGame.set(event.game_id, list);
+  }
+  const gamesWithStats = gamesRaw.map((g: any) => {
+    const activeEvents = byGame.get(g.id) ?? [];
 
     const buckets = {
       sixty: 0,
@@ -114,8 +115,7 @@ export async function getGamesForFixture(fixtureId: string): Promise<Game[]> {
         three_dart_avg,
         first_nine_avg
       } as Game;
-    })
-  );
+    });
 
   return gamesWithStats;
 }
