@@ -149,7 +149,7 @@ export default function PracticeScoringClient() {
       const res = await recordPracticeVisitAction(gameId, activeSide, score, darts, meta?.revision, requestId);
       if (!res.ok) throw new Error(res.message ?? "Could not save the score.");
       setAlert(null);
-      clearInput();
+      setInputScore(0);
       setFinishScore(null);
       const reload = res;
       applyState(reload);
@@ -160,7 +160,7 @@ export default function PracticeScoringClient() {
   };
 
   const undo = () => {
-    if (!gameId) return;
+    if (!gameId || !meta || pending || saveError) return;
     const requestId = crypto.randomUUID();
     startTransition(async () => {
       const res = await undoLastPracticeVisitAction(gameId, meta?.revision, requestId);
@@ -228,6 +228,7 @@ export default function PracticeScoringClient() {
         </div>
 
         <div className="card flex flex-col gap-2">
+          <ScoreSaveStatus pending={pending} saved={saved} error={saveError} retry={retrySave} reload={reloadLatest} />
           {alert && <p role="alert" className="text-sm text-red-700">{alert}</p>}
           <button onClick={undo} disabled={pending || saveError !== null} className="btn-secondary">Undo checkout</button>
           {sessionStatus === "completed" ? (
@@ -273,7 +274,7 @@ export default function PracticeScoringClient() {
                 <button
                   className="rounded-md bg-red-600 px-3 py-1.5 text-sm font-semibold text-white hover:bg-red-700 disabled:opacity-50"
                   onClick={deleteSession}
-                  disabled={pending}
+                  disabled={pending || saveError !== null || !meta}
                 >
                   Yes, delete
                 </button>
@@ -386,7 +387,7 @@ export default function PracticeScoringClient() {
             key={n}
             className="rounded-md border border-slate-300 bg-white py-4 text-lg font-semibold hover:bg-slate-50 active:bg-slate-100"
             onClick={() => handleKey(n)}
-            disabled={pending}
+            disabled={pending || saveError !== null || !meta}
           >
             {n}
           </button>
@@ -394,21 +395,21 @@ export default function PracticeScoringClient() {
         <button
           className="rounded-md bg-emerald-600 text-white py-3 font-semibold hover:bg-emerald-700 disabled:opacity-50"
           onClick={() => submitScore()}
-          disabled={pending}
+          disabled={pending || saveError !== null || !meta}
         >
           Enter
         </button>
         <button
           className="rounded-md bg-slate-100 text-slate-800 py-3 font-semibold hover:bg-slate-200 disabled:opacity-50"
           onClick={clearInput}
-          disabled={pending}
+          disabled={pending || saveError !== null || !meta}
         >
           Clear
         </button>
         <button
           className="rounded-md bg-red-50 text-red-700 py-3 font-semibold hover:bg-red-100 disabled:opacity-50"
           onClick={undo}
-          disabled={pending}
+          disabled={pending || saveError !== null || !meta}
         >
           Undo
         </button>
@@ -430,7 +431,7 @@ export default function PracticeScoringClient() {
             <button
               className="rounded-md bg-red-600 px-3 py-1.5 text-sm font-semibold text-white hover:bg-red-700 disabled:opacity-50"
               onClick={deleteSession}
-              disabled={pending}
+              disabled={pending || saveError !== null || !meta}
             >
               Yes, delete
             </button>
