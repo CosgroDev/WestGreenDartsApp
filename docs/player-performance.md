@@ -10,7 +10,7 @@ The dashboard defaults to Overall performance, with Leg win % available as an al
 | Checkout visit success | 15% | 20 finishing visits |
 | 100+ visit rate | 10% | 60 recorded visits |
 
-Raw season rates come from the existing completed league-leg statistics; practice is excluded. Team baselines pool active players and weight each raw value by its relevant exposure. No further database reads are required.
+Raw season rates come from the existing completed league-leg statistics; practice is excluded. Three-dart average is credited points / recorded darts × 3: busts contribute zero points and their darts still count. First 9 pools the first three West Green visits in completed legs with nine recorded opening darts, using total opening points / opening darts × 3. Team baselines pool active players and weight each raw value by its relevant exposure. No further database reads are required.
 
 For each measure:
 

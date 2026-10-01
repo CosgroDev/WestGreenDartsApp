@@ -24,14 +24,15 @@ This branch does not apply migrations to the production database.
 
 ## Measured build
 
-The production build reports dashboard First Load JS of **113 kB**, compared with **221 kB** on the previous main build: approximately **49% less initial JavaScript**. This measures downloaded JavaScript, not elapsed loading time on a user's phone.
+The production build reports dashboard First Load JS of **113 kB** after the performance changes, or **115 kB** including the overall performance leaderboard, compared with **221 kB** on the previous main build: approximately **48% less initial JavaScript** with both changes. This measures downloaded JavaScript, not elapsed loading time on a user's phone.
 
 ## Verification
 
-`Build preview` runs Jest, database checks, TypeScript and the production build. The initial implementation passed 103 tests in 15 suites.
+`Build preview` runs Jest, database checks, TypeScript and the production build. The performance and leaderboard implementation passed 114 tests in 16 suites.
 
 `Verify performance and scoring usability` builds and opens the real production app in Chromium at a 390 × 844 viewport. A restricted local REST adapter connects server actions to an isolated PGlite database; it uses synthetic fixtures and session credentials, with no production database access. Checks cover:
 
+- Overall leaderboard explanation, qualification labels, per-player breakdown and win-rate switch.
 - Resume scoring and delayed chart-library loading.
 - Mobile width and zoom settings.
 - A database write whose HTTP response is deliberately lost: Retry must retain the request ID and create one visit.

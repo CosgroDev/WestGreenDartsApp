@@ -17,6 +17,7 @@ export function LeaderboardExplanation({ model }: { model: PerformanceLeaderboar
           </tr>)}</tbody>
         </table>
       </div>
+      <p>Three-dart average = credited points ÷ recorded darts × 3; busts score zero but their darts count. First 9 uses the first three West Green visits in legs with nine recorded opening darts, weighted by those opening darts. Checkout success = checkouts ÷ visits starting on a possible finish.</p>
       <ol className="list-decimal space-y-2 pl-5">
         <li>Calculate each player's raw rates and averages. Win rate is legs won ÷ completed legs. Ton rate is 100+ visits ÷ all recorded visits, including busts as zero scores.</li>
         <li>Allow for sample size. Adjusted value = (sample × player value + prior × team value) ÷ (sample + prior). Team values are averages weighted by the relevant number of legs, darts or visits across active players in this season.</li>
