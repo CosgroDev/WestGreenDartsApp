@@ -1,7 +1,7 @@
 // Runs the production application against an isolated PostgreSQL-compatible test DB.
 // The REST adapter implements only the reads/RPCs used here; no live data is touched.
 import { PGlite } from '@electric-sql/pglite';
-import { chromium } from 'playwright';
+const { chromium } = await import(process.env.PLAYWRIGHT_MODULE_PATH || 'playwright');
 import { createServer } from 'node:http';
 import { spawn } from 'node:child_process';
 import { readFileSync, readdirSync, mkdirSync, writeFileSync } from 'node:fs';
