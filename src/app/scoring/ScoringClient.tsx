@@ -242,7 +242,7 @@ export default function ScoringPage() {
           type="button"
           className={`score-panel ${activeSide === "opponent" && !isCompleted ? "active" : ""}`}
           onClick={() => setActiveSide("opponent")}
-          disabled={finishPrompt !== null || isCompleted}
+          disabled={inputLocked || finishPrompt !== null || isCompleted}
         >
           <p className="truncate text-sm font-semibold text-slate-700">{oppName}</p>
           <p key={`o-${displayOppRemaining}`} className="score-remaining score-pop mt-1 text-6xl text-slate-800">
@@ -320,7 +320,7 @@ export default function ScoringPage() {
               >
                 ⌫
               </button>
-              <button type="button" className="keypad-key" onClick={() => appendDigit(0)}>
+              <button type="button" className="keypad-key" disabled={inputLocked} onClick={() => appendDigit(0)}>
                 0
               </button>
               <button
@@ -328,7 +328,7 @@ export default function ScoringPage() {
                 className="keypad-key bg-emerald-600 text-xl text-white"
                 style={{ borderColor: "rgba(18,184,134,0.6)" }}
                 onClick={() => addScore(parseInt(inputScore || "0", 10))}
-                disabled={pending}
+                disabled={inputLocked}
                 aria-label="Enter score"
               >
                 ✓
@@ -339,7 +339,7 @@ export default function ScoringPage() {
               type="button"
               className="btn-secondary text-sm"
               onClick={undo}
-              disabled={pending}
+              disabled={inputLocked}
             >
               ↩ Undo last score
             </button>
