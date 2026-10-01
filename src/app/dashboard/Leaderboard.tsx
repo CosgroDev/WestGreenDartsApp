@@ -4,15 +4,25 @@ import { useState, useTransition } from "react";
 import { StatBar } from "@/components/StatBar";
 import { FormPills } from "@/components/FormPills";
 import type { PlayerCard, PlayerGameStat } from "@/data/stats";
+import type { PerformanceLeaderboard, PlayerPerformance } from "@/lib/playerPerformance";
+import { compareLeaderboardPlayers } from "@/lib/leaderboard";
+import { LeaderboardExplanation } from "./LeaderboardExplanation";
 import { loadPlayerGameLogAction } from "./actions";
 
 type Props = {
   players: PlayerCard[];
   formByPlayer: Record<string, ("W" | "D" | "L")[]>;
   seasonId: string;
+  performance: PerformanceLeaderboard;
 };
 
-export function Leaderboard({ players, formByPlayer, seasonId }: Props) {
+export function Leaderboard({ players, formByPlayer, seasonId, performance }: Props) {
+  const [ranking, setRanking] = useState<"performance" | "wins">("performance");
+  const ratingsById = new Map(performance.ratings.map(r => [r.playerId, r]));
+  const playersById = new Map(players.map(p => [p.player_id, p]));
+  const orderedPlayers = ranking === "performance"
+    ? performance.ratings.map(r => playersById.get(r.playerId)!)
+    : [...players].sort(compareLeaderboardPlayers);
   const [openId, setOpenId] = useState<string | null>(null);
   const [logs, setLogs] = useState<Record<string, PlayerGameStat[]>>({});
   const [loadingId, setLoadingId] = useState<string | null>(null);
@@ -35,8 +45,23 @@ export function Leaderboard({ players, formByPlayer, seasonId }: Props) {
   };
 
   return (
-    <div className="grid grid-cols-1 gap-2 max-h-[600px] overflow-y-auto pr-1">
-      {players.map((p, rank) => {
+    <div className="space-y-3">
+      <div className="flex flex-wrap items-center gap-2">
+        <label htmlFor="leaderboard-ranking" className="text-sm font-semibold">Rank players by</label>
+        <select id="leaderboard-ranking" className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm"
+          value={ranking} onChange={e => setRanking(e.target.value as "performance" | "wins")}>
+          <option value="performance">Overall performance</option><option value="wins">Leg win %</option>
+        </select>
+      </div>
+      <p className="text-sm text-slate-600">{ranking === "performance"
+        ? "Results, scoring and finishing, adjusted for sample size. Provisional players follow qualified players."
+        : "Raw leg win percentage. Ties use wins, then three-dart average. Small samples are not adjusted."}</p>
+      <LeaderboardExplanation model={performance} />
+      <div className="grid grid-cols-1 gap-2 max-h-[600px] overflow-y-auto pr-1">
+      {orderedPlayers.map((p, rank) => {
+        const rating = ratingsById.get(p.player_id)!;
+        const position = ranking === "performance" ? rating.rank : rank + 1;
+        const isLeader = position === 1;
         const winPct = p.legs_played > 0 ? (p.legs_won / p.legs_played) * 100 : null;
         const diff = (p.legs_won ?? 0) - ((p.legs_played ?? 0) - (p.legs_won ?? 0));
         const diffColor =
@@ -48,7 +73,7 @@ export function Leaderboard({ players, formByPlayer, seasonId }: Props) {
           <div
             key={p.player_id}
             className={`flex flex-col gap-3 rounded-2xl border px-4 py-3 text-sm ${
-              rank === 0 ? "border-amber-200 bg-amber-50/40" : "border-slate-200 bg-slate-50/40"
+              isLeader ? "border-amber-200 bg-amber-50/40" : "border-slate-200 bg-slate-50/40"
             }`}
           >
             <button
@@ -61,16 +86,16 @@ export function Leaderboard({ players, formByPlayer, seasonId }: Props) {
                 <p className="flex items-center gap-2 font-semibold">
                   <span
                     className={`inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[11px] font-bold ${
-                      rank === 0
+                      isLeader
                         ? "bg-amber-100 text-amber-700 ring-1 ring-amber-300"
-                        : rank === 1
+                        : position === 2
                         ? "bg-slate-100 text-slate-800 ring-1 ring-slate-300"
-                        : rank === 2
+                        : position === 3
                         ? "bg-amber-50 text-amber-600"
                         : "bg-slate-50 text-slate-500"
                     }`}
                   >
-                    {rank + 1}
+                    {position ?? "–"}
                   </span>
                   {p.name}
                   <span
@@ -89,6 +114,10 @@ export function Leaderboard({ players, formByPlayer, seasonId }: Props) {
                 </div>
               </div>
               <div className="flex flex-wrap gap-2">
+                <span className="rounded-full border border-emerald-300 bg-emerald-50 text-emerald-900 px-3 py-1 text-xs font-semibold">
+                  Performance {rating.score === null ? "–" : rating.score.toFixed(1) + "/100"}
+                </span>
+                <span className="rounded-full bg-slate-100 text-slate-800 px-3 py-1 text-xs font-semibold">{rating.qualified ? "Qualified" : "Provisional"}</span>
                 <span className="rounded-full bg-emerald-50 text-emerald-700 px-3 py-1 text-xs font-semibold">
                   Won {p.legs_won}
                 </span>
@@ -107,6 +136,9 @@ export function Leaderboard({ players, formByPlayer, seasonId }: Props) {
             </button>
             {/* Secondary stats row */}
             <div className="flex flex-wrap gap-2 border-t border-slate-100 pt-2">
+              <span className="rounded-full bg-slate-100 text-slate-700 px-3 py-1 text-xs font-semibold">{p.matches_played} matches · {p.scoring_visits} visits</span>
+              {p.high_finish !== null && <span className="rounded-full bg-slate-100 text-slate-700 px-3 py-1 text-xs font-semibold">High finish {p.high_finish}</span>}
+              <span className="rounded-full bg-slate-100 text-slate-700 px-3 py-1 text-xs font-semibold">{p.sixty_plus} × 60+ · {p.twenty_six} × 26</span>
               {p.checkout_pct !== null && (
                 <span className="rounded-full bg-blue-50 text-blue-700 px-3 py-1 text-xs font-semibold">
                   CO {p.checkout_pct.toFixed(0)}%
@@ -134,6 +166,7 @@ export function Leaderboard({ players, formByPlayer, seasonId }: Props) {
               )}
             </div>
 
+            <PerformanceBreakdown rating={rating} />
             {/* Game-by-game drill-down */}
             {isOpen && (
               <div className="border-t border-slate-100 pt-3">
@@ -156,6 +189,7 @@ export function Leaderboard({ players, formByPlayer, seasonId }: Props) {
           </div>
         );
       })}
+      </div>
     </div>
   );
 }
@@ -232,4 +266,21 @@ function Stat({ label, value }: { label: string; value: string }) {
       <span className="font-semibold text-slate-700">{value}</span>
     </div>
   );
+}
+
+function PerformanceBreakdown({ rating }: { rating: PlayerPerformance }) {
+  const format = (value: number | null, percent: boolean) => value === null ? "No data" : value.toFixed(1) + (percent ? "%" : "");
+  return <details className="border-t border-slate-200 pt-2 text-xs">
+    <summary className="cursor-pointer font-semibold text-emerald-800">Score breakdown</summary>
+    {rating.reasons.length > 0 && <p className="mt-2 text-slate-700">Provisional: {rating.reasons.join("; ")}.</p>}
+    <p className="mt-2 text-slate-600">These contributions sum to {rating.score === null ? "no score yet" : rating.score.toFixed(1) + "/100"}. Values below are rounded.</p>
+    <dl className="mt-2 space-y-3">
+      {rating.components.map(c => <div key={c.id} className="rounded-lg border border-slate-200 p-2">
+        <dt className="flex flex-wrap justify-between gap-2 font-semibold text-slate-900"><span>{c.label} · {c.weight}% weight</span><span>{c.contribution.toFixed(1)} / {c.weight} points</span></dt>
+        <dd className="mt-1 text-slate-700">Raw {format(c.raw,c.percent)} · {c.sample} {c.unit} · Team {format(c.baseline,c.percent)}</dd>
+        <dd className="mt-1 text-slate-700">Adjusted {format(c.adjusted,c.percent)} · {Math.round(c.dataWeight*100)}% player data / {Math.round((1-c.dataWeight)*100)}% team prior</dd>
+        <dd className="mt-1 text-slate-700">{c.percentile.toFixed(1)} percentile × {c.weight}% = {c.contribution.toFixed(1)} points{c.raw===null?" (neutral: missing evidence)":""}</dd>
+      </div>)}
+    </dl>
+  </details>;
 }

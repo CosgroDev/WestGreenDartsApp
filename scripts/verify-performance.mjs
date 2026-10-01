@@ -108,6 +108,16 @@ try{
  assert.ok(!(await Promise.all(scripts)).some(s=>s.includes('recharts-wrapper')),'Chart library loaded before expansion');
  assert.ok(!(await page.locator('meta[name=viewport]').getAttribute('content')).includes('maximum-scale=1'));
  assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'Dashboard overflows mobile screen');
+ const ranking=page.getByLabel('Rank players by');
+ assert.equal(await ranking.inputValue(),'performance');
+ await page.getByText('How the performance score is calculated',{exact:true}).click();
+ await page.getByText('Score breakdown',{exact:true}).first().click();
+ assert.ok(await page.getByText(/Provisional: Needs 6 completed legs/).count()>0);
+ await ranking.selectOption('wins');assert.equal(await ranking.inputValue(),'wins');
+ await ranking.selectOption('performance');
+ await page.getByText('How the performance score is calculated',{exact:true}).click();
+ await page.getByText('Score breakdown',{exact:true}).first().click();
+ console.log('PERFORMANCE_LEADERBOARD_PASS: explanation, sample qualification, player breakdown and win-rate switch');
  await page.getByText('Performance charts',{exact:true}).click();
  await page.locator('.recharts-wrapper').first().waitFor();
  await page.screenshot({path:'performance-verification/dashboard-mobile.png',fullPage:true});

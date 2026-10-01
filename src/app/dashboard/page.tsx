@@ -6,7 +6,7 @@ import { getDashboardStatistics } from "@/data/dashboard";
 import { Suspense } from "react";
 import { ResumeMatch } from "./ResumeMatch";
 import { PerformanceCharts } from "./PerformanceCharts";
-import { compareLeaderboardPlayers } from "@/lib/leaderboard";
+import { buildPerformanceLeaderboard } from "@/lib/playerPerformance";
 import { FormPills } from "@/components/FormPills";
 import { ExportLinks } from "./ExportLinks";
 import { ScoringBreakdown } from "./ScoringBreakdown";
@@ -27,7 +27,7 @@ export default async function DashboardPage() {
     currentSeasonId ? getStoredSeasonSummary(currentSeasonId) : Promise.resolve({ summary: null, at: null, fixtures: null }),
     getFixtures(undefined, false)
   ]);
-  const playersByWinPct = [...players].sort(compareLeaderboardPlayers);
+  const performance = buildPerformanceLeaderboard(players);
   const playersByLegs = [...players].sort((a, b) => b.legs_won - a.legs_won);
   const formById = new Map(playerForm.map((f) => [f.player_id, f.matches.map((m) => m.result)]));
   const playersBy3da = [...players].sort((a, b) => (b.three_dart_avg ?? 0) - (a.three_dart_avg ?? 0));
@@ -247,10 +247,11 @@ export default async function DashboardPage() {
 
       <section className="card">
         <h2 className="text-lg font-semibold mb-2">
-          Leaderboard <span className="text-xs font-normal text-slate-500">by leg win % · tap a player for game-by-game</span>
+          Leaderboard <span className="text-xs font-normal text-slate-500">season performance · tap a player for game-by-game</span>
         </h2>
         <Leaderboard
-          players={playersByWinPct}
+          players={players}
+          performance={performance}
           formByPlayer={Object.fromEntries(formById)}
           seasonId={currentSeasonId}
         />
