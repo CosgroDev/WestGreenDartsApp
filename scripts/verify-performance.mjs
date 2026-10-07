@@ -304,7 +304,7 @@ try{
 
  // Resize a running game: portrait, landscape and reduced available height.
  await open121(session121);
- for(const viewport of [{width:320,height:568},{width:360,height:640},{width:390,height:480},{width:320,height:480},{width:480,height:320},{width:568,height:320},{width:844,height:390},{width:1024,height:768}]){
+ for(const viewport of [{width:320,height:568},{width:360,height:640},{width:390,height:480},{width:320,height:480},{width:320,height:360},{width:390,height:360},{width:480,height:320},{width:568,height:320},{width:844,height:390},{width:1024,height:768}]){
   await page.setViewportSize(viewport);await scoreField().focus();await scoreField().fill('61');
   await assert121Fits('Score entry '+JSON.stringify(viewport));await assert121DoesNotScroll();
   await page.getByRole('button',{name:'Clear',exact:true}).click();
@@ -325,11 +325,15 @@ try{
  await scoreField().fill('60');loseNext=true;await enter121().click();
  await page.getByRole('button',{name:'Retry save',exact:true}).waitFor();
  await assert121Fits('Small-phone save recovery');assert.equal(await scoreField().inputValue(),'60');
+ await page.setViewportSize({width:320,height:360});await assert121Fits('Reduced-height save recovery');
+ await page.setViewportSize({width:320,height:568});
  await page.getByRole('button',{name:'Retry save',exact:true}).click();await ready121();
  await scoreField().fill(await remaining().textContent());await enter121().click();loseNext=true;
  await page.getByRole('button',{name:'Confirm double-out',exact:true}).click();
  await page.getByRole('button',{name:'Retry save',exact:true}).waitFor();
  await assert121Fits('Small-phone checkout recovery');
+ await page.setViewportSize({width:390,height:360});await assert121Fits('Reduced-height checkout recovery');
+ await page.setViewportSize({width:320,height:568});
  await page.getByRole('button',{name:'Retry save',exact:true}).click();await ready121();
  // A real touch gesture must not scroll the score entry screen.
  const cdp=await context.newCDPSession(page),touchBefore=await remaining().boundingBox();

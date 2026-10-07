@@ -164,3 +164,26 @@
 @container (min-width:700px) and (max-height:520px) {
   .live .keypad { grid-template-columns:repeat(6,minmax(0,1fr)); grid-template-rows:repeat(2,minmax(0,1fr)); }
 }
+
+/* A reduced visual viewport can be narrow as well as short (phone keyboard). */
+@container (max-width:439px) and (max-height:420px) {
+  .game { grid-template-columns:minmax(0,.9fr) minmax(0,1.1fr); grid-template-rows:minmax(0,1fr); }
+  .live .scoreboard { display:flex; flex-direction:column; justify-content:center; }
+  .live .remaining { font-size:36px; }
+  .live .scoreLine { gap:6px; margin:6px 0; }
+  .live .meta { font-size:10px; gap:4px; }
+  .live .visitNumber { font-size:22px; }
+  .live .visitNumber span { font-size:12px; }
+  .live .visit .muted { display:none; }
+  .live .guideTitle { font-size:10px; }
+  .live .route { gap:3px; }
+  .live .route strong { font-size:18px; }
+  .live .preview { display:none; }
+  .live .scoreActions>* { font-size:11px; padding:2px; }
+  .live .confirmation h2 { font-size:12px; }
+  .live .confirmation p { font-size:10px; }
+  .live .confirmation button { font-size:11px; padding:2px; }
+  .live .recovery [role="alert"] { font-size:10px; padding:4px; }
+  .live .recovery [role="alert"] p+p { display:none; }
+  .live .recovery button { min-height:32px; padding:2px 4px; font-size:10px; }
+}

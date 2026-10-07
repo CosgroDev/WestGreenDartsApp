@@ -24,4 +24,4 @@ The input uses `inputMode="none"`: the application provides its own keypad, whil
 
 Help and visit history may scroll inside their own panels while score entry is paused. Confirmation and error recovery replace the keypad rather than adding height below it. Save/reload retains the entered score. Future scoring layouts should follow this rule and prove every control fits before adopting the scroll lock.
 
-Browser checks resize a running game through 320×480, 320×568, 360×640, 390×480, 480×320, 568×320, 844×390 and 1024×768, check button bounds and hit targets, detect clipped form content, and exercise wheel/touch scrolling, confirmation, recovery and scroll restoration.
+Browser checks resize a running game through 320×360, 320×480, 320×568, 360×640, 390×360, 390×480, 480×320, 568×320, 844×390 and 1024×768, check button bounds and hit targets, detect clipped form content, and exercise wheel/touch scrolling, confirmation, recovery and scroll restoration.
