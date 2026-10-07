@@ -2,7 +2,7 @@
 import { allRows } from "@/lib/database";
 import { stableRead } from "@/lib/stableRead";
 import { drillCommand, endDrill } from "@/lib/drillCommand";
-import { canFinishFrom } from "@/lib/scoringUtils";
+import { resolve121Turn } from "@/lib/game121";
 
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
@@ -41,105 +41,57 @@ export async function load121StateAction(sessionId: string) {
 
 async function readState(sessionId: string) {
   const supabase = await supabaseServer();
-  if (!supabase) return { ok: false as const };
-
-  const [{ data: session }, { data: turns }] = await Promise.all([
-    supabase
-      .from("game_121_sessions")
-      .select("*, player:player_id(name)")
-      .eq("id", sessionId)
-      .single(),
-    allRows(() => supabase
-      .from("game_121_turns")
-      .select("*")
-      .eq("session_id", sessionId)
-      .order("id", { ascending: false })),
+  if (!supabase || !TEAM_ID) return { ok: false as const, message: "Database or team is not configured." };
+  const [sessionRows, turnRows] = await Promise.all([
+    supabase.from("game_121_sessions").select("*, player:player_id(name)")
+      .eq("id", sessionId).eq("team_id", TEAM_ID).single(),
+    allRows(() => supabase.from("game_121_turns").select("*")
+      .eq("session_id", sessionId).order("id", { ascending: false })),
   ]);
-
-  if (!session) throw new Error("Session not found");
-  return { ok: true as const, session, turns: (turns ?? []) as any[] };
+  if (sessionRows.error || !sessionRows.data) throw new Error(sessionRows.error?.message || "Session not found.");
+  if (turnRows.error) throw new Error(turnRows.error.message || "Could not load turn history.");
+  return { ok: true as const, session: sessionRows.data, turns: turnRows.data ?? [] };
 }
 
-export async function record121TurnAction(sessionId: string, score: number, revision?: number) {
-  if (!Number.isInteger(score) || score < 0 || score > 180) {
-    return { ok: false, message: "Invalid score" };
-  }
+export async function record121TurnAction(
+  sessionId: string, score: number, revision?: number, requestId?: string, declaredBust = false
+) {
+  if (!Number.isInteger(score) || score < 0 || score > 180) return { ok: false as const, message: "Enter a whole-number score from 0 to 180." };
   const supabase = await supabaseServer();
-  if (!supabase) return { ok: false };
+  if (!supabase || !TEAM_ID) return { ok: false as const, message: "Database or team is not configured." };
+  const { data: session, error } = await supabase.from("game_121_sessions").select("*")
+    .eq("id", sessionId).eq("team_id", TEAM_ID).single();
+  if (error || !session) return { ok: false as const, message: "Session not found." };
 
-  const { data: session } = await supabase
-    .from("game_121_sessions")
-    .select("*")
-    .eq("id", sessionId)
-    .single();
-
-  if (!session || session.status !== "in_progress") {
-    return { ok: false, message: "Session not active" };
+  // The existing RPC checks request history before status/revision. Recover a
+  // committed visit whose response was lost without recalculating another turn.
+  // This deliberately invalid patch can only replay a cached request; it cannot
+  // create a fresh visit or end a session.
+  if (requestId && revision !== undefined &&
+      (session.revision !== revision || session.status !== "in_progress")) {
+    const replay = await drillCommand("121", sessionId, revision, null, { status: "replay_only" }, null, null, requestId);
+    if (!replay.ok) return { ok: false as const, message: replay.message || "Could not recover the saved visit." };
+    const state = await load121StateAction(sessionId);
+    if (!state.ok) return state;
+    return { ...state, result: null };
   }
-  if (revision !== undefined && revision !== session.revision) return {ok: false, message: "Session changed on another device. Reload before scoring again."};
-
-  const remainingBefore: number = session.remaining;
-  const diff = remainingBefore - score;
-  // Bust: score takes you below 0 or leaves exactly 1 (can't finish on 1)
-  const isBust = diff < 0 || diff === 1 || (diff === 0 && !canFinishFrom(remainingBefore));
-  const remainingAfter = isBust ? remainingBefore : Math.max(0, diff);
-  const finished = remainingAfter === 0;
-
-  let result: string | null = null;
-  let newBase: number = session.base_checkout;
-  let nextCheckout: number = session.current_checkout;
-  let nextTurn: number = session.current_turn;
-  let nextRemaining: number = remainingAfter;
-  let newStatus = "in_progress";
-  let completedAt: string | null = null;
-
-  if (finished) {
-    const isWin = session.current_checkout >= 170;
-    // Base locks on a Turn 1 finish, or — when this mode is enabled — on any
-    // finish within the 3 turns (9 darts).
-    const locksBase = session.current_turn === 1 || session.advance_base_on_any_finish === true;
-    if (isWin) {
-      result = "won";
-      newStatus = "won";
-      completedAt = new Date().toISOString();
-    } else if (locksBase) {
-      result = "locked";
-      newBase = session.current_checkout;
-      nextCheckout = session.current_checkout + 1;
-      nextTurn = 1;
-      nextRemaining = nextCheckout;
-    } else {
-      result = "progressed";
-      nextCheckout = session.current_checkout + 1;
-      nextTurn = 1;
-      nextRemaining = nextCheckout;
-    }
-  } else {
-    if (session.current_turn === 3) {
-      result = "failed";
-      nextCheckout = session.base_checkout;
-      nextTurn = 1;
-      nextRemaining = session.base_checkout;
-    } else {
-      nextTurn = session.current_turn + 1;
-      nextRemaining = isBust ? remainingBefore : remainingAfter;
-    }
-  }
-
+  if (session.status !== "in_progress") return { ok: false as const, message: "Session is no longer active." };
+  if (revision !== undefined && revision !== session.revision) return { ok: false as const, message: "Session changed on another device. Reload before scoring again." };
+  const outcome = resolve121Turn(session, score, declaredBust);
   const saved = await drillCommand("121", sessionId, revision ?? session.revision, {
-    score, remaining_after: remainingAfter, is_bust: isBust, result
+    score, remaining_after: outcome.remainingAfter, is_bust: outcome.isBust, result: outcome.result,
   }, {
-    base_checkout: newBase, current_checkout: nextCheckout, current_turn: nextTurn,
-    remaining: nextRemaining, status: newStatus, completed_at: completedAt
-  });
-  if (!saved.ok) return saved;
-
+    ...outcome.patch, completed_at: outcome.result === "won" ? new Date().toISOString() : null,
+  }, null, null, requestId);
+  if (!saved.ok) return { ok: false as const, message: saved.message || "Could not save the visit." };
   revalidatePath("/practice/121");
-  return { ok: true, result };
+  const state = await load121StateAction(sessionId);
+  if (!state.ok) return state;
+  return { ...state, result: outcome.result };
 }
 
-export async function abandon121SessionAction(sessionId: string, revision?: number) {
-  const result = await endDrill("121", sessionId, "abandoned", revision);
+export async function abandon121SessionAction(sessionId: string, revision?: number, requestId?: string) {
+  const result = await endDrill("121", sessionId, "abandoned", revision, requestId);
   if (result.ok) revalidatePath("/practice/121");
   return result;
 }

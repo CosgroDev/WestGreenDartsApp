@@ -1,321 +1,199 @@
 "use client";
-import { useAsyncTask } from "@/lib/useAsyncTask";
-
-import { useEffect, useState } from "react";
+import Link from "next/link";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useScoreTask } from "@/lib/useScoreTask";
+import { ScoreSaveStatus } from "@/components/ScoreSaveStatus";
+import {
+  get121CheckoutGuide, get121SingleMissGuide, resolve121Turn,
+  type Game121Session, type Game121Turn, type CheckoutGuide,
+} from "@/lib/game121";
 import { load121StateAction, record121TurnAction, abandon121SessionAction } from "./actions";
-
-type Turn = {
-  id: number;
-  checkout: number;
-  turn_number: number;
-  score: number;
-  remaining_before: number;
-  remaining_after: number;
-  is_bust: boolean;
-  result: string | null;
-};
-
-type Session = {
-  revision: number;
-  base_checkout: number;
-  current_checkout: number;
-  current_turn: number;
-  remaining: number;
-  status: string;
-  advance_base_on_any_finish?: boolean;
-  player?: { name: string } | null;
-};
+import styles from "./game121.module.css";
 
 export default function Game121Client({ sessionId }: { sessionId: string }) {
   const router = useRouter();
-  const [session, setSession] = useState<Session | null>(null);
-  const [turns, setTurns] = useState<Turn[]>([]);
-  const [inputScore, setInputScore] = useState(0);
+  const [session, setSession] = useState<Game121Session | null>(null);
+  const [turns, setTurns] = useState<Game121Turn[]>([]);
+  const [inputScore, setInputScore] = useState("");
   const [lastResult, setLastResult] = useState<string | null>(null);
-  const [lastBase, setLastBase] = useState<number | null>(null);
+  const [confirmation, setConfirmation] = useState<number | null>(null);
   const [confirmAbandon, setConfirmAbandon] = useState(false);
-  const [pending, startTransition] = useAsyncTask();
-
-  const loadState = async () => {
-      const res = await load121StateAction(sessionId);
-      if (!res.ok) throw new Error("Could not load the session");
-      if (res.ok) {
-        setSession(res.session as Session);
-        setTurns((res.turns as Turn[]) ?? []);
-      }
+  const confirmButton = useRef<HTMLButtonElement>(null);
+  const scoreInput = useRef<HTMLInputElement>(null);
+  const { pending, error, saved, run, retry, clearError } = useScoreTask();
+  const applyState = (state: {session: any; turns: any[]}) => {
+    setSession(state.session); setTurns(state.turns);
   };
-
   useEffect(() => {
-    startTransition(loadState);
-  }, [sessionId]);
-
-  const handleKey = (n: number) => {
-    setInputScore((prev) => {
-      const next = Number(`${prev}${n}`);
-      return next > 180 ? prev : next;
+    run(async () => {
+      const state = await load121StateAction(sessionId);
+      if (!state.ok) throw new Error(state.message);
+      applyState(state);
+    });
+  }, [sessionId, run]);
+  useEffect(() => {
+    if (confirmation !== null) confirmButton.current?.focus();
+  }, [confirmation]);
+  const reload = () => {
+    if (pending) return;
+    run(async () => {
+      const state = await load121StateAction(sessionId);
+      if (!state.ok) throw new Error(state.message);
+      applyState(state); clearError(); setConfirmation(null); setLastResult(null);
     });
   };
-
-  const submitWithScore = (score: number) => {
-    if (!session || session.status !== "in_progress") return;
-    setInputScore(0);
-    startTransition(async () => {
-      const res = await record121TurnAction(sessionId, score, session.revision);
-      if (!res?.ok) throw new Error("message" in res ? res.message : "Could not save the score");
-      setLastResult("result" in res ? res.result : null);
-      const reload = await load121StateAction(sessionId);
-      if (reload.ok) {
-        setLastBase((reload.session as Session).base_checkout);
-        setSession(reload.session as Session);
-        setTurns((reload.turns as Turn[]) ?? []);
-      }
+  const locked = pending || error !== null || !session || session.status !== "in_progress";
+  const validScore = inputScore !== "" && Number(inputScore) <= 180;
+  const setEntry = (value: string) => {
+    if (!locked && /^\d{0,3}$/.test(value)) setInputScore(value.replace(/^0+(?=\d)/, ""));
+  };
+  const save = (score: number, declaredBust = false) => {
+    if (locked || !session) return;
+    const requestId = crypto.randomUUID();
+    run(async () => {
+      const result = await record121TurnAction(sessionId, score, session.revision, requestId, declaredBust);
+      if (!result.ok) throw new Error(result.message || "Could not save the visit.");
+      applyState(result); setInputScore(""); setConfirmation(null); setLastResult(result.result);
     });
   };
-
+  const submit = () => {
+    if (locked || !session || !validScore || confirmation !== null) return;
+    const score = Number(inputScore), outcome = resolve121Turn(session, score);
+    if (outcome.finished) { setConfirmation(score); return; }
+    save(score);
+  };
   const abandon = () => {
-    startTransition(async () => {
-      const result = await abandon121SessionAction(sessionId, session?.revision);
-      if (!result.ok) throw new Error(result.message ?? "Could not finish the session");
-      router.push("/practice/121");
+    if (locked || !session) return;
+    const requestId=crypto.randomUUID();
+    run(async () => {
+      const result=await abandon121SessionAction(sessionId,session.revision,requestId);
+      if (!result.ok) throw new Error(result.message || "Could not end the game.");
+      router.push("/practice/121"); router.refresh();
     });
   };
-
-  if (!session) {
-    return <div className="card text-sm text-slate-600">Loading…</div>;
-  }
-
-  const playerName = (session as any).player?.name ?? "Player";
-
-  // ── Win screen ─────────────────────────────────────────────────
-  if (session.status === "won") {
-    const totalTurns = turns.length;
-    return (
-      <div className="flex flex-col gap-4">
-        <div className="card text-center py-6">
-          <p className="text-5xl mb-3">🎯</p>
-          <h2 className="text-2xl font-bold text-emerald-700">You reached 170!</h2>
-          <p className="text-slate-600 mt-1">{playerName} completed the 121 challenge</p>
-          <p className="text-sm text-slate-400 mt-1">in {totalTurns} turn{totalTurns !== 1 ? "s" : ""}</p>
-        </div>
-
-        {/* Recent turns on win screen */}
-        {turns.length > 0 && (
-          <div className="card">
-            <p className="text-xs font-semibold text-slate-500 mb-2">Turn history</p>
-            <div className="flex flex-col gap-1">
-              {turns.slice(0, 10).map((t) => (
-                <TurnRow key={t.id} turn={t} />
-              ))}
-            </div>
-          </div>
-        )}
-
-        <div className="card flex flex-col gap-2">
-          <a
-            href="/practice/121"
-            className="rounded-md bg-purple-600 px-4 py-3 text-center text-white font-semibold hover:bg-purple-700"
-          >
-            Play again
-          </a>
-          <a
-            href="/practice"
-            className="rounded-md border border-slate-300 px-4 py-2 text-center text-sm text-slate-700 hover:border-slate-400"
-          >
-            Back to Practice
-          </a>
-          <a
-            href="/dashboard"
-            className="rounded-md border border-slate-300 px-4 py-2 text-center text-sm text-slate-700 hover:border-slate-400"
-          >
-            Dashboard
-          </a>
+  const cancelCheckout = () => {
+    if (locked) return;
+    setConfirmation(null); requestAnimationFrame(()=>scoreInput.current?.focus());
+  };
+  const status = <ScoreSaveStatus pending={pending && session !== null} saved={saved && turns.length > 0} error={error} retry={retry} reload={reload} />;
+  if (!session) return <main className={styles.shell}><section className={styles.panel}>
+    <h1>121 Challenge</h1><p role="status">Loading your game…</p>{status}
+  </section></main>;
+  const name=session.player?.name || "Player";
+  const history=<details className={styles.panel}>
+    <summary>Visit history · {turns.length}</summary>
+    <div className={styles.history}>{turns.length ? turns.slice(0,20).map(t=><TurnRow key={t.id} turn={t}/>):<p>No visits recorded yet.</p>}</div>
+    {turns.length>20 && <p className={styles.muted}>Showing the most recent 20 visits.</p>}
+  </details>;
+  if(session.status !== "in_progress") return <main className={styles.shell}>
+    <section className={styles.panel}>
+      <p className={styles.eyebrow}>121 Challenge · {name}</p>
+      <h1>{session.status==="won"?"You finished 170!":"Game ended"}</h1>
+      <p>{turns.length} recorded visit{turns.length===1?"":"s"} · Locked base {session.base_checkout}</p>
+      {status}
+      <Link href="/practice/121" className={styles.primary}>Play another game</Link>
+      <Link href="/practice" className={styles.secondary}>Back to practice</Link>
+    </section>{history}
+  </main>;
+  const guide=get121CheckoutGuide(session.remaining);
+  const miss=get121SingleMissGuide(session.remaining,guide);
+  const preview=validScore?resolve121Turn(session,Number(inputScore)):null;
+  const previewText=!validScore?(inputScore?"Enter a score from 0 to 180.":"Enter the total for this visit.")
+    :preview!.finished?"Finish on a double or Bull to confirm."
+    :preview!.result==="failed"?`Returns to base ${session.base_checkout}.`
+    :preview!.isBust?`Bust · ${session.remaining} stays for visit ${session.current_turn+1}.`
+    :`Leaves ${preview!.remainingAfter} for visit ${session.current_turn+1}.`;
+  const resultText=lastResult==="locked"?`Checkout complete · base locked at ${session.base_checkout}.`
+    :lastResult==="progressed"?`Checkout complete · now attempt ${session.current_checkout}.`
+    :lastResult==="failed"?`Three visits used · back to base ${session.base_checkout}.`:null;
+  return <main className={styles.shell}>
+    <header className={styles.header}>
+      <div><Link href="/practice/121" className={styles.back}>‹ 121 Challenge</Link><p className={styles.muted}>{name}</p></div>
+      <button type="button" className={styles.secondary} disabled={locked || confirmation !== null} onClick={()=>setConfirmAbandon(true)}>End game</button>
+    </header>
+    {confirmAbandon && <section className={styles.panel} aria-label="End game confirmation">
+      <p>End this game and keep its practice record?</p>
+      <div className={styles.actions}><button type="button" className={styles.secondary} disabled={locked} onClick={()=>setConfirmAbandon(false)}>Keep playing</button>
+        <button type="button" className={styles.primary} disabled={locked} onClick={abandon}>Yes, end game</button></div>
+    </section>}
+    <section className={styles.scoreboard} aria-label="Current checkout">
+      <div className={styles.meta}><span>Target <strong>{session.current_checkout}</strong> / 170</span><span>Locked base <strong>{session.base_checkout}</strong></span></div>
+      <div className={styles.progress} role="progressbar" aria-label="Checkout progression" aria-valuemin={121} aria-valuemax={170} aria-valuenow={session.current_checkout}>
+        <div style={{width:((session.current_checkout-121)/49*100)+"%"}}/>
+      </div>
+      <div className={styles.scoreLine}>
+        <div><p className={styles.eyebrow}>Remaining</p><output className={styles.remaining} aria-label="Remaining score">{session.remaining}</output></div>
+        <div className={styles.visit}><p className={styles.eyebrow}>Visit</p><p className={styles.visitNumber}>{session.current_turn}<span> / 3</span></p>
+          <p className={styles.muted}>{(4-session.current_turn)*3} darts left in attempt</p>
+          <div className={styles.dots} aria-label={`Visit ${session.current_turn} of 3`}>{[1,2,3].map(v=><span key={v} className={v===session.current_turn?styles.currentDot:v<session.current_turn?styles.usedDot:styles.dot}/>)}</div>
         </div>
       </div>
-    );
-  }
-
-  // ── Result banner ───────────────────────────────────────────────
-  const resultBanner =
-    lastResult === "locked"
-      ? { text: `🔒 Locked! Base is now ${lastBase ?? session.base_checkout}`, cls: "bg-purple-50 text-purple-700 border-purple-200" }
-      : lastResult === "progressed"
-      ? { text: "✓ Checkout complete! Next up…", cls: "bg-emerald-50 text-emerald-700 border-emerald-200" }
-      : lastResult === "failed"
-      ? { text: `✗ Failed — back to base ${session.base_checkout}`, cls: "bg-red-50 text-red-700 border-red-200" }
-      : null;
-
-  // Progress bar: how far from 121 to 170
-  const progress = Math.round(((session.current_checkout - 121) / (170 - 121)) * 100);
-
-  // ── In-progress game screen ─────────────────────────────────────
-  return (
-    <div className="card flex flex-col gap-3">
-      {/* Nav — no links away from game; must use End game to exit */}
-      <div className="flex items-center justify-between border-b border-slate-100 pb-2">
-        <div>
-          <p className="text-xs text-slate-500">121 Challenge</p>
-          <p className="text-sm font-semibold text-slate-800">{playerName}</p>
-          {session.advance_base_on_any_finish && (
-            <p className="text-[11px] font-semibold text-purple-600">⚙️ Base advances on any finish</p>
-          )}
+      <section className={styles.guide} aria-label="Checkout guidance">
+        <p className={styles.guideTitle}>{guide.kind==="finish"?"Suggested checkout":"No three-dart checkout · set up the next visit"}</p>
+        <Route guide={guide}/>
+        <p className={styles.guideNote}>{guide.kind==="finish"?"Finish on a double or Bull.":session.current_turn===3?"Last visit: a setup will return this attempt to your base.":`Leaves ${guide.leave} for your next visit.`}</p>
+      </section>
+    </section>
+    {resultText && <p className={styles.result} role="status">{resultText}</p>}
+    <form className={styles.entry} onSubmit={e=>{e.preventDefault();submit();}} aria-label="Score entry">
+      {confirmation !== null ? <div className={styles.confirmation} role="dialog" aria-labelledby="checkout-confirmation-title" onKeyDown={e=>{
+        if(e.key==="Escape")cancelCheckout();
+      }}>
+        <h2 id="checkout-confirmation-title">Did you finish on a double?</h2>
+        <p>{confirmation} scored · a Bull finish also counts.</p>
+        <button ref={confirmButton} type="button" className={styles.primary} disabled={locked} onClick={()=>save(confirmation)}>Confirm double-out</button>
+        <button type="button" className={styles.secondary} disabled={locked} onClick={()=>save(confirmation,true)}>No double · record a bust</button>
+        <button type="button" className={styles.secondary} disabled={locked} onClick={cancelCheckout}>Edit score</button>
+      </div> : <>
+        <div className={styles.entryHeading}>
+          <div><label htmlFor="visit-score">Visit {session.current_turn} score</label><p className={styles.preview} id="score-preview">{previewText}</p></div>
+          <input ref={scoreInput} id="visit-score" aria-label="Visit score" aria-describedby="score-preview" aria-invalid={inputScore!==""&&!validScore} inputMode="numeric" autoComplete="off"
+            type="text" maxLength={3} value={inputScore} disabled={locked} placeholder="–" onChange={e=>setEntry(e.target.value)}/>
         </div>
-        {confirmAbandon ? (
-          <div className="flex items-center gap-2">
-            <button
-              onClick={abandon}
-              disabled={pending}
-              className="rounded-md bg-slate-700 px-3 py-1.5 text-xs font-semibold text-white hover:bg-slate-800 disabled:opacity-50"
-            >
-              Yes, end game
-            </button>
-            <button
-              onClick={() => setConfirmAbandon(false)}
-              className="rounded-md border border-slate-300 px-3 py-1.5 text-xs font-semibold text-slate-700"
-            >
-              Cancel
-            </button>
-          </div>
-        ) : (
-          <button
-            onClick={() => setConfirmAbandon(true)}
-            className="rounded-md border border-slate-300 px-3 py-1.5 text-xs font-semibold text-slate-600 hover:border-slate-400"
-          >
-            End game
-          </button>
-        )}
+        <div className={styles.keypad}>
+          {[1,2,3,4,5,6,7,8,9].map(n=><button key={n} type="button" className={styles.key} disabled={locked} onClick={()=>setEntry(inputScore+n)}>{n}</button>)}
+          <button type="button" className={styles.key} disabled={locked || !inputScore} aria-label="Delete last digit" onClick={()=>setEntry(inputScore.slice(0,-1))}>⌫</button>
+          <button type="button" className={styles.key} disabled={locked} onClick={()=>setEntry(inputScore+"0")}>0</button>
+          <button type="button" className={styles.key} disabled={locked || !inputScore} onClick={()=>setEntry("")}>Clear</button>
+        </div>
+        <div className={styles.actions}>
+          <button type="button" className={styles.secondary} disabled={locked} onClick={()=>save(0)}>Miss · 0</button>
+          <button type="button" className={styles.secondary} disabled={locked} onClick={()=>save(validScore?Number(inputScore):0,true)}>Bust</button>
+        </div>
+        <button type="submit" className={styles.primary} disabled={locked || !validScore}>Enter score</button>
+      </>}
+      {status}
+    </form>
+    <details className={styles.panel}><summary>Checkout help &amp; game rules</summary>
+      <div className={styles.help}>
+        <p>T = treble, S = single, D = double. Bull is the inner bull worth 50; 25 is the outer bull.</p>
+        {miss && <div className={styles.missHelp}><h2>If your first dart hits {miss.hit.label}</h2>
+          <p>{miss.remaining} left with two darts in this visit.</p><Route guide={miss.guide}/>
+          <p>{miss.guide.kind==="finish"?"This can still finish in this visit.":`Use the setup to leave ${miss.guide.leave} for another visit.`}</p>
+        </div>}
+        <p>Each checkout gets three visits of up to three darts. Enter the visit total after throwing. Checkout guidance suggests a route; enter what you actually scored.</p>
+        <p>{session.advance_base_on_any_finish?"Any finish within the three visits locks the completed checkout as your base.":"Finishing in visit 1 locks the completed checkout as your base. A visit 2 or 3 finish advances the target while the base stays unchanged."}</p>
+        <p>If three visits pass without a finish, return to your locked base. Bogey targets such as 159 need a setup before you can finish.</p>
+        <p>Miss records zero. Bust uses the visit and keeps its starting remaining score. If it was visit 3, the attempt returns to base. The Back link keeps your game saved so you can resume from the 121 page.</p>
       </div>
-
-      {/* Progress bar */}
-      <div>
-        <div className="flex justify-between text-xs text-slate-500 mb-1">
-          <span>121</span>
-          <span className="font-semibold text-slate-700">
-            Checkout {session.current_checkout} / 170
-          </span>
-          <span>170</span>
-        </div>
-        <div className="h-2 w-full rounded-full bg-slate-100">
-          <div
-            className="h-2 rounded-full bg-purple-500 transition-all"
-            style={{ width: `${progress}%` }}
-          />
-        </div>
-      </div>
-
-      {/* Game state */}
-      <div className="grid grid-cols-3 gap-2 text-center">
-        <div className="rounded-lg bg-slate-50 border border-slate-200 px-2 py-2">
-          <p className="text-xs text-slate-500">Base</p>
-          <p className="text-xl font-bold text-slate-800">{session.base_checkout}</p>
-          <p className="text-xs text-slate-400">🔒 locked</p>
-        </div>
-        <div className="rounded-lg bg-purple-50 border border-purple-200 px-2 py-2">
-          <p className="text-xs text-purple-600">Remaining</p>
-          <p className="text-3xl font-bold text-purple-800">{session.remaining}</p>
-          <p className="text-xs text-purple-400">checkout {session.current_checkout}</p>
-        </div>
-        <div className="rounded-lg bg-slate-50 border border-slate-200 px-2 py-2">
-          <p className="text-xs text-slate-500">Turn</p>
-          <p className="text-xl font-bold text-slate-800">{session.current_turn}</p>
-          <p className="text-xs text-slate-400">of 3</p>
-        </div>
-      </div>
-
-      {/* Result banner */}
-      {resultBanner && (
-        <div className={`rounded-md border px-3 py-2 text-sm font-semibold ${resultBanner.cls}`}>
-          {resultBanner.text}
-        </div>
-      )}
-
-      {/* Score input display */}
-      <div className="flex items-center justify-between">
-        <span className="text-sm text-slate-500">Turn {session.current_turn} score:</span>
-        <span className="text-2xl font-bold text-slate-800">{inputScore || "–"}</span>
-      </div>
-
-      {/* Numpad */}
-      <div className="grid grid-cols-3 gap-2">
-        {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((n) => (
-          <button
-            key={n}
-            onClick={() => handleKey(n)}
-            disabled={pending}
-            className="rounded-md border border-slate-300 bg-white py-4 text-lg font-semibold hover:bg-slate-50 active:bg-slate-100"
-          >
-            {n}
-          </button>
-        ))}
-        <button
-          onClick={() => submitWithScore(0)}
-          disabled={pending}
-          className="rounded-md border border-slate-300 bg-white py-3 text-sm font-semibold text-slate-600 hover:bg-slate-50"
-        >
-          Miss
-        </button>
-        <button
-          onClick={() => handleKey(0)}
-          disabled={pending}
-          className="rounded-md border border-slate-300 bg-white py-4 text-lg font-semibold hover:bg-slate-50 active:bg-slate-100"
-        >
-          0
-        </button>
-        <button
-          onClick={() => setInputScore(0)}
-          disabled={pending}
-          className="rounded-md bg-slate-100 text-slate-800 py-3 font-semibold hover:bg-slate-200"
-        >
-          Clear
-        </button>
-        <button
-          onClick={() => submitWithScore(inputScore)}
-          disabled={pending}
-          className="col-span-3 rounded-md bg-purple-600 text-white py-3 font-semibold hover:bg-purple-700 disabled:opacity-50"
-        >
-          Enter
-        </button>
-      </div>
-
-      {/* Recent turns */}
-      {turns.length > 0 && (
-        <div className="border-t border-slate-100 pt-2">
-          <p className="text-xs font-semibold text-slate-500 mb-1.5">Recent turns</p>
-          <div className="flex flex-col gap-1">
-            {turns.slice(0, 6).map((t) => (
-              <TurnRow key={t.id} turn={t} />
-            ))}
-          </div>
-        </div>
-      )}
-
-    </div>
-  );
+    </details>
+    {history}
+  </main>;
 }
-
-function TurnRow({ turn }: { turn: Turn }) {
-  const resultLabel =
-    turn.result === "locked"
-      ? <span className="text-purple-700 font-semibold">🔒 Locked</span>
-      : turn.result === "progressed"
-      ? <span className="text-emerald-700 font-semibold">✓ Done</span>
-      : turn.result === "failed"
-      ? <span className="text-red-600 font-semibold">✗ Failed</span>
-      : turn.result === "won"
-      ? <span className="text-emerald-700 font-bold">🏆 Won!</span>
-      : <span className="text-slate-400">{turn.remaining_after} left</span>;
-
-  return (
-    <div className="flex items-center justify-between text-xs text-slate-600 py-0.5">
-      <span>
-        C{turn.checkout} · T{turn.turn_number} ·{" "}
-        {turn.is_bust ? (
-          <span className="text-red-500">Bust ({turn.score})</span>
-        ) : (
-          <span>{turn.score}</span>
-        )}
-      </span>
-      {resultLabel}
-    </div>
-  );
+function Route({guide}:{guide:CheckoutGuide}) {
+  let remaining=guide.targets.reduce((sum,t)=>sum+t.score,0)+guide.leave;
+  return <ol className={styles.route} aria-label={guide.kind==="finish"?"Suggested dart targets":"Suggested setup targets"}>
+    {guide.targets.map((target,index)=>{
+      remaining-=target.score;
+      return <li key={index} aria-label={`Dart ${index+1}: ${target.description}`}><strong>{target.label}</strong><span>{remaining===0?"Double out":remaining+" left"}</span></li>;
+    })}
+  </ol>;
+}
+function TurnRow({turn}:{turn:Game121Turn}) {
+  const label=turn.result==="locked"?"Base locked":turn.result==="progressed"?"Checkout complete":turn.result==="failed"?"Back to base":turn.result==="won"?"Challenge won":turn.remaining_after+" left";
+  return <div className={styles.turnRow}>
+    <div><strong>{turn.checkout} target · Visit {turn.turn_number}</strong><span>{turn.is_bust?"Bust · ":""}{turn.score} scored</span></div>
+    <span>{label}</span>
+  </div>;
 }
