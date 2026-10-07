@@ -1,7 +1,7 @@
 import { randomUUID } from "crypto";
 import { supabaseServer } from "./supabaseServer";
 
-export async function drillCommand(mode: "121" | "checkout" | "doubles", sessionId: string, revision: number, event: object | null, patch: object, playerId: string | null = null, playerPatch: object | null = null, requestId = randomUUID()): Promise<{ ok: boolean; message?: string }> {
+export async function drillCommand(mode: "121" | "checkout" | "doubles", sessionId: string, revision: number, event: object | null, patch: object, playerId: string | null = null, playerPatch: object | null = null, requestId: string = randomUUID()): Promise<{ ok: boolean; message?: string }> {
   const db = await supabaseServer();
   if (!db) return {ok: false, message: "Database not configured"};
   const {data, error} = await db.rpc("wgd_drill_command", {
