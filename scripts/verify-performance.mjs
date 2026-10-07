@@ -239,6 +239,7 @@ try{
  await page.getByRole('heading',{name:'Resume a saved game',exact:true}).waitFor();
  await page.locator('a[href="/practice/121/scoring?session='+session121+'"]').click();await ready121();
  assert.equal(await remaining().textContent(),'103');
+ console.log('121_ENTRY_RETRY_RESUME_PASS');
  await open121(bogey121);
  await page.getByText('No three-dart checkout · set up the next visit',{exact:true}).waitFor();
  await enterScore(127);await ready121();assert.equal(await remaining().textContent(),'32');
@@ -247,7 +248,10 @@ try{
  assert.equal((await read121(bogey121)).current_checkout,160);assert.equal((await read121(bogey121)).base_checkout,158);
  await page.getByRole('button',{name:'End game',exact:true}).click();
  await page.getByRole('button',{name:'Yes, end game',exact:true}).click();
- await page.waitForURL('**/practice/121');assert.equal((await read121(bogey121)).status,'abandoned');
+ await page.waitForURL('**/practice/121',{timeout:10000}).catch(async error=>{
+  console.error('121_END_GAME_DIAGNOSTIC',JSON.stringify(await read121(bogey121)),await page.locator('body').innerText(),JSON.stringify(trace.slice(-15)));
+  await page.screenshot({path:'performance-verification/121-end-game-failure.png',fullPage:true});throw error;
+ });assert.equal((await read121(bogey121)).status,'abandoned');
  await open121(anyBase121);await enterScore(40);await page.getByRole('button',{name:'Confirm double-out',exact:true}).click();await ready121();
  assert.equal((await read121(anyBase121)).base_checkout,125);
  await open121(final121);await enterScore(170);loseNext=true;trace.length=0;

@@ -69,7 +69,7 @@ export default function Game121Client({ sessionId }: { sessionId: string }) {
     run(async () => {
       const result=await abandon121SessionAction(sessionId,session.revision,requestId);
       if (!result.ok) throw new Error(result.message || "Could not end the game.");
-      router.push("/practice/121"); router.refresh();
+      router.push("/practice/121");
     });
   };
   const cancelCheckout = () => {
