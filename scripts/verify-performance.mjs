@@ -304,7 +304,7 @@ try{
 
  // Resize a running game: portrait, landscape and reduced available height.
  await open121(session121);
- for(const viewport of [{width:320,height:568},{width:360,height:640},{width:390,height:480},{width:320,height:480},{width:568,height:320},{width:844,height:390},{width:1024,height:768}]){
+ for(const viewport of [{width:320,height:568},{width:360,height:640},{width:390,height:480},{width:320,height:480},{width:480,height:320},{width:568,height:320},{width:844,height:390},{width:1024,height:768}]){
   await page.setViewportSize(viewport);await scoreField().focus();await scoreField().fill('61');
   await assert121Fits('Score entry '+JSON.stringify(viewport));await assert121DoesNotScroll();
   await page.getByRole('button',{name:'Clear',exact:true}).click();
