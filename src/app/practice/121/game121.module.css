@@ -77,3 +77,89 @@
 
 .shell [role="status"] { color:#c7ffe6; font-size:12px; }
 .shell [role="alert"] { color:#fde8e8; background:#4b1c2d; }
+
+/* Active scoring fits the visible viewport. Help/history replace score entry. */
+.viewport {
+  position:fixed; z-index:60;
+  top:var(--scoring-top,0px); left:var(--scoring-left,0px);
+  width:var(--scoring-width,100%); height:100vh; height:var(--scoring-height,100dvh);
+  padding: max(6px,env(safe-area-inset-top)) max(8px,env(safe-area-inset-right))
+    max(6px,env(safe-area-inset-bottom)) max(8px,env(safe-area-inset-left));
+  overflow:hidden; overscroll-behavior:none; background:var(--bg-deep);
+  container-type:size; box-sizing:border-box;
+}
+.loading { max-width:720px; margin:auto; color:var(--text); }
+.live { width:100%; max-width:720px; height:100%; margin:auto;
+  display:grid; grid-template-rows:40px minmax(0,1fr) 40px; gap:6px; min-height:0; }
+.live .header { min-height:0; gap:8px; }
+.live .header>div { min-width:0; }
+.live .header .muted { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:480px; }
+.live .header .secondary { min-height:36px; padding:4px 10px; flex-shrink:0; }
+.live .back { font-size:14px; }
+.game { display:grid; grid-template-rows:auto minmax(0,1fr); gap:6px; min-height:0; }
+.live .scoreboard { padding:8px; min-width:0; min-height:0; }
+.live .scoreLine { margin:6px 0; }
+.live .remaining { font-size:clamp(40px,10.5cqh,96px); }
+.live .guide { padding:6px; }
+.live .route { margin-top:4px; }
+.live .guideNote { margin-top:4px; }
+.live .entry { display:grid; grid-template-rows:40px minmax(0,1fr) 44px 16px;
+  gap:4px; padding:6px; min-height:0; min-width:0; }
+.live .entryHeading { min-height:0; gap:6px; }
+.live .entryHeading>div { min-width:0; }
+.live .preview { font-size:11px; line-height:1.15; }
+.live .entry input { width:80px; min-width:80px; padding:0 6px; height:38px; font-size:30px; }
+.live .keypad { grid-template-rows:repeat(4,minmax(0,1fr)); gap:4px; min-height:0; }
+.live .key { min-height:0; padding:0; font-size:clamp(18px,3.5cqh,28px); }
+.live .key:last-child { font-size:13px; }
+.scoreActions { display:grid; grid-template-columns:1fr .8fr 1.5fr; gap:4px; min-height:0; }
+.live .scoreActions>* { min-height:0; padding:4px; font-size:13px; }
+.saveStatus { min-height:0; line-height:16px; }
+.saveStatus [role="status"] { font-size:11px; }
+.toolbar { display:grid; grid-template-columns:1.4fr 1fr; gap:6px; min-height:0; }
+.live .toolbar button { min-height:0; padding:2px 6px; font-size:12px; line-height:1.2; }
+.live .entryConfirm { grid-template-rows:minmax(0,1fr) 16px; }
+.live .confirmation { min-height:0; display:grid; grid-template-rows:auto auto repeat(3,minmax(36px,1fr)); gap:4px; }
+.live .confirmation p { font-size:12px; }
+.live .confirmation button { min-height:0; padding:4px; }
+.live .entryRecovery { grid-template-rows:40px minmax(0,1fr); }
+.recovery { min-height:0; display:flex; align-items:center; }
+.recovery>div { width:100%; }
+.live .recovery [role="alert"] { padding:8px; font-size:12px; line-height:1.2; }
+.live .recovery button { min-height:40px; padding:4px 8px; font-size:12px; }
+.pausePanel { min-height:0; display:flex; flex-direction:column; gap:8px; color:var(--text); }
+.panelHeading { display:flex; justify-content:space-between; align-items:center; gap:8px; }
+.panelHeading .secondary { min-height:40px; font-size:12px; padding:4px 8px; flex-shrink:0; }
+.panelScroll { min-height:0; overflow:auto; overscroll-behavior:contain; padding:2px; }
+.live .help { margin-top:0; }
+@container (max-height:650px) {
+  .live .progress,.live .dots { display:none; }
+  .live .remaining { font-size:clamp(40px,9.5cqh,62px); }
+  .live .scoreLine { margin:4px 0; }
+  .live .scoreboard { padding:6px; }
+  .live .guideNote { display:none; }
+  .live .guideTitle { font-size:11px; line-height:1.2; }
+  .live .route strong { font-size:24px; }
+  .live .route span { display:none; }
+  .live .visitNumber { font-size:26px; }
+  .live .visit .muted { font-size:10px; }
+}
+@container (max-height:520px) {
+  .live { grid-template-rows:34px minmax(0,1fr) 34px; gap:4px; }
+  .live .keypad { grid-template-columns:repeat(4,minmax(0,1fr)); grid-template-rows:repeat(3,minmax(0,1fr)); }
+  .live .entry { grid-template-rows:34px minmax(0,1fr) 40px 14px; gap:3px; padding:4px; }
+  .live .entryHeading label { font-size:11px; }
+  .live .entry input { height:32px; font-size:26px; width:66px; min-width:66px; }
+  .live .preview { font-size:10px; }
+  .live .entryConfirm { grid-template-rows:minmax(0,1fr) 14px; }
+  .live .entryRecovery { grid-template-rows:34px minmax(0,1fr); }
+}
+@container (min-width:560px) and (max-height:560px) {
+  .game { grid-template-columns:minmax(0,.9fr) minmax(0,1.1fr); grid-template-rows:minmax(0,1fr); }
+  .live .scoreboard { display:flex; flex-direction:column; justify-content:center; }
+  .live .remaining { font-size:clamp(40px,18cqh,76px); }
+  .live .scoreLine { margin:8px 0; }
+}
+@container (min-width:700px) and (max-height:520px) {
+  .live .keypad { grid-template-columns:repeat(6,minmax(0,1fr)); grid-template-rows:repeat(2,minmax(0,1fr)); }
+}
