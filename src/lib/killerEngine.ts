@@ -54,7 +54,8 @@ export function addPlayer(game: KillerGame, name: string): KillerGame {
   if (game.state !== "waiting_for_players") return game;
   const trimmed = name.trim();
   if (!trimmed) return game;
-  if (game.players.some((p) => p.name.toLowerCase() === trimmed.toLowerCase())) return game;
+  if (game.players.some((p) => p.name.toLowerCase() === trimmed.toLowerCase()))
+    return game;
   const newPlayer: Player = {
     id: nanoid(),
     name: trimmed,
@@ -92,12 +93,22 @@ export function startGame(game: KillerGame): KillerGame {
     lives: INITIAL_LIVES,
     status: "alive" as PlayerStatus,
   }));
-  return { ...game, players: shuffled, state: "shuffle_animation", current_player_index: 0 };
+  return {
+    ...game,
+    players: shuffled,
+    state: "shuffle_animation",
+    current_player_index: 0,
+  };
 }
 
 export function continueAfterShuffle(game: KillerGame): KillerGame {
   if (game.state !== "shuffle_animation") return game;
-  return { ...game, state: "setting_first_segment", current_player_index: 0, darts_thrown_this_turn: 0 };
+  return {
+    ...game,
+    state: "setting_first_segment",
+    current_player_index: 0,
+    darts_thrown_this_turn: 0,
+  };
 }
 
 export function getAlivePlayers(game: KillerGame): Player[] {
@@ -107,7 +118,7 @@ export function getAlivePlayers(game: KillerGame): Player[] {
 export function getNextPlayerIndex(
   game: KillerGame,
   fromIndex: number,
-  ownerId: string | null
+  ownerId: string | null,
 ): number {
   const n = game.players.length;
   let next = (fromIndex + 1) % n;
@@ -151,10 +162,23 @@ function advanceTurn(game: KillerGame): KillerGame {
   const nonOwnerAlive = alive.filter((p) => p.id !== ownerId);
   if (nonOwnerAlive.length === 0 && alive.length === 1) {
     const ownerIndex = game.players.findIndex((p) => p.id === ownerId);
-    return { ...game, state: "final_proof", current_player_index: ownerIndex, darts_thrown_this_turn: 0 };
+    return {
+      ...game,
+      state: "final_proof",
+      current_player_index: ownerIndex,
+      darts_thrown_this_turn: 0,
+    };
   }
-  const nextIndex = getNextPlayerIndex(game, game.current_player_index, ownerId);
-  return { ...game, current_player_index: nextIndex, darts_thrown_this_turn: 0 };
+  const nextIndex = getNextPlayerIndex(
+    game,
+    game.current_player_index,
+    ownerId,
+  );
+  return {
+    ...game,
+    current_player_index: nextIndex,
+    darts_thrown_this_turn: 0,
+  };
 }
 
 export function missDart(game: KillerGame): KillerGame {
@@ -167,9 +191,15 @@ export function missDart(game: KillerGame): KillerGame {
   const newLives = currentPlayer.lives - 1;
   const newStatus: PlayerStatus = newLives <= 0 ? "eliminated" : "alive";
   const updatedPlayers = game.players.map((p) =>
-    p.id === currentPlayer.id ? { ...p, lives: newLives, status: newStatus } : p
+    p.id === currentPlayer.id
+      ? { ...p, lives: newLives, status: newStatus }
+      : p,
   );
-  return advanceTurn({ ...game, players: updatedPlayers, darts_thrown_this_turn: 0 });
+  return advanceTurn({
+    ...game,
+    players: updatedPlayers,
+    darts_thrown_this_turn: 0,
+  });
 }
 
 export function undoDart(game: KillerGame): KillerGame {
@@ -182,7 +212,11 @@ export function setNewSegment(game: KillerGame, segment: string): KillerGame {
   if (game.state !== "segment_setting_phase") return game;
   const currentPlayer = game.players[game.current_player_index];
   const withOwner = { ...game, segment_owner_id: currentPlayer.id };
-  const nextIndex = getNextPlayerIndex(withOwner, game.current_player_index, currentPlayer.id);
+  const nextIndex = getNextPlayerIndex(
+    withOwner,
+    game.current_player_index,
+    currentPlayer.id,
+  );
   return {
     ...game,
     current_segment: segment,
@@ -209,7 +243,11 @@ export function finalProofMiss(game: KillerGame): KillerGame {
   return { ...game, state: "rollover", winner_id: null };
 }
 
-export function adjustLives(game: KillerGame, playerId: string, delta: number): KillerGame {
+export function adjustLives(
+  game: KillerGame,
+  playerId: string,
+  delta: number,
+): KillerGame {
   const updatedPlayers = game.players.map((p) => {
     if (p.id !== playerId) return p;
     const newLives = Math.max(0, Math.min(INITIAL_LIVES, p.lives + delta));
@@ -226,4 +264,58 @@ export function skipCurrentPlayer(game: KillerGame): KillerGame {
 
 export function resetGame(rollover_pot = 0): KillerGame {
   return createGame(rollover_pot);
+}
+
+export type KillerHistory = { game: KillerGame; previous: KillerGame[] };
+/** Snapshot the whole state so life loss, ownership, turn changes and the pot undo together. */
+export function applyKillerAction(
+  history: KillerHistory,
+  game: KillerGame,
+): KillerHistory {
+  if (JSON.stringify(history.game) === JSON.stringify(game)) return history;
+  return {
+    game,
+    previous: [...history.previous, structuredClone(history.game)].slice(-100),
+  };
+}
+export function undoKillerAction(history: KillerHistory): KillerHistory {
+  const game = history.previous.at(-1);
+  return game
+    ? { game: structuredClone(game), previous: history.previous.slice(0, -1) }
+    : history;
+}
+export function isKillerGame(value: unknown): value is KillerGame {
+  if (!value || typeof value !== "object") return false;
+  const g = value as KillerGame;
+  return (
+    typeof g.id === "string" &&
+    [
+      "waiting_for_players",
+      "shuffle_animation",
+      "setting_first_segment",
+      "attack_phase",
+      "segment_setting_phase",
+      "final_proof",
+      "game_over",
+      "rollover",
+    ].includes(g.state) &&
+    Number.isInteger(g.current_player_index) &&
+    g.current_player_index >= 0 &&
+    Number.isFinite(g.pot) &&
+    Number.isFinite(g.rollover_pot) &&
+    Number.isInteger(g.darts_thrown_this_turn) &&
+    Array.isArray(g.players) &&
+    g.players.every(
+      (p) =>
+        typeof p.id === "string" &&
+        typeof p.name === "string" &&
+        Number.isInteger(p.lives) &&
+        p.lives >= 0 &&
+        p.lives <= INITIAL_LIVES &&
+        ["alive", "eliminated"].includes(p.status),
+    ) &&
+    (g.players.length === 0
+      ? g.state === "waiting_for_players"
+      : g.current_player_index < g.players.length)
+  );
 }

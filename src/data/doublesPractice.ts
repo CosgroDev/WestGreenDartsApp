@@ -15,13 +15,13 @@ export type DoublesPlayerStat = {
 
 export async function getDoublesPlayerStats(): Promise<DoublesPlayerStat[]> {
   const supabase = await supabaseServer();
-  if (!supabase) return [];
+  if (!supabase) throw new Error("Practice storage is not configured.");
 
   // Only completed games count toward stats.
   const { data: sessions } = await allRows(() => supabase
     .from("doubles_practice_sessions")
     .select("id")
-    .eq("status", "completed").order("id", { ascending: true }));
+    .eq("team_id", process.env.TEAM_ID).eq("status", "completed").order("id", { ascending: true }));
   if (!sessions?.length) return [];
 
   const sessionIds = (sessions as any[]).map((s) => s.id);

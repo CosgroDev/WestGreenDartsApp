@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { enterPinAction } from "./actions";
+import { safeLocalDestination } from "@/lib/localDestination";
 
 const MAX_PIN_LENGTH = 8;
 const DOT_COUNT = 4;
@@ -21,15 +22,21 @@ export default function PinPage() {
     startTransition(async () => {
       const formData = new FormData();
       formData.append("pin", value);
-      const res = await enterPinAction(formData);
-      if (!res.ok) {
-        setError(res.message || "Incorrect PIN");
-        setPin("");
-        setShaking(true);
-        setTimeout(() => setShaking(false), 450);
-        return;
+      try {
+        const res = await enterPinAction(formData);
+        if (!res.ok) {
+          setError(res.message || "Incorrect PIN");
+          setPin("");
+          setShaking(true);
+          setTimeout(() => setShaking(false), 450);
+          return;
+        }
+        const destination = safeLocalDestination(new URLSearchParams(window.location.search).get("redirect"));
+        router.replace(destination + (window.location.hash && !destination.includes("#") ? window.location.hash : ""));
+        router.refresh();
+      } catch {
+        setError("Could not unlock. Check your connection and try again.");
       }
-      router.replace("/dashboard");
     });
   };
 
@@ -51,7 +58,17 @@ export default function PinPage() {
         </div>
       </div>
 
-      <div className={`flex items-center gap-3 ${shaking ? "shake" : ""}`} aria-label="PIN entry">
+      <form className="flex w-full max-w-[280px] flex-col gap-2" onSubmit={event => { event.preventDefault(); submit(pin); }}>
+        <label htmlFor="team-pin" className="text-sm font-semibold">Team PIN</label>
+        <input id="team-pin" type="password" inputMode="numeric" autoComplete="one-time-code" maxLength={MAX_PIN_LENGTH}
+          pattern="[0-9]+" value={pin} disabled={pending} className="input text-center tracking-[0.35em]"
+          onChange={event => { setError(null); setPin(event.target.value.replace(/\D/g, "").slice(0, MAX_PIN_LENGTH)); }}
+          aria-describedby="pin-help" aria-invalid={!!error} required />
+        <p id="pin-help" className="text-sm text-slate-600">Type or paste up to 8 digits, then press Enter or Unlock.</p>
+        <button type="submit" className="sr-only">Unlock</button>
+      </form>
+
+      <div className={`flex items-center gap-3 ${shaking ? "shake" : ""}`} aria-hidden="true">
         {Array.from({ length: dotTotal }).map((_, i) => (
           <span key={i} className={`pin-dot ${i < pin.length ? "filled" : ""}`} />
         ))}
@@ -86,6 +103,7 @@ export default function PinPage() {
           onClick={() => submit(pin)}
           disabled={pending || !pin.length}
           aria-label="Unlock"
+          aria-busy={pending}
         >
           {pending ? "…" : "✓"}
         </button>

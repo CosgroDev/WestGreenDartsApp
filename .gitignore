@@ -24,3 +24,6 @@ Thumbs.db
 
 # Vercel
 .vercel
+
+# Generated isolated browser verification artifacts
+ui-ux-verification/

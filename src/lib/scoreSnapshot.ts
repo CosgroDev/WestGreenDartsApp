@@ -1,13 +1,13 @@
 import { finishRoutes } from "./finishRoutes";
 import { buildLegStats } from "./scoringUtils";
-export function leagueScoreSnapshot(raw: any) {
+export function leagueScoreSnapshot(raw: any, undidThrower?: string) {
   const events = raw.events ?? [];
   const visits = events.filter((e: any) => e.thrower === "west_green");
   const opponent = events.filter((e: any) => e.thrower === "opponent");
   const remaining = visits.at(-1)?.remaining_after ?? 501;
   const meta = { ...raw.meta,
     opponentRemaining: opponent.at(-1)?.remaining_after ?? 501,
-    activeSide: events.length ? (events.at(-1).thrower === "opponent" ? "west" : "opponent") : (raw.meta.west_green_starts ? "west" : "opponent"),
+    activeSide: undidThrower === "west_green" ? "west" : undidThrower === "opponent" ? "opponent" : events.length ? (events.at(-1).thrower === "opponent" ? "west" : "opponent") : (raw.meta.west_green_starts ? "west" : "opponent"),
     throwLog: events.map((e: any) => e.thrower === "opponent" ? "opponent" : "west")
   };
   return { ok: true, visits, remaining, finishHint: finishRoutes[remaining] ?? null, meta,

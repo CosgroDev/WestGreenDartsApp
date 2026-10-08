@@ -1,10 +1,6 @@
 import { allRows } from "@/lib/database";
-import { matchKey } from "@/lib/matchKey";
+import { summariseFixture, MATCHES_PER_FIXTURE } from "@/lib/fixtureState";
 import { supabaseServer } from "@/lib/supabaseServer";
-
-// A fixture is a night of up to 6 singles matches (each West Green player vs
-// one opponent, played over a set of legs). Mirrors the fixture page.
-const MATCHES_PER_FIXTURE = 6;
 
 export type SeasonFixtureResult = {
   fixtureId: string;
@@ -35,11 +31,8 @@ export type SeasonToDate = {
   fixtureWins: number;
   fixtureDraws: number;
   fixtureLosses: number;
-  /** Fixtures where every live game is completed but the matchup count isn't
-   *  6 — usually a match was deleted (e.g. a scoring correction gone wrong)
-   *  and never re-entered. These fixtures look "finished" on the fixtures
-   *  page but are silently excluded here and from the AI summary, so they're
-   *  surfaced instead of just dropped. */
+  /** Nights with settled matches but an incomplete lineup remain visible
+   *  for the captain to review; they never count as completed fixtures. */
   anomalies: SeasonFixtureAnomaly[];
 };
 
@@ -65,6 +58,7 @@ export async function getSeasonToDate(seasonId: string, sharedGames?: any[]): Pr
   // Group games -> fixtures -> matches (player + opponent), like the fixture page.
   const byFixture = new Map<string, any[]>();
   games.forEach((g: any) => {
+    if (g.deleted === true) return;
     const list = byFixture.get(g.fixture_id) ?? [];
     list.push(g);
     byFixture.set(g.fixture_id, list);
@@ -73,39 +67,14 @@ export async function getSeasonToDate(seasonId: string, sharedGames?: any[]): Pr
   const fixtures: SeasonFixtureResult[] = [];
   const anomalies: SeasonFixtureAnomaly[] = [];
   for (const list of byFixture.values()) {
-    const matches = new Map<string, any[]>();
-    list.forEach((g: any) => {
-      const key = matchKey(g);
-      const arr = matches.get(key) ?? [];
-      arr.push(g);
-      matches.set(key, arr);
-    });
-
-    const anyInProgress = list.some((g: any) => g.status === "in_progress");
-    if (matches.size !== MATCHES_PER_FIXTURE && !anyInProgress) {
-      // Every live game is settled but the matchup count is off — a match
-      // was likely deleted rather than the night being genuinely unfinished.
+    const state = summariseFixture(list);
+    const matchesFound = state.matches.length;
+    if (matchesFound !== MATCHES_PER_FIXTURE && state.completedMatches === matchesFound) {
       const f = list[0].fixtures;
-      anomalies.push({ fixtureId: f.id, opponent: f.opponent, startsAt: f.starts_at, matchesFound: matches.size });
+      anomalies.push({ fixtureId: f.id, opponent: f.opponent, startsAt: f.starts_at, matchesFound });
     }
-    // Only count a fixture once it is fully played out.
-    if (matches.size < MATCHES_PER_FIXTURE || anyInProgress) continue;
-
-    let matchWins = 0;
-    let matchDraws = 0;
-    let matchLosses = 0;
-    let legsFor = 0;
-    let legsAgainst = 0;
-    for (const arr of matches.values()) {
-      const completed = arr.filter((g: any) => g.status === "completed");
-      const westWins = completed.filter((g: any) => g.winner === "west_green").length;
-      const oppWins = completed.filter((g: any) => g.winner === "opponent").length;
-      legsFor += westWins;
-      legsAgainst += oppWins;
-      if (westWins > oppWins) matchWins += 1;
-      else if (oppWins > westWins) matchLosses += 1;
-      else matchDraws += 1;
-    }
+    if (!state.complete) continue;
+    const { matchWins, matchDraws, matchLosses, legsFor, legsAgainst } = state;
 
     const f = list[0].fixtures;
     fixtures.push({

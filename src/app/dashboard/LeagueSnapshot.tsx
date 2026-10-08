@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 import { isLeagueRefreshWindow, LEAGUE_REFRESH_INTERVAL_MS, LEAGUE_REFRESH_DESCRIPTION } from "@/lib/leagueRefresh";
 import { LEAGUE_SOURCE, TARGET_LEAGUE, type LeagueContext } from "@/lib/liveLeague";
 
-export function LeagueSnapshot() {
+export function LeagueSnapshot({ season }: { season?: string } = {}) {
   const [context, setContext] = useState<LeagueContext | null>(null);
   const [failed, setFailed] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -82,7 +82,7 @@ export function LeagueSnapshot() {
         {context ? stale ? "This table is over ten minutes old. Showing the last retrieved result while the source refreshes." : "Refresh failed. Showing the last retrieved table." : "The live league table is temporarily unavailable. Please try again."}
       </p>}
       {!context && !failed && <p role="status" className="mt-3 text-sm text-slate-600">Loading live standings…</p>}
-      <Link href="/league-insights" className="mt-3 mr-4 inline-block text-sm font-semibold text-emerald-800 underline">League insights →</Link>
+      <Link href={`/league-insights${season ? `?season=${encodeURIComponent(season)}` : ""}`} className="mt-3 mr-4 inline-block text-sm font-semibold text-emerald-800 underline">League insights →</Link>
       <a href={LEAGUE_SOURCE} target="_blank" rel="noopener noreferrer" className="mt-3 inline-block text-sm text-emerald-800 underline">View full league table ↗</a>
     </section>
   );

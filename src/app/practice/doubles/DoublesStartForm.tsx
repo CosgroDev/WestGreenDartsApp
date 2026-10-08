@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, useTransition } from "react";
 import { startDoublesGameAction } from "./actions";
 
 type PlayerOption = { id: string; name: string };
@@ -8,6 +8,8 @@ type PlayerOption = { id: string; name: string };
 export default function DoublesStartForm({ players }: { players: PlayerOption[] }) {
   const [order, setOrder] = useState<string[]>([]);
   const [pick, setPick] = useState("");
+  const [pending, startTransition] = useTransition();
+  const [error, setError] = useState("");
 
   const nameById = useMemo(() => new Map(players.map((p) => [p.id, p.name])), [players]);
   const available = players.filter((p) => !order.includes(p.id));
@@ -29,19 +31,34 @@ export default function DoublesStartForm({ players }: { players: PlayerOption[] 
   };
 
   return (
-    <form action={startDoublesGameAction} className="flex flex-col gap-3">
+    <form onSubmit={event => {
+      event.preventDefault();
+      if (pending) return;
+      const data = new FormData(event.currentTarget);
+      setError("");
+      startTransition(async () => {
+        try {
+          const result = await startDoublesGameAction(data);
+          if (result && !result.ok) setError(result.message ?? "Could not start this game. Please try again.");
+        } catch (failure) {
+          if (failure instanceof Error && failure.message.includes("NEXT_REDIRECT")) throw failure;
+          setError("Could not connect to start the game. Your throwing order is unchanged; please try again.");
+        }
+      });
+    }} className="flex min-w-0 flex-col gap-3">
+      <fieldset disabled={pending} className="flex min-w-0 flex-col gap-3">
       <input type="hidden" name="playerOrder" value={order.join(",")} />
 
       <div className="flex flex-col gap-1">
         <label className="text-sm text-slate-700" htmlFor="doublesPick">
           Add players (in throwing order)
         </label>
-        <div className="flex gap-2">
+        <div className="flex min-w-0 gap-2">
           <select
             id="doublesPick"
             value={pick}
             onChange={(e) => setPick(e.target.value)}
-            className="flex-1 rounded-md border border-slate-300 px-3 py-2"
+            className="input min-w-0 flex-1"
           >
             <option value="">-- Select player --</option>
             {available.map((p) => (
@@ -54,7 +71,7 @@ export default function DoublesStartForm({ players }: { players: PlayerOption[] 
             type="button"
             onClick={add}
             disabled={!pick}
-            className="rounded-md bg-slate-800 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-900 disabled:opacity-40"
+            className="btn btn-secondary shrink-0"
           >
             Add
           </button>
@@ -66,21 +83,21 @@ export default function DoublesStartForm({ players }: { players: PlayerOption[] 
           {order.map((id, i) => (
             <li
               key={id}
-              className="flex items-center justify-between rounded-md border border-slate-200 px-3 py-2 text-sm"
+              className="flex min-w-0 flex-col gap-2 rounded-md border border-slate-200 px-3 py-2 text-sm sm:flex-row sm:items-center sm:justify-between"
             >
-              <span className="flex items-center gap-2">
+              <span className="flex min-w-0 items-center gap-2">
                 <span className="flex h-6 w-6 items-center justify-center rounded-full bg-emerald-100 text-xs font-bold text-emerald-700">
                   {i + 1}
                 </span>
-                <span className="font-semibold">{nameById.get(id)}</span>
+                <span className="min-w-0 break-words font-semibold">{nameById.get(id)}</span>
               </span>
               <span className="flex items-center gap-1">
                 <button
                   type="button"
                   onClick={() => move(i, -1)}
                   disabled={i === 0}
-                  className="rounded border border-slate-300 px-2 py-1 text-xs disabled:opacity-30"
-                  aria-label="Move up"
+                  className="btn btn-secondary"
+                  aria-label={`Move ${nameById.get(id)} up`}
                 >
                   ↑
                 </button>
@@ -88,15 +105,16 @@ export default function DoublesStartForm({ players }: { players: PlayerOption[] 
                   type="button"
                   onClick={() => move(i, 1)}
                   disabled={i === order.length - 1}
-                  className="rounded border border-slate-300 px-2 py-1 text-xs disabled:opacity-30"
-                  aria-label="Move down"
+                  className="btn btn-secondary"
+                  aria-label={`Move ${nameById.get(id)} down`}
                 >
                   ↓
                 </button>
                 <button
                   type="button"
                   onClick={() => remove(id)}
-                  className="rounded border border-red-200 bg-red-50 px-2 py-1 text-xs font-semibold text-red-600"
+                  className="btn btn-secondary"
+                  aria-label={`Remove ${nameById.get(id)} from this game`}
                 >
                   Remove
                 </button>
@@ -108,12 +126,15 @@ export default function DoublesStartForm({ players }: { players: PlayerOption[] 
         <p className="text-xs text-slate-500">Add at least one player to start.</p>
       )}
 
+      </fieldset>
+      {error && <p role="alert" className="text-sm text-red-600">{error}</p>}
       <button
         type="submit"
-        disabled={order.length === 0}
-        className="rounded-md bg-emerald-600 px-4 py-3 font-semibold text-white hover:bg-emerald-700 disabled:opacity-40"
+        disabled={order.length === 0 || pending}
+        aria-busy={pending}
+        className="btn btn-primary"
       >
-        Start Doubles Switch
+        {pending ? "Starting…" : "Start Doubles Switch"}
       </button>
     </form>
   );

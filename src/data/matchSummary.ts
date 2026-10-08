@@ -1,3 +1,4 @@
+import { groupFixtureMatches, summariseFixture } from "@/lib/fixtureState";
 import { allRows } from "@/lib/database";
 import { canFinishFrom } from "@/lib/scoringUtils";
 import { supabaseServer } from "@/lib/supabaseServer";
@@ -32,7 +33,8 @@ export type MatchSummary = {
   opponentPlayer: string;
   westLegs: number;
   oppLegs: number;
-  result: "win" | "loss" | "draw";
+  result: "win" | "loss" | "draw" | null;
+  complete?: boolean;
   legs: LegSummary[];
   // match-level aggregates (West Green player only — opponent visits aren't tracked)
   dartsTotal: number;
@@ -103,6 +105,7 @@ export async function getMatchSummary(gameId: string): Promise<MatchSummary | nu
     .from("games")
     .select("id, fixture_id, west_green_player_id, opponent_player, match_id, players(name)")
     .eq("id", gameId)
+    .eq("deleted", false)
     .single();
   if (gameErr || !game) return null;
 
@@ -118,14 +121,11 @@ export async function getMatchSummary(gameId: string): Promise<MatchSummary | nu
   if (sibErr || !siblings) return null;
 
   const oppKey = (game.opponent_player || "").trim().toLowerCase();
-  const legsGames = siblings.filter(
-    (g: any) =>
-      (game.match_id
-        ? g.match_id === game.match_id
-        : g.west_green_player_id === game.west_green_player_id &&
-          (g.opponent_player || "").trim().toLowerCase() === oppKey) &&
-      g.status === "completed"
-  );
+  const matchGames = siblings.filter((g: any) => game.match_id
+    ? g.match_id === game.match_id
+    : g.west_green_player_id === game.west_green_player_id && (g.opponent_player || "").trim().toLowerCase() === oppKey);
+  const matchState = groupFixtureMatches(matchGames)[0];
+  const legsGames = matchGames.filter((g: any) => g.status === "completed");
   if (!legsGames.length) return null;
 
   const { data: events } = await allRows(() => supabase
@@ -160,7 +160,7 @@ export async function getMatchSummary(gameId: string): Promise<MatchSummary | nu
   const westLegs = legs.filter((l) => l.winner === "west").length;
   const oppLegs = legs.filter((l) => l.winner === "opponent").length;
   const isDraw = legs.some((l) => l.winner === "draw") || westLegs === oppLegs;
-  const result: MatchSummary["result"] = isDraw ? "draw" : westLegs > oppLegs ? "win" : "loss";
+  const result: MatchSummary["result"] = matchState?.result ?? null;
 
   const dartsTotal = legs.reduce((s, l) => s + l.dartsTotal, 0);
   const pointsTotal = legs.reduce((s, l) => s + l.pointsTotal, 0);
@@ -194,6 +194,7 @@ export async function getMatchSummary(gameId: string): Promise<MatchSummary | nu
     westLegs: isDraw && westLegs === 0 && oppLegs === 0 ? 1 : westLegs,
     oppLegs: isDraw && westLegs === 0 && oppLegs === 0 ? 1 : oppLegs,
     result,
+    complete: matchState?.complete ?? false,
     legs,
     dartsTotal,
     pointsTotal,
@@ -277,7 +278,7 @@ export type FixtureTeamSummary = {
  * Team-wide summary for a fixture: rolls up every completed match (each a
  * group of legs played by one West Green player vs one opponent, mirroring the
  * fixture page's grouping) into one set of team aggregates plus a per-match
- * breakdown. Returns null until at least one match is complete.
+ * breakdown. Returns null until all six distinct matches are complete.
  */
 export async function getFixtureTeamSummary(fixtureId: string): Promise<FixtureTeamSummary | null> {
   const supabase = await supabaseServer();
@@ -287,39 +288,24 @@ export async function getFixtureTeamSummary(fixtureId: string): Promise<FixtureT
     supabase.from("fixtures").select("id, opponent, home").eq("id", fixtureId).single(),
     supabase
       .from("games")
-      .select("id, match_id, opponent_player, west_green_player_id, status, created_at")
+      .select("id, match_id, opponent_player, west_green_player_id, status, winner, created_at")
       .eq("fixture_id", fixtureId)
       .eq("deleted", false)
       .order("created_at", { ascending: true })
   ]);
   if (error || !games || !games.length) return null;
 
-  // Group legs into matches by match_id, falling back to West Green player +
-  // opponent name for legacy rows (mirrors fixture page).
-  const groups = new Map<string, any[]>();
-  games.forEach((g: any) => {
-    const key =
-      g.match_id ?? `${g.west_green_player_id || "none"}|${(g.opponent_player || "").trim().toLowerCase()}`;
-    const list = groups.get(key) ?? [];
-    list.push(g);
-    groups.set(key, list);
-  });
-
-  // Build a full MatchSummary for each completed match (skip any still in progress).
-  const summaries: MatchSummary[] = [];
-  for (const list of groups.values()) {
-    if (list.some((g) => g.status === "in_progress")) continue;
-    const completed = list.find((g) => g.status === "completed");
-    if (!completed) continue;
-    const ms = await getMatchSummary(completed.id);
-    if (ms) summaries.push(ms);
-  }
+  const state = summariseFixture(games);
+  if (!state.complete) return null;
+  const summaries = (await Promise.all(state.matches.map(match => getMatchSummary(match.games[0].id!))))
+    .filter((summary): summary is MatchSummary => summary !== null && summary.complete === true && summary.result !== null);
+  if (summaries.length !== 6) return null;
   if (!summaries.length) return null;
 
   const matches: TeamMatchSummary[] = summaries.map((m) => ({
     westPlayerName: m.westPlayerName,
     opponentPlayer: m.opponentPlayer,
-    result: m.result,
+    result: m.result!,
     westLegs: m.westLegs,
     oppLegs: m.oppLegs,
     threeDartAvg: m.threeDartAvg,

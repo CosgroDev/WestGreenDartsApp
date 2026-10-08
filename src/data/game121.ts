@@ -12,13 +12,13 @@ export type Game121PlayerStat = {
 
 export async function get121PlayerStats(): Promise<Game121PlayerStat[]> {
   const supabase = await supabaseServer();
-  if (!supabase) return [];
+  if (!supabase) throw new Error("Practice storage is not configured.");
 
   // Only count finished games (won or abandoned) — not in_progress
   const { data: sessions } = await allRows(() => supabase
     .from("game_121_sessions")
     .select("id, player_id, status, current_checkout, player:player_id(name)")
-    .in("status", ["won", "abandoned"]).order("id", { ascending: true }));
+    .eq("team_id", process.env.TEAM_ID).in("status", ["won", "abandoned"]).order("id", { ascending: true }));
   if (!sessions?.length) return [];
 
   // Fetch turns only for these sessions (for lock rate calculation)
@@ -85,11 +85,11 @@ export async function get121PlayerStats(): Promise<Game121PlayerStat[]> {
 
 export async function getActive121Sessions() {
   const db = await supabaseServer();
-  if (!db || !process.env.TEAM_ID) return [];
-  const { data, error } = await db.from("game_121_sessions")
+  if (!db || !process.env.TEAM_ID) throw new Error("Practice storage is not configured.");
+  const { data, error } = await allRows(() => db.from("game_121_sessions")
     .select("id, current_checkout, remaining, current_turn, player:player_id(name)")
     .eq("team_id", process.env.TEAM_ID).eq("status", "in_progress")
-    .order("created_at", { ascending: false }).limit(5);
+    .order("created_at", { ascending: false }).order("id", { ascending: false }));
   if (error) throw new Error(error.message);
   return (data ?? []) as unknown as {
     id: string; current_checkout: number; remaining: number; current_turn: number;

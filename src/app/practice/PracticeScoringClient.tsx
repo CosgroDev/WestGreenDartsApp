@@ -7,6 +7,7 @@ import { useEffect, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import type { LegStats } from "@/lib/scoringUtils";
 import {
+  endPracticeSessionAction,
   loadPracticeStateAction,
   recordPracticeVisitAction,
   undoLastPracticeVisitAction,
@@ -18,14 +19,20 @@ const START_FALLBACK = 501;
 function StatGrid({ stats, name }: { stats: LegStats; name: string }) {
   const b = stats.buckets;
   return (
-    <div className="flex flex-col gap-1">
+    <div className="flex min-w-0 flex-col gap-1">
       <p className="text-xs font-semibold text-slate-700 truncate">{name}</p>
       <div className="grid grid-cols-2 gap-x-3 gap-y-0.5 text-xs text-slate-600">
         <span>
-          3DA: <strong>{stats.threeDartAvg != null ? stats.threeDartAvg.toFixed(1) : "–"}</strong>
+          3DA:{" "}
+          <strong>
+            {stats.threeDartAvg != null ? stats.threeDartAvg.toFixed(1) : "–"}
+          </strong>
         </span>
         <span>
-          F9: <strong>{stats.firstNineAvg != null ? stats.firstNineAvg.toFixed(1) : "–"}</strong>
+          F9:{" "}
+          <strong>
+            {stats.firstNineAvg != null ? stats.firstNineAvg.toFixed(1) : "–"}
+          </strong>
         </span>
         <span>
           Darts: <strong>{stats.totalDarts}</strong>
@@ -86,14 +93,22 @@ export default function PracticeScoringClient() {
 
   const [remainingA, setRemainingA] = useState<number>(START_FALLBACK);
   const [remainingB, setRemainingB] = useState<number>(START_FALLBACK);
-  const [inputScore, setInputScore] = useState(0);
+  const [inputScore, setInputScore] = useState("");
   const [activeSide, setActiveSide] = useState<"a" | "b">("a");
   const [finishHintA, setFinishHintA] = useState<string | null>(null);
   const [finishHintB, setFinishHintB] = useState<string | null>(null);
-  const { pending, run: startTransition, error: saveError, saved, retry: retrySave, clearError: clearSaveError } = useScoreTask();
+  const {
+    pending,
+    run: startTransition,
+    error: saveError,
+    saved,
+    retry: retrySave,
+    clearError: clearSaveError,
+  } = useScoreTask();
   const [meta, setMeta] = useState<any>(null);
   const [alert, setAlert] = useState<string | null>(null);
   const [statsA, setStatsA] = useState<LegStats | null>(null);
+  const [sessionSummary, setSessionSummary] = useState<any>(null);
   const [statsB, setStatsB] = useState<LegStats | null>(null);
   const [finishScore, setFinishScore] = useState<number | null>(null);
   const [confirmDelete, setConfirmDelete] = useState(false);
@@ -106,55 +121,92 @@ export default function PracticeScoringClient() {
     setFinishHintB(res.finishHintB ?? null);
     setMeta(res.meta ?? null);
     const last = res.visits?.[res.visits.length - 1];
-    setActiveSide(last ? (last.thrower === "player_a" ? "b" : "a") : ((res.meta?.leg_index ?? 1) % 2 ? "a" : "b"));
+    setActiveSide(
+      res.meta?.practice_sessions?.solo_mode
+        ? "a"
+        : last
+          ? last.thrower === "player_a"
+            ? "b"
+            : "a"
+          : (res.meta?.leg_index ?? 1) % 2
+            ? "a"
+            : "b",
+    );
     setStatsA(res.statsA ?? null);
     setStatsB(res.statsB ?? null);
+    if (res.sessionSummary) setSessionSummary(res.sessionSummary);
   };
 
   useEffect(() => {
     if (!gameId) return;
     startTransition(async () => {
       const res = await loadPracticeStateAction(gameId);
-      if (!res.ok || !res.meta) throw new Error(res.message || "Could not load this game.");
+      if (!res.ok || !res.meta)
+        throw new Error(res.message || "Could not load this game.");
       applyState(res);
     });
-  }, [gameId]);
+  }, [gameId, startTransition]);
 
-  const playerAName = meta?.practice_sessions?.player_a?.name ?? "Player A";
-  const playerBName = meta?.practice_sessions?.player_b?.name ?? "Player B";
+  const playerAName =
+    meta?.practice_sessions?.player_a?.name ??
+    (meta?.practice_sessions?.player_a_id
+      ? "Former player"
+      : meta?.practice_sessions?.solo_mode
+        ? "Guest"
+        : "Guest A");
+  const playerBName =
+    meta?.practice_sessions?.player_b?.name ??
+    (meta?.practice_sessions?.player_b_id ? "Former player" : "Guest B");
   const gameStatus = meta?.status ?? "in_progress";
   const winner = meta?.winner ?? null;
   const legIndex = meta?.leg_index ?? 1;
   const legsToPlay = meta?.practice_sessions?.legs_to_play ?? 1;
   const sessionStatus = meta?.practice_sessions?.status ?? "in_progress";
-  const activeFinishHint = activeSide === "a" ? finishHintA : finishHintB;
+  const solo = !!meta?.practice_sessions?.solo_mode;
 
   const handleKey = (n: number) => {
     if (pending || saveError) return;
     setInputScore((prev) => {
       const next = Number(`${prev}${n}`);
-      return next > 180 ? prev : next;
+      return next > 180 ? prev : String(next);
     });
   };
-  const clearInput = () => { if (!pending && !saveError) setInputScore(0); };
+  const clearInput = () => {
+    if (!pending && !saveError) setInputScore("");
+  };
 
   const submitScore = (darts = 3, checkoutScore?: number) => {
     if (!gameId || !meta || gameStatus === "completed") return;
     if (pending || saveError) return;
-    const score = checkoutScore ?? inputScore;
+    if (checkoutScore === undefined && inputScore === "") return;
+    const score = checkoutScore ?? Number(inputScore);
     const remaining = activeSide === "a" ? remainingA : remainingB;
-    if (checkoutScore === undefined && score === remaining && canFinishFrom(remaining)) { setFinishScore(score); return; }
+    if (
+      checkoutScore === undefined &&
+      score === remaining &&
+      canFinishFrom(remaining)
+    ) {
+      setFinishScore(score);
+      return;
+    }
     const requestId = crypto.randomUUID();
     startTransition(async () => {
-      const res = await recordPracticeVisitAction(gameId, activeSide, score, darts, meta?.revision, requestId);
+      const res = await recordPracticeVisitAction(
+        gameId,
+        activeSide,
+        score,
+        darts,
+        meta?.revision,
+        requestId,
+      );
       if (!res.ok) throw new Error(res.message ?? "Could not save the score.");
       setAlert(null);
-      setInputScore(0);
+      setInputScore("");
       setFinishScore(null);
       const reload = res;
       applyState(reload);
       if (reload.ok && reload.meta?.status !== "completed") {
-        setActiveSide(activeSide === "a" ? "b" : "a");
+        setActiveSide(solo ? "a" : activeSide === "a" ? "b" : "a");
       }
     });
   };
@@ -163,10 +215,27 @@ export default function PracticeScoringClient() {
     if (!gameId || !meta || pending || saveError) return;
     const requestId = crypto.randomUUID();
     startTransition(async () => {
-      const res = await undoLastPracticeVisitAction(gameId, meta?.revision, requestId);
-      if (!res.ok) throw new Error(res.message || "Could not update the score.");
+      const res =
+        sessionStatus === "cancelled"
+          ? await endPracticeSessionAction(
+              gameId,
+              meta.revision,
+              requestId,
+              true,
+            )
+          : await undoLastPracticeVisitAction(
+              gameId,
+              meta?.revision,
+              requestId,
+            );
+      if (!res.ok)
+        throw new Error(res.message || "Could not update the score.");
       const reload = res;
       applyState(reload);
+      if (res.meta?.id && res.meta.id !== gameId)
+        router.replace(
+          `/practice/scoring?session=${sessionId}&game=${res.meta.id}`,
+        );
       setAlert(null);
       const thrower = (res as any).undidThrower;
       if (thrower === "player_a") setActiveSide("a");
@@ -178,11 +247,41 @@ export default function PracticeScoringClient() {
     if (!gameId || pending) return;
     startTransition(async () => {
       const res = await loadPracticeStateAction(gameId);
-      if (!res.ok || !res.meta) throw new Error(res.message || "Could not reload the score.");
-      applyState(res); clearSaveError(); setAlert(null);
+      if (!res.ok || !res.meta)
+        throw new Error(res.message || "Could not reload the score.");
+      applyState(res);
+      clearSaveError();
+      setAlert(null);
     });
   };
 
+  const endSession = () => {
+    if (!gameId || pending || saveError || !meta) return;
+    const request = crypto.randomUUID();
+    startTransition(async () => {
+      const res = await endPracticeSessionAction(
+        gameId,
+        meta.revision,
+        request,
+      );
+      if (!res.ok)
+        throw new Error(
+          "message" in res ? res.message : "Could not end session.",
+        );
+      applyState(res);
+    });
+  };
+  const pauseGuard = (e: React.MouseEvent<HTMLAnchorElement>) => {
+    if (
+      pending ||
+      saveError ||
+      (inputScore !== "" &&
+        !confirm(
+          "This score has not been entered. Leave without recording it?",
+        ))
+    )
+      e.preventDefault();
+  };
   const goToNextLeg = () => {
     if (!sessionId) return;
     router.push(`/practice/scoring?session=${sessionId}`);
@@ -193,53 +292,139 @@ export default function PracticeScoringClient() {
     if (!sessionId) return;
     startTransition(async () => {
       const deleted = await deletePracticeSessionFromScoringAction(sessionId);
-      if (!deleted.ok) { setAlert(deleted.message || "Could not delete session"); return; }
+      if (!deleted.ok)
+        throw new Error(deleted.message || "Could not delete session");
       router.push("/practice");
     });
   };
 
   if (!gameId) {
-    return <div className="card text-sm text-slate-600"><p>Loading…</p><ScoreSaveStatus pending={pending} saved={saved} error={saveError} retry={retrySave} reload={reloadLatest} /></div>;
+    return (
+      <div className="card text-sm text-slate-600">
+        <p>Loading…</p>
+        <ScoreSaveStatus
+          pending={pending}
+          saved={saved}
+          error={saveError}
+          retry={retrySave}
+          reload={reloadLatest}
+        />
+      </div>
+    );
   }
 
   // Post-leg summary
-  if (gameStatus === "completed") {
-    const winnerName = winner === "player_a" ? playerAName : winner === "player_b" ? playerBName : "–";
+  if (gameStatus === "completed" || sessionStatus === "cancelled") {
+    const winnerName =
+      winner === "player_a"
+        ? playerAName
+        : winner === "player_b"
+          ? playerBName
+          : "–";
     return (
       <div className="flex flex-col gap-4">
         <div className="card">
-          <p className="text-sm text-slate-600">Leg {legIndex} of {legsToPlay}</p>
-          <h2 className="text-2xl font-semibold mt-0.5">{winnerName} wins!</h2>
+          <p className="text-sm text-slate-600">
+            Leg {legIndex} of {legsToPlay}
+          </p>
+          <h2 className="text-2xl font-semibold mt-0.5">
+            {sessionStatus === "cancelled"
+              ? "Session ended"
+              : `${winnerName} wins!`}
+          </h2>
         </div>
 
         <div className="grid grid-cols-2 gap-3">
-          <div className={`card ${winner === "player_a" ? "border-emerald-300 ring-1 ring-emerald-200" : ""}`}>
+          <div
+            className={`card ${winner === "player_a" ? "border-emerald-300 ring-1 ring-emerald-200" : ""}`}
+          >
             {winner === "player_a" && (
-              <p className="text-xs font-semibold text-emerald-600 mb-1">Winner</p>
+              <p className="text-xs font-semibold text-emerald-600 mb-1">
+                Winner
+              </p>
             )}
             {statsA && <StatGrid stats={statsA} name={playerAName} />}
           </div>
-          <div className={`card ${winner === "player_b" ? "border-emerald-300 ring-1 ring-emerald-200" : ""}`}>
-            {winner === "player_b" && (
-              <p className="text-xs font-semibold text-emerald-600 mb-1">Winner</p>
-            )}
-            {statsB && <StatGrid stats={statsB} name={playerBName} />}
-          </div>
+          {!solo && (
+            <div
+              className={`card ${winner === "player_b" ? "border-emerald-300 ring-1 ring-emerald-200" : ""}`}
+            >
+              {!solo && winner === "player_b" && (
+                <p className="text-xs font-semibold text-emerald-600 mb-1">
+                  Winner
+                </p>
+              )}
+              {!solo && statsB && (
+                <StatGrid stats={statsB} name={playerBName} />
+              )}
+            </div>
+          )}
         </div>
 
+        {sessionSummary && sessionStatus !== "in_progress" && (
+          <section className="card">
+            <h2 className="font-semibold">
+              Whole session · {sessionSummary.completed} completed legs
+            </h2>
+            <div className="grid grid-cols-2 gap-3 mt-3">
+              {sessionSummary.players
+                .filter((_: any, i: number) => !solo || i === 0)
+                .map((p: any, i: number) => (
+                  <div key={p.side} className="min-w-0">
+                    <p className="font-semibold break-words">
+                      {i === 0 ? playerAName : playerBName}
+                    </p>
+                    <p className="text-sm">
+                      {p.wins} legs won · {p.darts} darts
+                    </p>
+                    <p className="text-sm">
+                      3-dart average:{" "}
+                      {p.average === null ? "–" : p.average.toFixed(1)}
+                    </p>
+                  </div>
+                ))}
+            </div>
+          </section>
+        )}
         <div className="card flex flex-col gap-2">
-          <ScoreSaveStatus pending={pending} saved={saved} error={saveError} retry={retrySave} reload={reloadLatest} />
-          {alert && <p role="alert" className="text-sm text-red-700">{alert}</p>}
-          <button onClick={undo} disabled={pending || saveError !== null} className="btn-secondary">Undo checkout</button>
-          {sessionStatus === "completed" ? (
+          <ScoreSaveStatus
+            pending={pending}
+            saved={saved}
+            error={saveError}
+            retry={retrySave}
+            reload={reloadLatest}
+          />
+          {alert && (
+            <p role="alert" className="text-sm text-red-700">
+              {alert}
+            </p>
+          )}
+          <button
+            onClick={undo}
+            disabled={pending || saveError !== null}
+            className="btn-secondary"
+          >
+            {sessionStatus === "cancelled"
+              ? "Undo end session"
+              : "Undo checkout"}
+          </button>
+          {sessionStatus !== "in_progress" ? (
             <>
-              <p className="text-sm font-semibold text-slate-700">Session complete</p>
-              <p className="text-xs text-slate-600">{legsToPlay} leg{legsToPlay !== 1 ? "s" : ""} played</p>
+              <p className="text-sm font-semibold text-slate-700">
+                {sessionStatus === "cancelled"
+                  ? "Ended early · completed legs are kept"
+                  : "Session complete"}
+              </p>
+              <p className="text-xs text-slate-600">
+                {sessionStatus === "cancelled"
+                  ? "Unfinished legs do not count as results."
+                  : `${legsToPlay} legs played`}
+              </p>
               <a
-                href="/dashboard"
+                href="/practice"
                 className="rounded-md bg-emerald-600 px-4 py-3 text-center text-white font-semibold hover:bg-emerald-700"
               >
-                Dashboard
+                Play again
               </a>
               <a
                 href="/practice"
@@ -269,8 +454,12 @@ export default function PracticeScoringClient() {
           )}
           <div className="border-t border-slate-100 pt-2">
             {confirmDelete ? (
-              <div className="flex items-center gap-2">
-                <span className="text-sm text-slate-600 flex-1">Delete this session?</span>
+              <div className="flex min-w-0 flex-wrap items-center gap-2">
+                <span className="min-w-0 basis-full text-sm text-slate-600 [overflow-wrap:anywhere]">
+                  Delete this X01 session for {playerAName}
+                  {!solo && ` and ${playerBName}`} and all its {legsToPlay}{" "}
+                  scheduled legs?
+                </span>
                 <button
                   className="rounded-md bg-red-600 px-3 py-1.5 text-sm font-semibold text-white hover:bg-red-700 disabled:opacity-50"
                   onClick={deleteSession}
@@ -301,91 +490,161 @@ export default function PracticeScoringClient() {
 
   // In-progress scoring
   return (
-    <div className="card flex flex-col gap-3">
+    <div className="card min-w-0 flex flex-col gap-3">
       {/* Navigation + leg progress */}
       <div className="flex items-center justify-between gap-2 border-b border-slate-100 pb-2">
-        <div className="flex items-center gap-2">
-          <a
-            href="/dashboard"
-            className="rounded-md border border-slate-300 px-2 py-1 text-xs font-semibold text-slate-600 hover:border-slate-400 hover:text-slate-800"
-          >
-            ← Dashboard
-          </a>
-          <a
-            href="/practice"
-            className="rounded-md border border-emerald-200 bg-emerald-50 px-2 py-1 text-xs font-semibold text-emerald-700 hover:bg-emerald-100"
-          >
-            Sessions
-          </a>
-        </div>
+        <a
+          href="/practice"
+          className="btn-secondary text-sm"
+          aria-disabled={pending || !!saveError}
+          onClick={pauseGuard}
+        >
+          Pause &amp; save
+        </a>
         {meta && (
-          <span className="text-sm font-semibold text-slate-800">Leg {legIndex} of {legsToPlay}</span>
+          <span className="text-sm font-semibold text-slate-800">
+            Leg {legIndex} of {legsToPlay}
+          </span>
         )}
       </div>
 
       {/* Player toggle + input display */}
-      <div className="flex items-center justify-between">
-        <div className="flex gap-2">
+      <div className="flex min-w-0 flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="grid min-w-0 grid-cols-2 gap-2 sm:flex sm:flex-1 sm:flex-wrap">
           <button
-            className={`px-3 py-1 rounded-md text-sm font-semibold ${
-              activeSide === "a" ? "bg-emerald-600 text-white" : "bg-slate-200 text-slate-800"
+            className={`min-w-0 max-w-full whitespace-normal [overflow-wrap:anywhere] px-3 py-2 rounded-md text-sm font-semibold ${
+              activeSide === "a"
+                ? "bg-emerald-600 text-white"
+                : "bg-slate-200 text-slate-800"
             }`}
-            disabled={pending || saveError !== null} onClick={() => setActiveSide("a")}
+            disabled={pending || saveError !== null}
+            onClick={() => setActiveSide("a")}
           >
             {playerAName}
           </button>
-          <button
-            className={`px-3 py-1 rounded-md text-sm font-semibold ${
-              activeSide === "b" ? "bg-emerald-600 text-white" : "bg-slate-200 text-slate-800"
-            }`}
-            disabled={pending || saveError !== null} onClick={() => setActiveSide("b")}
-          >
-            {playerBName}
-          </button>
+          {!solo && (
+            <button
+              className={`min-w-0 max-w-full whitespace-normal [overflow-wrap:anywhere] px-3 py-2 rounded-md text-sm font-semibold ${
+                activeSide === "b"
+                  ? "bg-emerald-600 text-white"
+                  : "bg-slate-200 text-slate-800"
+              }`}
+              disabled={pending || saveError !== null}
+              onClick={() => setActiveSide("b")}
+            >
+              {playerBName}
+            </button>
+          )}
         </div>
-        <div className="text-xl font-bold text-slate-800">{inputScore || "–"}</div>
+        <label className="flex items-center justify-between gap-2 text-xs sm:flex-col sm:items-end sm:shrink-0">
+          Visit score
+          <input
+            aria-label="Visit score"
+            inputMode="numeric"
+            type="text"
+            className="block w-20 rounded-md border border-slate-300 px-2 py-2 text-xl font-bold"
+            value={inputScore}
+            placeholder="–"
+            disabled={pending || !!saveError || !meta}
+            onChange={(e) => {
+              if (
+                /^\d{0,3}$/.test(e.target.value) &&
+                Number(e.target.value) <= 180
+              )
+                setInputScore(e.target.value);
+            }}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                submitScore();
+              }
+            }}
+          />
+        </label>
       </div>
 
       {/* Remaining scores */}
       <div className="flex gap-2">
         <div
-          className={`flex-1 rounded-lg border px-3 py-2 ${
-            activeSide === "a" ? "border-emerald-300 bg-emerald-50" : "border-slate-200 bg-white"
+          className={`min-w-0 flex-1 rounded-lg border px-3 py-2 ${
+            activeSide === "a"
+              ? "border-emerald-300 bg-emerald-50"
+              : "border-slate-200 bg-white"
           }`}
         >
-          <p className="text-xs uppercase font-medium text-emerald-700 truncate">{playerAName}</p>
+          <p className="text-xs uppercase font-medium text-emerald-700 [overflow-wrap:anywhere]">
+            {playerAName}
+          </p>
           <p className="text-3xl font-bold text-emerald-900">{remainingA}</p>
           {activeSide === "a" && finishHintA && (
             <p className="text-xs text-emerald-600 mt-0.5">{finishHintA}</p>
           )}
         </div>
-        <div
-          className={`flex-1 rounded-lg border px-3 py-2 ${
-            activeSide === "b" ? "border-emerald-300 bg-emerald-50" : "border-slate-200 bg-white"
-          }`}
-        >
-          <p className="text-xs uppercase font-medium text-slate-600 truncate">{playerBName}</p>
-          <p className="text-3xl font-bold text-slate-900">{remainingB}</p>
-          {activeSide === "b" && finishHintB && (
-            <p className="text-xs text-emerald-600 mt-0.5">{finishHintB}</p>
-          )}
-        </div>
+        {!solo && (
+          <div
+            className={`min-w-0 flex-1 rounded-lg border px-3 py-2 ${
+              activeSide === "b"
+                ? "border-emerald-300 bg-emerald-50"
+                : "border-slate-200 bg-white"
+            }`}
+          >
+            <p className="text-xs uppercase font-medium text-slate-600 [overflow-wrap:anywhere]">
+              {playerBName}
+            </p>
+            <p className="text-3xl font-bold text-slate-900">{remainingB}</p>
+            {activeSide === "b" && finishHintB && (
+              <p className="text-xs text-emerald-600 mt-0.5">{finishHintB}</p>
+            )}
+          </div>
+        )}
       </div>
 
-      {alert && <div role="alert" className="text-sm text-red-800 rounded-md bg-red-50 px-3 py-2">{alert}</div>}
-      <ScoreSaveStatus pending={pending} saved={saved} error={saveError} retry={retrySave} reload={reloadLatest} />
+      {alert && (
+        <div
+          role="alert"
+          className="text-sm text-red-800 rounded-md bg-red-50 px-3 py-2"
+        >
+          {alert}
+        </div>
+      )}
+      <ScoreSaveStatus
+        pending={pending}
+        saved={saved}
+        error={saveError}
+        retry={retrySave}
+        reload={reloadLatest}
+      />
 
-      {finishScore !== null && <div className="rounded-md bg-emerald-50 p-3">
-        <p>How many darts on the checkout?</p>
-        {[1, 2, 3].map(d => <button key={d} className="btn-secondary m-1" disabled={pending || saveError !== null || !canFinishFrom(finishScore, d)} onClick={() => submitScore(d, finishScore)}>{d} dart{d > 1 ? "s" : ""}</button>)}
-        <button className="btn-secondary" disabled={pending || saveError !== null} onClick={() => setFinishScore(null)}>Cancel</button>
-      </div>}
+      {finishScore !== null && (
+        <div className="rounded-md bg-emerald-50 p-3">
+          <p>How many darts on the checkout?</p>
+          {[1, 2, 3].map((d) => (
+            <button
+              key={d}
+              className="btn-secondary m-1"
+              disabled={
+                pending || saveError !== null || !canFinishFrom(finishScore, d)
+              }
+              onClick={() => submitScore(d, finishScore)}
+            >
+              {d} dart{d > 1 ? "s" : ""}
+            </button>
+          ))}
+          <button
+            className="btn-secondary"
+            disabled={pending || saveError !== null}
+            onClick={() => setFinishScore(null)}
+          >
+            Cancel
+          </button>
+        </div>
+      )}
       {/* Numpad */}
       <div className="grid grid-cols-3 gap-2">
         {[1, 2, 3, 4, 5, 6, 7, 8, 9, 0].map((n) => (
           <button
             key={n}
-            className="rounded-md border border-slate-300 bg-white py-4 text-lg font-semibold hover:bg-slate-50 active:bg-slate-100"
+            className="rounded-md border border-slate-300 bg-white py-2 text-lg font-semibold hover:bg-slate-50 active:bg-slate-100"
             onClick={() => handleKey(n)}
             disabled={pending || saveError !== null || !meta}
           >
@@ -395,7 +654,7 @@ export default function PracticeScoringClient() {
         <button
           className="rounded-md bg-emerald-600 text-white py-3 font-semibold hover:bg-emerald-700 disabled:opacity-50"
           onClick={() => submitScore()}
-          disabled={pending || saveError !== null || !meta}
+          disabled={pending || saveError !== null || !meta || inputScore === ""}
         >
           Enter
         </button>
@@ -407,6 +666,13 @@ export default function PracticeScoringClient() {
           Clear
         </button>
         <button
+          className="btn-secondary"
+          disabled={pending || !!saveError || !meta}
+          onClick={() => submitScore(3, 0)}
+        >
+          Miss · 0
+        </button>
+        <button
           className="rounded-md bg-red-50 text-red-700 py-3 font-semibold hover:bg-red-100 disabled:opacity-50"
           onClick={undo}
           disabled={pending || saveError !== null || !meta}
@@ -415,42 +681,73 @@ export default function PracticeScoringClient() {
         </button>
       </div>
 
+      <div className="flex flex-col gap-2">
+        <button
+          className="btn-secondary"
+          disabled={pending || !!saveError || !meta}
+          onClick={() => {
+            if (
+              confirm(
+                inputScore !== ""
+                  ? "This score has not been entered and will not be included. End this session and keep recorded visits?"
+                  : "End this session? Completed legs and visits will be kept.",
+              )
+            )
+              endSession();
+          }}
+        >
+          End &amp; results
+        </button>
+        <p className="text-xs text-slate-600">
+          Every entered visit is saved. Resume from Practice.
+        </p>
+      </div>
       {/* Live per-player stats */}
       {meta && (
-        <div className="grid grid-cols-2 gap-3 border-t border-slate-200 pt-3">
-          {statsA && <StatGrid stats={statsA} name={playerAName} />}
-          {statsB && <StatGrid stats={statsB} name={playerBName} />}
-        </div>
+        <details className="border-t border-slate-200 pt-3">
+          <summary>Live stats</summary>
+          <div className="grid grid-cols-2 gap-3 mt-3">
+            {statsA && <StatGrid stats={statsA} name={playerAName} />}
+            {!solo && statsB && <StatGrid stats={statsB} name={playerBName} />}
+          </div>
+        </details>
       )}
 
       {/* Delete session */}
-      <div className="border-t border-slate-100 pt-2">
-        {confirmDelete ? (
-          <div className="flex items-center gap-2">
-            <span className="text-sm text-slate-600 flex-1">Delete this session?</span>
+      <details className="border-t border-slate-100 pt-2">
+        <summary>Session management</summary>
+        <div className="mt-3">
+          {confirmDelete ? (
+            <div className="flex min-w-0 flex-wrap items-center gap-2">
+              <span className="min-w-0 basis-full text-sm text-slate-600 [overflow-wrap:anywhere]">
+                Delete this X01 session for {playerAName}
+                {!solo && ` and ${playerBName}`} and all its {legsToPlay}{" "}
+                scheduled legs?
+              </span>
+              <button
+                className="rounded-md bg-red-600 px-3 py-1.5 text-sm font-semibold text-white hover:bg-red-700 disabled:opacity-50"
+                onClick={deleteSession}
+                disabled={pending || saveError !== null || !meta}
+              >
+                Yes, delete
+              </button>
+              <button
+                className="rounded-md border border-slate-300 px-3 py-1.5 text-sm font-semibold text-slate-700 hover:border-slate-400"
+                onClick={() => setConfirmDelete(false)}
+              >
+                Cancel
+              </button>
+            </div>
+          ) : (
             <button
-              className="rounded-md bg-red-600 px-3 py-1.5 text-sm font-semibold text-white hover:bg-red-700 disabled:opacity-50"
-              onClick={deleteSession}
-              disabled={pending || saveError !== null || !meta}
+              className="rounded-md border border-red-200 px-3 py-1.5 text-xs font-semibold text-red-600 hover:bg-red-50"
+              onClick={() => setConfirmDelete(true)}
             >
-              Yes, delete
+              Delete session
             </button>
-            <button
-              className="rounded-md border border-slate-300 px-3 py-1.5 text-sm font-semibold text-slate-700 hover:border-slate-400"
-              onClick={() => setConfirmDelete(false)}
-            >
-              Cancel
-            </button>
-          </div>
-        ) : (
-          <button
-            className="rounded-md border border-red-200 px-3 py-1.5 text-xs font-semibold text-red-600 hover:bg-red-50"
-            onClick={() => setConfirmDelete(true)}
-          >
-            Delete session
-          </button>
-        )}
-      </div>
+          )}
+        </div>
+      </details>
     </div>
   );
 }

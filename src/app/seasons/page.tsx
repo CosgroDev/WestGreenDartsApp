@@ -1,83 +1,34 @@
+import Link from "next/link";
 import { getSeasons } from "@/data/seasons";
+import { ActionForm, PendingButton, ConfirmSubmitButton } from "@/components/ActionForm";
 import { createSeasonAction, setCurrentSeasonAction } from "./actions";
+
+export const dynamic = "force-dynamic";
 
 export default async function SeasonsPage() {
   const seasons = await getSeasons();
-  const uniqueSeasons = seasons.filter(
-    (s, idx, arr) => arr.findIndex((t) => t.name.toLowerCase() === s.name.toLowerCase()) === idx
-  );
-
-  return (
-    <main className="flex flex-col gap-4">
-      <header>
-        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-emerald-700">Seasons</p>
-        <h1 className="text-2xl font-bold">Manage Seasons</h1>
-      </header>
-
-      <section className="card">
-        <h2 className="text-lg font-semibold mb-3">Add season</h2>
-        <form action={createSeasonAction} className="flex flex-col gap-3">
-          <div className="flex flex-col gap-1">
-            <label className="text-sm text-slate-700" htmlFor="name">
-              Season name (YY/YY)
-            </label>
-            <input
-              id="name"
-              name="name"
-              type="text"
-              required
-              pattern="^[0-9]{2}/[0-9]{2}$"
-              className="rounded-md border border-slate-300 px-3 py-2"
-              placeholder="25/26"
-            />
-          </div>
-          <label className="inline-flex items-center gap-2 text-sm text-slate-700">
-            <input type="checkbox" name="is_current" className="h-4 w-4" />
-            Set as current
-          </label>
-          <button
-            type="submit"
-            className="self-start rounded-md bg-emerald-600 px-4 py-2 text-white font-semibold hover:bg-emerald-700"
-          >
-            Save season
-          </button>
-        </form>
-      </section>
-
-      <section className="card">
-        {!uniqueSeasons.length ? (
-          <p className="text-sm text-slate-600">No seasons yet.</p>
-        ) : (
-          <div className="flex flex-col gap-2">
-            {uniqueSeasons.map((s) => (
-              <div
-                key={s.id}
-                className="flex items-center justify-between rounded-md border border-slate-200 px-3 py-2"
-              >
-                <div>
-                  <p className="font-semibold">{s.name}</p>
-                  {s.is_current && <p className="text-sm text-emerald-700">Current</p>}
-                </div>
-                {!s.is_current && (
-                  <form
-                    action={async () => {
-                      "use server";
-                      await setCurrentSeasonAction(s.id);
-                    }}
-                  >
-                    <button
-                      type="submit"
-                      className="rounded-md border border-slate-300 px-3 py-1 text-sm font-semibold hover:border-emerald-200"
-                    >
-                      Set current
-                    </button>
-                  </form>
-                )}
-              </div>
-            ))}
-          </div>
-        )}
-      </section>
-    </main>
-  );
+  return <main className="mx-auto flex max-w-2xl flex-col gap-5">
+    <header><Link href="/settings" className="inline-flex min-h-11 items-center text-sm text-emerald-700">← Settings</Link><h1 className="text-2xl font-bold">Manage seasons</h1>
+      <p className="mt-1 text-sm text-slate-600">The team default sets Home and the initial selection across the app for everyone.</p></header>
+    <section className="card">
+      <h2 className="mb-3 text-lg font-semibold">Add season</h2>
+      <ActionForm action={createSeasonAction} className="flex flex-col gap-3" successMessage="Season added.">
+        <label htmlFor="season-name" className="text-sm font-semibold">Season name (YY/YY)</label>
+        <input id="season-name" name="name" type="text" required pattern="[0-9]{2}/[0-9]{2}" className="input" placeholder="26/27" />
+        <label className="inline-flex min-h-11 items-center gap-3 text-sm"><input type="checkbox" name="is_current" className="h-5 w-5" />Use as the team default</label>
+        <PendingButton className="btn-primary self-start">Add season</PendingButton>
+      </ActionForm>
+    </section>
+    <section className="card">
+      <h2 className="mb-3 text-lg font-semibold">Team seasons</h2>
+      {!seasons.length ? <p className="text-sm text-slate-600">No seasons yet. Add one to organise fixtures and results.</p> : <div className="divide-y divide-slate-200">
+        {seasons.map(season => <div key={season.id} className="flex flex-wrap items-center justify-between gap-3 py-3">
+          <div><p className="font-semibold">{season.name}</p>{season.is_current && <p className="text-sm text-emerald-700">Team default</p>}</div>
+          {!season.is_current && <ActionForm action={setCurrentSeasonAction.bind(null, season.id)} successMessage={`${season.name} is now the team default.`}>
+            <ConfirmSubmitButton message={`Use ${season.name} as the default season for the whole team? This changes Home and the initial season shown in Fixtures and Stats.`} confirmLabel="Use as team default">Set team default</ConfirmSubmitButton>
+          </ActionForm>}
+        </div>)}
+      </div>}
+    </section>
+  </main>;
 }

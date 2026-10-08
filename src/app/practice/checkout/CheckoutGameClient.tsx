@@ -1,207 +1,257 @@
 "use client";
-import { useAsyncTask } from "@/lib/useAsyncTask";
+import Link from "next/link";
+import { useCallback, useEffect, useState } from "react";
+import { useScoreTask } from "@/lib/useScoreTask";
+import { ScoreSaveStatus } from "@/components/ScoreSaveStatus";
 import { canFinishFrom } from "@/lib/scoringUtils";
-
-import { useEffect, useMemo, useState } from "react";
 import { finishRoutes } from "@/lib/finishRoutes";
 import {
   loadCheckoutStateAction,
   recordCheckoutAttemptAction,
   endCheckoutGameAction,
+  undoCheckoutAction,
 } from "./actions";
-
+type Session = {
+  revision: number;
+  current_target: number;
+  status: string;
+  player?: { name: string } | null;
+};
 type Attempt = {
   id: number;
   target: number;
   darts_used: number;
   success: boolean;
 };
-
-type Session = {
-  revision: number;
-  current_target: number;
-  attempt_index: number;
-  status: string;
-  player?: { name: string } | null;
-};
-
-export default function CheckoutGameClient({ sessionId }: { sessionId: string }) {
-  const [session, setSession] = useState<Session | null>(null);
-  const [attempts, setAttempts] = useState<Attempt[]>([]);
-  const [confirmEnd, setConfirmEnd] = useState(false);
-  const [pending, startTransition] = useAsyncTask();
-
-  const loadState = async () => {
-      const res = await loadCheckoutStateAction(sessionId);
-      if (!res.ok) throw new Error("Could not load the session");
-      if (res.ok) {
-        setSession(res.session as Session);
-        setAttempts(res.attempts as Attempt[]);
-      }
-  };
-
-  useEffect(() => {
-    startTransition(loadState);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+export default function CheckoutGameClient({
+  sessionId,
+}: {
+  sessionId: string;
+}) {
+  const [session, setSession] = useState<Session | null>(null),
+    [attempts, setAttempts] = useState<Attempt[]>([]),
+    [confirmEnd, setConfirmEnd] = useState(false);
+  const { pending, error, saved, run, retry, clearError } = useScoreTask();
+  const load = useCallback(async () => {
+    const r = await loadCheckoutStateAction(sessionId);
+    if (!r.ok) throw new Error("Could not load the session.");
+    setSession(r.session);
+    setAttempts(r.attempts);
   }, [sessionId]);
-
-  const record = (success: boolean, dartsUsed: number) => {
-    if (!session || session.status !== "in_progress" || pending) return;
-    startTransition(async () => {
-      const res = await recordCheckoutAttemptAction(sessionId, success, dartsUsed, session.revision);
-      if (!res?.ok) throw new Error("message" in res ? res.message : "Could not save the score");
-      await loadState();
+  useEffect(() => {
+    run(load);
+  }, [load, run]);
+  const reload = () =>
+    run(async () => {
+      await load();
+      clearError();
+    });
+  const locked = pending || !!error || !session;
+  const record = (success: boolean, darts: number) => {
+    if (locked || session?.status !== "in_progress") return;
+    const request = crypto.randomUUID();
+    run(async () => {
+      const r = await recordCheckoutAttemptAction(
+        sessionId,
+        success,
+        darts,
+        session.revision,
+        request,
+      );
+      if (!r.ok) throw new Error(r.message || "Could not save the attempt.");
+      await load();
     });
   };
-
-  const endGame = () => {
-    startTransition(async () => {
-      const result = await endCheckoutGameAction(sessionId, session?.revision);
-      if (!result.ok) throw new Error(result.message ?? "Could not finish the session");
-      await loadState();
+  const undo = () => {
+    if (locked || !session) return;
+    const request = crypto.randomUUID();
+    run(async () => {
+      const r = await undoCheckoutAction(sessionId, session.revision, request);
+      if (!r.ok) throw new Error(r.message || "Could not undo.");
+      await load();
+      setConfirmEnd(false);
     });
   };
-
-  const finished = attempts.filter((a) => a.success).length;
-  const successDarts = attempts.filter((a) => a.success);
-  const avgDarts = useMemo(
-    () =>
-      successDarts.length
-        ? Math.round((successDarts.reduce((s, a) => s + a.darts_used, 0) / successDarts.length) * 10) / 10
-        : null,
-    [successDarts]
+  const end = () => {
+    if (locked || !session) return;
+    const request = crypto.randomUUID();
+    run(async () => {
+      const r = await endCheckoutGameAction(
+        sessionId,
+        session.revision,
+        request,
+      );
+      if (!r.ok) throw new Error(r.message || "Could not end the session.");
+      await load();
+    });
+  };
+  const status = (
+    <ScoreSaveStatus
+      pending={pending}
+      error={error}
+      saved={saved && attempts.length > 0}
+      retry={retry}
+      reload={reload}
+    />
   );
-
-  if (!session) {
-    return <div className="card text-sm text-slate-600">Loading…</div>;
-  }
-
-  const playerName = session.player?.name ?? "Player";
-
-  // ── Results screen ──────────────────────────────────────────────
-  if (session.status !== "in_progress") {
-    const pct = attempts.length ? Math.round((finished / attempts.length) * 100) : 0;
+  if (!session)
     return (
-      <div className="flex flex-col gap-4">
-        <div className="card text-center py-6">
-          <p className="text-5xl mb-3">🎯</p>
-          <h2 className="text-2xl font-bold text-blue-700">{pct}% checkout</h2>
-          <p className="text-slate-500 mt-1">
-            {playerName} · {finished}/{attempts.length} finished
-            {avgDarts !== null && ` · ${avgDarts} avg darts`}
-          </p>
-        </div>
-        <div className="card flex flex-col gap-2">
-          <a
-            href="/practice/checkout"
-            className="rounded-md bg-blue-600 px-4 py-3 text-center text-white font-semibold hover:bg-blue-700"
-          >
-            Play again
-          </a>
-          <a
-            href="/practice"
-            className="rounded-md border border-slate-300 px-4 py-2 text-center text-sm text-slate-700 hover:border-slate-400"
-          >
-            Back to Practice
-          </a>
-        </div>
+      <div className="card">
+        <p role="status">Loading checkout practice…</p>
+        {status}
       </div>
     );
-  }
-
-  const route = finishRoutes[session.current_target];
-
-  // ── In-progress screen ──────────────────────────────────────────
+  const hits = attempts.filter((a) => a.success),
+    pct = attempts.length
+      ? Math.round((hits.length / attempts.length) * 100)
+      : 0;
+  const average = hits.length
+    ? (hits.reduce((s, a) => s + a.darts_used, 0) / hits.length).toFixed(1)
+    : null;
   return (
-    <div className="card flex flex-col gap-3">
-      <div className="flex items-center justify-between border-b border-slate-100 pb-2">
-        <div>
-          <p className="text-xs text-slate-500">Random Checkout</p>
-          <p className="text-sm font-semibold text-slate-800">{playerName}</p>
-        </div>
-        {confirmEnd ? (
-          <div className="flex items-center gap-2">
+    <div className="flex flex-col gap-4">
+      <header className="card">
+        <p className="text-sm text-slate-600">
+          Random Checkout · {session.player?.name || "Guest"}
+        </p>
+        <h1 className="text-2xl font-bold">
+          {session.status === "in_progress"
+            ? "Checkout practice"
+            : "Session results"}
+        </h1>
+        {status}
+      </header>
+      {session.status === "in_progress" ? (
+        <>
+          <section className="card text-center">
+            <p className="text-sm text-slate-600">Target</p>
+            <p className="text-6xl font-bold text-blue-800">
+              {session.current_target}
+            </p>
+            <p className="mt-3 font-semibold">
+              {finishRoutes[session.current_target]}
+            </p>
+            <p className="mt-2 text-sm text-slate-600">
+              Finish on a double or Bull.
+            </p>
+          </section>
+          <section className="card">
+            <h2 className="font-semibold mb-3">Record the attempt</h2>
+            <div className="grid grid-cols-3 gap-2">
+              {[1, 2, 3].map((d) => (
+                <button
+                  key={d}
+                  className="btn-primary py-4"
+                  disabled={locked || !canFinishFrom(session.current_target, d)}
+                  onClick={() => record(true, d)}
+                >
+                  {d} dart{d > 1 ? "s" : ""}
+                </button>
+              ))}
+            </div>
             <button
-              onClick={endGame}
-              disabled={pending}
-              className="rounded-md bg-blue-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-blue-700 disabled:opacity-50"
+              className="btn-secondary w-full mt-2"
+              disabled={locked}
+              onClick={() => record(false, 0)}
             >
-              End & see stats
+              Didn’t finish · 3 darts
             </button>
-            <button
-              onClick={() => setConfirmEnd(false)}
-              className="rounded-md border border-slate-300 px-3 py-1.5 text-xs font-semibold text-slate-700"
-            >
-              Cancel
-            </button>
-          </div>
-        ) : (
-          <button
-            onClick={() => setConfirmEnd(true)}
-            className="rounded-md border border-slate-300 px-3 py-1.5 text-xs font-semibold text-slate-600 hover:border-slate-400"
-          >
-            End game
-          </button>
-        )}
-      </div>
-
-      {/* Target */}
-      <div className="rounded-lg bg-blue-50 border border-blue-200 px-3 py-5 text-center">
-        <p className="text-xs font-semibold text-blue-600 uppercase tracking-wide">Checkout</p>
-        <p className="text-6xl font-extrabold text-blue-800 mt-1">{session.current_target}</p>
-        {route && <p className="text-sm font-semibold text-blue-500 mt-2">{route}</p>}
-      </div>
-
-      {/* Running stats */}
-      <div className="flex items-center justify-between text-xs text-slate-500">
-        <span>Finished: <strong className="text-slate-700">{finished}/{attempts.length}</strong></span>
-        {avgDarts !== null && <span>Avg darts: <strong className="text-slate-700">{avgDarts}</strong></span>}
-      </div>
-
-      {/* Outcome buttons */}
-      <div>
-        <p className="text-xs text-slate-500 mb-1.5">Finished in…</p>
-        <div className="grid grid-cols-3 gap-2">
-          {[1, 2, 3].map((d) => (
-            <button
-              key={d}
-              onClick={() => record(true, d)}
-              disabled={pending || !canFinishFrom(session.current_target, d)}
-              className="rounded-md bg-blue-600 py-4 text-lg font-bold text-white hover:bg-blue-700 disabled:opacity-50"
-            >
-              {d} dart{d > 1 ? "s" : ""}
-            </button>
-          ))}
-        </div>
-        <button
-          onClick={() => record(false, 0)}
-          disabled={pending}
-          className="mt-2 w-full rounded-md border border-slate-300 bg-white py-3 font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-50"
-        >
-          Didn&apos;t finish
-        </button>
-      </div>
-
-      {/* Recent attempts */}
-      {attempts.length > 0 && (
-        <div className="border-t border-slate-100 pt-2">
-          <p className="text-xs font-semibold text-slate-500 mb-1.5">Recent</p>
-          <div className="flex flex-col gap-1">
-            {attempts.slice(0, 6).map((a) => (
-              <div key={a.id} className="flex items-center justify-between text-xs text-slate-600 py-0.5">
-                <span>Checkout {a.target}</span>
-                {a.success ? (
-                  <span className="text-emerald-700 font-semibold">
-                    ✓ {a.darts_used} dart{a.darts_used > 1 ? "s" : ""}
-                  </span>
-                ) : (
-                  <span className="text-red-500">✗ missed</span>
-                )}
-              </div>
-            ))}
-          </div>
-        </div>
+          </section>
+        </>
+      ) : (
+        <section className="card text-center">
+          <p className="text-4xl font-bold">{pct}% checkout</p>
+          <p className="mt-2">
+            {hits.length} of {attempts.length} attempts finished
+            {average && ` · ${average} average darts`}
+          </p>
+        </section>
       )}
+      <section className="card flex flex-col gap-2">
+        <button
+          className="btn-secondary"
+          disabled={
+            locked || (!attempts.length && session.status === "in_progress")
+          }
+          onClick={undo}
+        >
+          {session.status === "in_progress"
+            ? "Undo last attempt"
+            : "Undo final action"}
+        </button>
+        {session.status === "in_progress" ? (
+          <>
+            {confirmEnd ? (
+              <div>
+                <p className="text-sm mb-2">
+                  End this session and keep its results?
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  <button
+                    className="btn-primary"
+                    disabled={locked}
+                    onClick={end}
+                  >
+                    End &amp; results
+                  </button>
+                  <button
+                    className="btn-secondary"
+                    disabled={locked}
+                    onClick={() => setConfirmEnd(false)}
+                  >
+                    Keep playing
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <button
+                className="btn-secondary"
+                disabled={locked}
+                onClick={() => setConfirmEnd(true)}
+              >
+                End &amp; results
+              </button>
+            )}
+            <Link
+              aria-disabled={locked}
+              onClick={(e) => {
+                if (locked) e.preventDefault();
+              }}
+              className="btn-secondary text-center"
+              href="/practice"
+            >
+              Pause &amp; save
+            </Link>
+            <p className="text-xs text-slate-600">
+              Each recorded attempt is saved. Resume from Practice.
+            </p>
+          </>
+        ) : (
+          <>
+            <Link className="btn-primary text-center" href="/practice/checkout">
+              Play again
+            </Link>
+            <Link className="btn-secondary text-center" href="/practice">
+              Back to Practice
+            </Link>
+          </>
+        )}
+      </section>
+      <details className="card">
+        <summary>Attempt history · {attempts.length}</summary>
+        <ol className="mt-3 divide-y divide-slate-200">
+          {attempts.map((a) => (
+            <li key={a.id} className="py-2 flex justify-between gap-2">
+              <span>{a.target} target</span>
+              <span>
+                {a.success
+                  ? `${a.darts_used} darts · finished`
+                  : "Not finished"}
+              </span>
+            </li>
+          ))}
+        </ol>
+      </details>
     </div>
   );
 }

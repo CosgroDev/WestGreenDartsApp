@@ -27,6 +27,9 @@ export async function generateAiReviewAction(gameId: string): Promise<AiReviewRe
 
   const supabase = await supabaseServer();
 
+  const summary = await getMatchSummary(gameId);
+  if (!summary?.complete || summary.result === null) return { ok: false, reason: "no_data", message: "Finish both legs before reviewing the match" };
+
   // A completed match never changes — generate the review once, then read it
   // back rather than regenerating on every visit.
   if (supabase) {
@@ -39,9 +42,6 @@ export async function generateAiReviewAction(gameId: string): Promise<AiReviewRe
       return { ok: true, review: existing.ai_review };
     }
   }
-
-  const summary = await getMatchSummary(gameId);
-  if (!summary) return { ok: false, reason: "no_data" };
 
   // Compact payload: per-leg visit list + aggregates
   const payload = {

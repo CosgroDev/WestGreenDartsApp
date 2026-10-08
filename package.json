@@ -9,7 +9,11 @@
     "lint": "next lint",
     "test": "jest",
     "test:database": "node scripts/test-database.mjs",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test:fixtures": "node scripts/test-fixture-database.mjs",
+    "test:practice-lifecycle": "node scripts/test-practice-lifecycle.mjs",
+    "test:ui": "node scripts/verify-ui-ux.mjs",
+    "test:league-reviews": "node scripts/test-league-review-invalidation.mjs"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.104.1",

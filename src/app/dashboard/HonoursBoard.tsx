@@ -1,7 +1,8 @@
+import Link from "next/link";
 import type { PlayerCard } from "@/data/stats";
 import { getHonours } from "@/lib/honours";
 
-export function HonoursBoard({ players, seasonName }: { players: PlayerCard[]; seasonName?: string }) {
+export function HonoursBoard({ players, seasonName, seasonId }: { players: PlayerCard[]; seasonName?: string; seasonId?: string }) {
   const honours = getHonours(players);
   return (
     <section className="card">
@@ -16,10 +17,10 @@ export function HonoursBoard({ players, seasonName }: { players: PlayerCard[]; s
             <h3 className="text-sm font-semibold text-emerald-800">{honour.title}</h3>
             <p className="mt-2 text-2xl font-bold text-white">{honour.value}</p>
             {honour.leaders.length ? (
-              <div className="mt-2 space-y-3">
+              <details className="mt-2"><summary className="cursor-pointer font-semibold">{honour.leaders[0].player.name}{honour.leaders.length > 1 ? ` and ${honour.leaders.length - 1} shared winner${honour.leaders.length > 2 ? "s" : ""}` : ""} · View evidence</summary><div className="mt-3 space-y-3">
                 {honour.leaders.map(({ player, evidence }) => (
                   <div key={player.player_id}>
-                    <p className="font-semibold text-slate-900">{player.name}</p>
+                    <Link className="font-semibold text-slate-900 underline" href={`/stats/players/${player.player_id}?season=${encodeURIComponent(seasonId || "all")}`}>{player.name}</Link>
                     <p className="text-sm text-slate-700">{evidence}</p>
                     <p className="mt-1 text-sm text-emerald-800">
                       {player.matches_played} match{player.matches_played === 1 ? "" : "es"} with completed legs
@@ -27,7 +28,7 @@ export function HonoursBoard({ players, seasonName }: { players: PlayerCard[]; s
                     </p>
                   </div>
                 ))}
-              </div>
+              </div></details>
             ) : <p className="mt-2 text-sm text-slate-600">Awaiting qualifying results</p>}
             <p className="mt-3 border-t border-slate-300 pt-2 text-sm text-slate-600">{honour.criteria}</p>
           </div>

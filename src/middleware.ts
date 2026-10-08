@@ -15,7 +15,7 @@ export async function middleware(request: NextRequest) {
   const hasSession = await verifySession(request.cookies.get("wgd_session")?.value);
   if (!hasSession) {
     const url = new URL("/pin", request.url);
-    url.searchParams.set("redirect", pathname);
+    url.searchParams.set("redirect", `${pathname}${request.nextUrl.search}`);
     return NextResponse.redirect(url);
   }
 

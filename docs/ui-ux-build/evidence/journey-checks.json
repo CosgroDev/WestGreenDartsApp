@@ -1,0 +1,91 @@
+{
+  "dataset": "Synthetic local PGlite records; browser actions verified against persisted SQL",
+  "results": [
+    {
+      "name": "Theme persistence, first paint, independent devices and contrast",
+      "passed": true
+    },
+    {
+      "name": "Safe full scoring destination through keyboard PIN and device lock",
+      "passed": true
+    },
+    {
+      "name": "Season browsing preserves default and linked profile history return",
+      "passed": true
+    },
+    {
+      "name": "Saved practice discovery covers every mode and player filters",
+      "passed": true
+    },
+    {
+      "name": "X01 empty versus zero, lost-response retry, pause/resume and end correction",
+      "passed": true
+    },
+    {
+      "name": "Random Checkout retry, attempt undo, results and end reopening",
+      "passed": true
+    },
+    {
+      "name": "Doubles explicit dart outcomes, fair round end and final visit undo",
+      "passed": true
+    },
+    {
+      "name": "121 checkout confirmation, progression, retry, undo and pause",
+      "passed": true
+    },
+    {
+      "name": "League West-only guidance, next-leg undo and completed result correction",
+      "passed": true
+    },
+    {
+      "name": "Tonight persists after kickoff, fifth match, final result and reopened match",
+      "passed": true
+    },
+    {
+      "name": "Match creation retained on lost response, direct scoring and stable replacement slot",
+      "passed": true
+    },
+    {
+      "name": "Fixture form retains input after lost response and saves exactly once",
+      "passed": true
+    },
+    {
+      "name": "Killer device save, resume discovery and full-state Undo",
+      "passed": true
+    },
+    {
+      "name": "X01 two-player setup excludes duplicates and preserves explicit guests",
+      "passed": true
+    },
+    {
+      "name": "X01 solo setup persists its format and resumes with one scoring side",
+      "passed": true
+    },
+    {
+      "name": "121 setup saves the selected player and advance-base preference, then resumes",
+      "passed": true
+    },
+    {
+      "name": "Doubles setup preserves reordered long-name players without duplicate slots",
+      "passed": true
+    },
+    {
+      "name": "Random Checkout setup saves the chosen player and resumes the same generated target",
+      "passed": true
+    },
+    {
+      "name": "Practice setup and resume journeys",
+      "passed": true
+    },
+    {
+      "name": "Roster duplicate feedback keeps entries and deactivation preserves history",
+      "passed": true
+    },
+    {
+      "name": "Roster read failure is explicit and never replaced by sample players",
+      "passed": true
+    }
+  ],
+  "failures": [],
+  "pageErrors": []
+}

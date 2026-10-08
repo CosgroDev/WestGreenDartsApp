@@ -1,7 +1,7 @@
 
 "use server";
 
-import { randomUUID } from "crypto";
+import { redirect } from "next/navigation";
 import Anthropic from "@anthropic-ai/sdk";
 import { revalidatePath } from "next/cache";
 import { supabaseServer } from "@/lib/supabaseServer";
@@ -32,6 +32,9 @@ export async function generateTeamAiReviewAction(fixtureId: string): Promise<Tea
   const supabase = await supabaseServer();
   if (!supabase) return { ok: false, reason: "error", message: "Supabase not configured" };
 
+  const summary = await getFixtureTeamSummary(fixtureId);
+  if (!summary) return { ok: false, reason: "no_data", message: "Finish all six matches before reviewing the night" };
+
   // The review is the night's summary — generate it once, then read it back.
   const { data: existing } = await supabase
     .from("fixtures")
@@ -41,9 +44,6 @@ export async function generateTeamAiReviewAction(fixtureId: string): Promise<Tea
   if (existing?.ai_team_review) {
     return { ok: true, review: existing.ai_team_review };
   }
-
-  const summary = await getFixtureTeamSummary(fixtureId);
-  if (!summary) return { ok: false, reason: "no_data" };
 
   const round1 = (n: number | null) => (n === null ? null : Math.round(n * 10) / 10);
 
@@ -124,60 +124,35 @@ export async function createGameAction(prevState: any, formData: FormData) {
 
   const { data: fixture, error: fixtureError } = await supabase.from("fixtures").select("home").eq("id", fixtureId).eq("team_id", TEAM_ID).single();
   if (fixtureError || !fixture) return { ok: false, message: "Fixture not found" };
-  const { error } = await supabase.from("games").insert({
-    team_id: TEAM_ID,
-    fixture_id: fixtureId,
-    west_green_player_id: playerId || null,
-    opponent_player: opponent,
-    west_green_starts: !fixture.home,
-    // Each created game is its own match; legs added later share this id.
-    match_id: randomUUID()
+  const gameId = formData.get("gameRequest") as string | null;
+  if (!gameId || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(gameId)) return { ok: false, message: "Invalid match request. Refresh and try again" };
+  const { error } = await supabase.rpc("wgd_create_fixture_match", {
+    p_fixture: fixtureId, p_team: TEAM_ID, p_player: playerId || null,
+    p_opponent: opponent, p_game: gameId
   });
-
   if (error) return { ok: false, message: error.message };
-
   revalidatePath(`/fixtures/${fixtureId}`);
-  return { ok: true };
+  revalidatePath("/fixtures");
+  revalidatePath("/dashboard");
+  const season = formData.get("season") as string | null;
+  redirect(`/scoring?${new URLSearchParams({ game: gameId, fixture: fixtureId, home: fixture.home ? "1" : "0", ...(season ? { season } : {}) })}`);
 }
 
-export async function deleteMatchAction(formData: FormData): Promise<void> {
+export async function deleteMatchAction(_state: { ok: boolean; message?: string }, formData: FormData): Promise<{ ok: boolean; message?: string }> {
   const fixtureId = formData.get("fixtureId") as string | null;
   const matchId = (formData.get("matchId") as string | null) || null;
   const opponent = formData.get("opponent") as string | null;
   const westId = (formData.get("westId") as string | null) || null;
-
-  if (!fixtureId || (!matchId && !opponent)) return;
-
+  if (!fixtureId || (!matchId && !opponent)) return { ok: false, message: "Match not found" };
   const supabase = await supabaseServer();
-  if (!supabase) return;
-
-  // Find leg IDs for this match. Prefer the stable match_id; fall back to the
-  // fixture page's legacy grouping (case-insensitive opponent name, null-safe
-  // player id) for rows without one — .eq() with a null player id matches nothing.
-  const { data: games, error: fetchErr } = await supabase
-    .from("games")
-    .select("id, match_id, opponent_player, west_green_player_id")
-    .eq("fixture_id", fixtureId)
-    .eq("deleted", false);
-  if (fetchErr || !games || games.length === 0) return;
-
-  const targetOpponent = (opponent || "").trim().toLowerCase();
-  const gameIds = games
-    .filter((g: any) =>
-      matchId
-        ? g.match_id === matchId
-        : (g.west_green_player_id ?? null) === westId &&
-          (g.opponent_player || "").trim().toLowerCase() === targetOpponent
-    )
-    .map((g: any) => g.id);
-  if (gameIds.length === 0) return;
-
-  // Soft-delete scoring events for those legs
-  await supabase.from("scoring_events").update({ is_deleted: true }).in("game_id", gameIds);
-
-  const { error } = await supabase.from("games").update({ deleted: true }).in("id", gameIds);
-
-  if (error) return;
-
+  if (!supabase) return { ok: false, message: "Unable to connect. Try again" };
+  const { error } = await supabase.rpc("wgd_delete_fixture_match", {
+    p_fixture: fixtureId, p_team: TEAM_ID, p_match: matchId, p_player: westId, p_opponent: opponent
+  });
+  if (error) return { ok: false, message: error.message };
   revalidatePath(`/fixtures/${fixtureId}`);
+  revalidatePath("/fixtures");
+  revalidatePath("/dashboard");
+  revalidatePath("/stats");
+  return { ok: true };
 }

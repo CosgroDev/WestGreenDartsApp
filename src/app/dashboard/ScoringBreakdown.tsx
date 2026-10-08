@@ -51,7 +51,7 @@ export function ScoringBreakdown({ team, players }: Props) {
           id="scoring-player"
           value={selected}
           onChange={(e) => setSelected(e.target.value)}
-          className="rounded-md border border-slate-300 px-3 py-1.5 text-sm"
+          className="input min-w-0 flex-1 text-sm"
         >
           <option value="all">All players</option>
           {players.map((p) => (

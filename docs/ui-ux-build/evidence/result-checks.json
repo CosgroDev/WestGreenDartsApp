@@ -1,0 +1,615 @@
+{
+  "dataset": "Read-only completed and ended synthetic local sessions; real production Next.js application; Chromium",
+  "captures": [
+    {
+      "mode": "x01",
+      "sessionStatus": "completed",
+      "route": "/practice/scoring?session=664e618c-693f-4b2f-996d-ea4185c80fd0",
+      "status": 200,
+      "theme": "dark",
+      "width": 390,
+      "height": 844,
+      "documentWidth": 390,
+      "title": "Alex Carter wins!",
+      "actions": [
+        {
+          "name": "Undo checkout",
+          "tag": "BUTTON",
+          "x": 37,
+          "width": 316,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Play again",
+          "tag": "A",
+          "x": 37,
+          "width": 316,
+          "height": 48,
+          "disabled": false
+        },
+        {
+          "name": "Back to sessions",
+          "tag": "A",
+          "x": 37,
+          "width": 316,
+          "height": 44,
+          "disabled": false
+        }
+      ],
+      "error": false
+    },
+    {
+      "mode": "121",
+      "sessionStatus": "abandoned",
+      "route": "/practice/121/scoring?session=e26c61c1-11f1-46b9-a879-2b252d99b27b",
+      "status": 200,
+      "theme": "dark",
+      "width": 390,
+      "height": 844,
+      "documentWidth": 390,
+      "title": "Game ended",
+      "actions": [
+        {
+          "name": "Undo final action",
+          "tag": "BUTTON",
+          "x": 31,
+          "width": 146.078125,
+          "height": 44,
+          "disabled": false
+        },
+        {
+          "name": "Play again",
+          "tag": "A",
+          "x": 31,
+          "width": 328,
+          "height": 44,
+          "disabled": false
+        },
+        {
+          "name": "Back to practice",
+          "tag": "A",
+          "x": 31,
+          "width": 328,
+          "height": 44,
+          "disabled": false
+        }
+      ],
+      "error": false
+    },
+    {
+      "mode": "doubles",
+      "sessionStatus": "completed",
+      "route": "/practice/doubles/scoring?session=d409cd9b-5e6b-4234-a4b2-d0ae360a0936",
+      "status": 200,
+      "theme": "dark",
+      "width": 390,
+      "height": 844,
+      "documentWidth": 390,
+      "title": "Session results",
+      "actions": [
+        {
+          "name": "Undo final action",
+          "tag": "BUTTON",
+          "x": 37,
+          "width": 316,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Play again",
+          "tag": "A",
+          "x": 37,
+          "width": 316,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Back to Practice",
+          "tag": "A",
+          "x": 37,
+          "width": 316,
+          "height": 46,
+          "disabled": false
+        }
+      ],
+      "error": false
+    },
+    {
+      "mode": "checkout",
+      "sessionStatus": "completed",
+      "route": "/practice/checkout/scoring?session=64ff77ee-f65f-4ceb-9ab0-b313be0fe98f",
+      "status": 200,
+      "theme": "dark",
+      "width": 390,
+      "height": 844,
+      "documentWidth": 390,
+      "title": "Session results",
+      "actions": [
+        {
+          "name": "Undo final action",
+          "tag": "BUTTON",
+          "x": 37,
+          "width": 316,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Play again",
+          "tag": "A",
+          "x": 37,
+          "width": 316,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Back to Practice",
+          "tag": "A",
+          "x": 37,
+          "width": 316,
+          "height": 46,
+          "disabled": false
+        }
+      ],
+      "error": false
+    },
+    {
+      "mode": "x01",
+      "sessionStatus": "completed",
+      "route": "/practice/scoring?session=664e618c-693f-4b2f-996d-ea4185c80fd0",
+      "status": 200,
+      "theme": "dark",
+      "width": 320,
+      "height": 568,
+      "documentWidth": 320,
+      "title": "Alex Carter wins!",
+      "actions": [
+        {
+          "name": "Undo checkout",
+          "tag": "BUTTON",
+          "x": 37,
+          "width": 246,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Play again",
+          "tag": "A",
+          "x": 37,
+          "width": 246,
+          "height": 48,
+          "disabled": false
+        },
+        {
+          "name": "Back to sessions",
+          "tag": "A",
+          "x": 37,
+          "width": 246,
+          "height": 44,
+          "disabled": false
+        }
+      ],
+      "error": false
+    },
+    {
+      "mode": "121",
+      "sessionStatus": "abandoned",
+      "route": "/practice/121/scoring?session=e26c61c1-11f1-46b9-a879-2b252d99b27b",
+      "status": 200,
+      "theme": "dark",
+      "width": 320,
+      "height": 568,
+      "documentWidth": 320,
+      "title": "Game ended",
+      "actions": [
+        {
+          "name": "Undo final action",
+          "tag": "BUTTON",
+          "x": 31,
+          "width": 146.078125,
+          "height": 44,
+          "disabled": false
+        },
+        {
+          "name": "Play again",
+          "tag": "A",
+          "x": 31,
+          "width": 258,
+          "height": 44,
+          "disabled": false
+        },
+        {
+          "name": "Back to practice",
+          "tag": "A",
+          "x": 31,
+          "width": 258,
+          "height": 44,
+          "disabled": false
+        }
+      ],
+      "error": false
+    },
+    {
+      "mode": "doubles",
+      "sessionStatus": "completed",
+      "route": "/practice/doubles/scoring?session=d409cd9b-5e6b-4234-a4b2-d0ae360a0936",
+      "status": 200,
+      "theme": "dark",
+      "width": 320,
+      "height": 568,
+      "documentWidth": 320,
+      "title": "Session results",
+      "actions": [
+        {
+          "name": "Undo final action",
+          "tag": "BUTTON",
+          "x": 37,
+          "width": 246,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Play again",
+          "tag": "A",
+          "x": 37,
+          "width": 246,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Back to Practice",
+          "tag": "A",
+          "x": 37,
+          "width": 246,
+          "height": 46,
+          "disabled": false
+        }
+      ],
+      "error": false
+    },
+    {
+      "mode": "checkout",
+      "sessionStatus": "completed",
+      "route": "/practice/checkout/scoring?session=64ff77ee-f65f-4ceb-9ab0-b313be0fe98f",
+      "status": 200,
+      "theme": "dark",
+      "width": 320,
+      "height": 568,
+      "documentWidth": 320,
+      "title": "Session results",
+      "actions": [
+        {
+          "name": "Undo final action",
+          "tag": "BUTTON",
+          "x": 37,
+          "width": 246,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Play again",
+          "tag": "A",
+          "x": 37,
+          "width": 246,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Back to Practice",
+          "tag": "A",
+          "x": 37,
+          "width": 246,
+          "height": 46,
+          "disabled": false
+        }
+      ],
+      "error": false
+    },
+    {
+      "mode": "x01",
+      "sessionStatus": "completed",
+      "route": "/practice/scoring?session=664e618c-693f-4b2f-996d-ea4185c80fd0",
+      "status": 200,
+      "theme": "light",
+      "width": 390,
+      "height": 844,
+      "documentWidth": 390,
+      "title": "Alex Carter wins!",
+      "actions": [
+        {
+          "name": "Undo checkout",
+          "tag": "BUTTON",
+          "x": 37,
+          "width": 316,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Play again",
+          "tag": "A",
+          "x": 37,
+          "width": 316,
+          "height": 48,
+          "disabled": false
+        },
+        {
+          "name": "Back to sessions",
+          "tag": "A",
+          "x": 37,
+          "width": 316,
+          "height": 44,
+          "disabled": false
+        }
+      ],
+      "error": false
+    },
+    {
+      "mode": "121",
+      "sessionStatus": "abandoned",
+      "route": "/practice/121/scoring?session=e26c61c1-11f1-46b9-a879-2b252d99b27b",
+      "status": 200,
+      "theme": "light",
+      "width": 390,
+      "height": 844,
+      "documentWidth": 390,
+      "title": "Game ended",
+      "actions": [
+        {
+          "name": "Undo final action",
+          "tag": "BUTTON",
+          "x": 31,
+          "width": 146.078125,
+          "height": 44,
+          "disabled": false
+        },
+        {
+          "name": "Play again",
+          "tag": "A",
+          "x": 31,
+          "width": 328,
+          "height": 44,
+          "disabled": false
+        },
+        {
+          "name": "Back to practice",
+          "tag": "A",
+          "x": 31,
+          "width": 328,
+          "height": 44,
+          "disabled": false
+        }
+      ],
+      "error": false
+    },
+    {
+      "mode": "doubles",
+      "sessionStatus": "completed",
+      "route": "/practice/doubles/scoring?session=d409cd9b-5e6b-4234-a4b2-d0ae360a0936",
+      "status": 200,
+      "theme": "light",
+      "width": 390,
+      "height": 844,
+      "documentWidth": 390,
+      "title": "Session results",
+      "actions": [
+        {
+          "name": "Undo final action",
+          "tag": "BUTTON",
+          "x": 37,
+          "width": 316,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Play again",
+          "tag": "A",
+          "x": 37,
+          "width": 316,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Back to Practice",
+          "tag": "A",
+          "x": 37,
+          "width": 316,
+          "height": 46,
+          "disabled": false
+        }
+      ],
+      "error": false
+    },
+    {
+      "mode": "checkout",
+      "sessionStatus": "completed",
+      "route": "/practice/checkout/scoring?session=64ff77ee-f65f-4ceb-9ab0-b313be0fe98f",
+      "status": 200,
+      "theme": "light",
+      "width": 390,
+      "height": 844,
+      "documentWidth": 390,
+      "title": "Session results",
+      "actions": [
+        {
+          "name": "Undo final action",
+          "tag": "BUTTON",
+          "x": 37,
+          "width": 316,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Play again",
+          "tag": "A",
+          "x": 37,
+          "width": 316,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Back to Practice",
+          "tag": "A",
+          "x": 37,
+          "width": 316,
+          "height": 46,
+          "disabled": false
+        }
+      ],
+      "error": false
+    },
+    {
+      "mode": "x01",
+      "sessionStatus": "completed",
+      "route": "/practice/scoring?session=664e618c-693f-4b2f-996d-ea4185c80fd0",
+      "status": 200,
+      "theme": "light",
+      "width": 320,
+      "height": 568,
+      "documentWidth": 320,
+      "title": "Alex Carter wins!",
+      "actions": [
+        {
+          "name": "Undo checkout",
+          "tag": "BUTTON",
+          "x": 37,
+          "width": 246,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Play again",
+          "tag": "A",
+          "x": 37,
+          "width": 246,
+          "height": 48,
+          "disabled": false
+        },
+        {
+          "name": "Back to sessions",
+          "tag": "A",
+          "x": 37,
+          "width": 246,
+          "height": 44,
+          "disabled": false
+        }
+      ],
+      "error": false
+    },
+    {
+      "mode": "121",
+      "sessionStatus": "abandoned",
+      "route": "/practice/121/scoring?session=e26c61c1-11f1-46b9-a879-2b252d99b27b",
+      "status": 200,
+      "theme": "light",
+      "width": 320,
+      "height": 568,
+      "documentWidth": 320,
+      "title": "Game ended",
+      "actions": [
+        {
+          "name": "Undo final action",
+          "tag": "BUTTON",
+          "x": 31,
+          "width": 146.078125,
+          "height": 44,
+          "disabled": false
+        },
+        {
+          "name": "Play again",
+          "tag": "A",
+          "x": 31,
+          "width": 258,
+          "height": 44,
+          "disabled": false
+        },
+        {
+          "name": "Back to practice",
+          "tag": "A",
+          "x": 31,
+          "width": 258,
+          "height": 44,
+          "disabled": false
+        }
+      ],
+      "error": false
+    },
+    {
+      "mode": "doubles",
+      "sessionStatus": "completed",
+      "route": "/practice/doubles/scoring?session=d409cd9b-5e6b-4234-a4b2-d0ae360a0936",
+      "status": 200,
+      "theme": "light",
+      "width": 320,
+      "height": 568,
+      "documentWidth": 320,
+      "title": "Session results",
+      "actions": [
+        {
+          "name": "Undo final action",
+          "tag": "BUTTON",
+          "x": 37,
+          "width": 246,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Play again",
+          "tag": "A",
+          "x": 37,
+          "width": 246,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Back to Practice",
+          "tag": "A",
+          "x": 37,
+          "width": 246,
+          "height": 46,
+          "disabled": false
+        }
+      ],
+      "error": false
+    },
+    {
+      "mode": "checkout",
+      "sessionStatus": "completed",
+      "route": "/practice/checkout/scoring?session=64ff77ee-f65f-4ceb-9ab0-b313be0fe98f",
+      "status": 200,
+      "theme": "light",
+      "width": 320,
+      "height": 568,
+      "documentWidth": 320,
+      "title": "Session results",
+      "actions": [
+        {
+          "name": "Undo final action",
+          "tag": "BUTTON",
+          "x": 37,
+          "width": 246,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Play again",
+          "tag": "A",
+          "x": 37,
+          "width": 246,
+          "height": 46,
+          "disabled": false
+        },
+        {
+          "name": "Back to Practice",
+          "tag": "A",
+          "x": 37,
+          "width": 246,
+          "height": 46,
+          "disabled": false
+        }
+      ],
+      "error": false
+    }
+  ],
+  "pageErrors": [],
+  "failures": []
+}

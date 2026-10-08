@@ -1,36 +1,32 @@
 "use client";
 
-import { useEffect, useRef } from "react";
-import { useFormState } from "react-dom";
+import { useRef } from "react";
+import { ActionForm, PendingButton } from "@/components/ActionForm";
 import { createFixtureAction } from "./actions";
 
 type SeasonOption = { id: string; name: string; is_current?: boolean };
 
-const initialState = { ok: false, message: "" as string | undefined };
-
 export function CreateFixtureForm({ seasons, defaultSeasonId }: { seasons: SeasonOption[]; defaultSeasonId: string }) {
   const formRef = useRef<HTMLFormElement>(null);
-  const [state, formAction] = useFormState(createFixtureAction, initialState);
-
-  useEffect(() => {
-    if (state?.ok) {
-      const form = formRef.current;
-      if (!form) return;
-      const seasonEl = form.elements.namedItem("seasonId") as HTMLSelectElement | null;
-      const seasonValue = seasonEl?.value;
-
-      form.reset();
-
-      // restore season selection
-      if (seasonEl && seasonValue) seasonEl.value = seasonValue;
-      // reset startsAt to "now"
-      const startsAtEl = form.elements.namedItem("startsAt") as HTMLInputElement | null;
-      if (startsAtEl) startsAtEl.value = new Date().toISOString().slice(0, 16);
-    }
-  }, [state?.ok]);
-
+  const requestRef = useRef<HTMLInputElement>(null);
   return (
-    <form ref={formRef} action={formAction} className="grid grid-cols-1 gap-3">
+    <ActionForm action={async data => {
+      const requestInput = requestRef.current;
+      if (!requestInput) return { ok: false, message: "Unable to save. Refresh and try again" };
+      if (!requestInput.value) requestInput.value = crypto.randomUUID();
+      data.set("fixtureRequest", requestInput.value);
+      const result = await createFixtureAction({ ok: false }, data);
+      if (result.ok && formRef.current) {
+        const season = formRef.current.elements.namedItem("seasonId") as HTMLSelectElement | null;
+        const selected = season?.value;
+        formRef.current.reset();
+        requestInput.value = "";
+        if (season && selected) season.value = selected;
+      }
+      return result;
+    }} className="grid grid-cols-1 gap-3" successMessage="Fixture saved.">
+      <input ref={requestRef} type="hidden" name="fixtureRequest" defaultValue="" />
+      <div className="contents" ref={node => { formRef.current = node?.closest("form") ?? null; }}>
       <div className="flex flex-col gap-1">
         <label className="text-sm text-slate-700" htmlFor="season">
           Season
@@ -55,14 +51,13 @@ export function CreateFixtureForm({ seasons, defaultSeasonId }: { seasons: Seaso
 
       <div className="flex flex-col gap-1">
         <label className="text-sm text-slate-700" htmlFor="startsAt">
-          Date & time
+          Date & time (UK)
         </label>
         <input
           id="startsAt"
           name="startsAt"
           type="datetime-local"
           required
-          defaultValue={new Date().toISOString().slice(0, 16)}
           className="rounded-md border border-slate-300 px-3 py-2"
         />
       </div>
@@ -112,15 +107,8 @@ export function CreateFixtureForm({ seasons, defaultSeasonId }: { seasons: Seaso
         />
       </div>
 
-      {state?.message && !state.ok && <p className="text-sm text-red-600">{state.message}</p>}
-      {state?.ok && <p className="text-sm text-emerald-700">Fixture saved</p>}
-
-      <button
-        type="submit"
-        className="self-start rounded-md bg-emerald-600 px-4 py-2 text-white font-semibold hover:bg-emerald-700"
-      >
-        Save fixture
-      </button>
-    </form>
+      <PendingButton className="btn-primary self-start" pendingLabel="Saving…">Save fixture</PendingButton>
+      </div>
+    </ActionForm>
   );
 }

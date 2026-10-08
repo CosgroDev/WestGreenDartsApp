@@ -3,11 +3,12 @@
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
+import { ThemeSync } from "./AppearanceSettings";
 
 const NAV_ITEMS = [
   {
     href: "/dashboard",
-    label: "Dashboard",
+    label: "Home",
     icon: (
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
         <path d="M3 12l9-9 9 9" />
@@ -28,18 +29,6 @@ const NAV_ITEMS = [
     )
   },
   {
-    href: "/players",
-    label: "Players",
-    icon: (
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
-        <circle cx="9" cy="7" r="4" />
-        <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
-        <path d="M16 3.13a4 4 0 0 1 0 7.75" />
-      </svg>
-    )
-  },
-  {
     href: "/practice",
     label: "Practice",
     icon: (
@@ -47,6 +36,16 @@ const NAV_ITEMS = [
         <circle cx="12" cy="12" r="10" />
         <circle cx="12" cy="12" r="6" />
         <circle cx="12" cy="12" r="2" />
+      </svg>
+    )
+  },
+  {
+    href: "/stats",
+    label: "Stats",
+    icon: (
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+        <path d="M4 20h16" />
+        <path d="M7 16V9m5 7V4m5 12v-5" />
       </svg>
     )
   }
@@ -60,6 +59,7 @@ const CHROME_HIDDEN_PREFIXES = [
   "/practice/121/scoring",
   "/practice/doubles/scoring",
   "/practice/checkout/scoring",
+  "/pub-games/killer",
 ];
 
 export function AppShell({ children }: { children: React.ReactNode }) {
@@ -69,10 +69,12 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     CHROME_HIDDEN_PREFIXES.some((p) => pathname === p || pathname.startsWith(`${p}/`));
 
   return (
-    <div className="page" style={hideChrome ? { paddingBottom: 24 } : undefined}>
+    <div className={`page ${hideChrome ? "page-focused" : ""}`}>
+      <ThemeSync />
+      <a className="skip-link" href="#app-content">Skip to content</a>
       {!hideChrome && (
         <div className="brand-bar">
-          <Link href="/dashboard" className="brand-link" aria-label="Go to dashboard">
+          <Link href="/dashboard" className="brand-link" aria-label="West Green Darts home">
             <Image
               src="/west_green_logo.png"
               alt="West Green Darts"
@@ -86,8 +88,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           <Link
             href="/settings"
             aria-label="Settings"
-            className={`rounded-full p-2 transition hover:bg-slate-100 ${
-              pathname.startsWith("/settings") ? "text-emerald-700" : "text-slate-500 hover:text-slate-800"
+            aria-current={pathname.startsWith("/settings") || pathname.startsWith("/players") || pathname.startsWith("/seasons") ? "page" : undefined}
+            className={`inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-xl transition hover:bg-slate-100 ${
+              pathname.startsWith("/settings") || pathname.startsWith("/players") || pathname.startsWith("/seasons") ? "text-emerald-700" : "text-slate-500 hover:text-slate-800"
             }`}
           >
             <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -98,15 +101,18 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         </div>
       )}
 
-      {children}
+      <div id="app-content" tabIndex={-1}>{children}</div>
 
       {!hideChrome && (
         <nav className="bottom-nav" aria-label="Primary">
           <div className="bottom-nav-inner">
             {NAV_ITEMS.map((item) => {
-              const active = pathname === item.href || pathname.startsWith(`${item.href}/`) || (item.href === "/dashboard" && pathname === "/league-insights");
+              const active = pathname === item.href || pathname.startsWith(`${item.href}/`) ||
+                (item.href === "/stats" && pathname.startsWith("/league-insights")) ||
+                (item.href === "/fixtures" && pathname.startsWith("/matches/")) ||
+                (item.href === "/practice" && pathname.startsWith("/pub-games/"));
               return (
-                <Link key={item.href} href={item.href} className={`bottom-nav-item ${active ? "active" : ""}`}>
+                <Link key={item.href} href={item.href} aria-current={active ? "page" : undefined} className={`bottom-nav-item ${active ? "active" : ""}`}>
                   {item.icon}
                   <span>{item.label}</span>
                 </Link>
