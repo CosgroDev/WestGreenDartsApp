@@ -2,7 +2,7 @@ name: Verify performance and scoring usability
 
 on:
   push:
-    branches: ["build/performance-usability"]
+    branches: ["build/performance-usability", "build/121-checkout-guidance"]
   workflow_dispatch:
 
 permissions:

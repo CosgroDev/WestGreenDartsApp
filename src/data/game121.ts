@@ -82,3 +82,17 @@ export async function get121PlayerStats(): Promise<Game121PlayerStat[]> {
     }))
     .sort((a, b) => b.games_won - a.games_won || (b.best_checkout ?? 0) - (a.best_checkout ?? 0));
 }
+
+export async function getActive121Sessions() {
+  const db = await supabaseServer();
+  if (!db || !process.env.TEAM_ID) return [];
+  const { data, error } = await db.from("game_121_sessions")
+    .select("id, current_checkout, remaining, current_turn, player:player_id(name)")
+    .eq("team_id", process.env.TEAM_ID).eq("status", "in_progress")
+    .order("created_at", { ascending: false }).limit(5);
+  if (error) throw new Error(error.message);
+  return (data ?? []) as unknown as {
+    id: string; current_checkout: number; remaining: number; current_turn: number;
+    player: { name: string } | null;
+  }[];
+}

@@ -13,12 +13,13 @@ export default async function Game121ScoringPage({
   if (!sessionId) return notFound();
 
   const supabase = await supabaseServer();
-  if (!supabase) return notFound();
+  if (!supabase || !process.env.TEAM_ID) return notFound();
 
   const { data } = await supabase
     .from("game_121_sessions")
     .select("id")
     .eq("id", sessionId)
+    .eq("team_id", process.env.TEAM_ID)
     .maybeSingle();
 
   if (!data) return notFound();
