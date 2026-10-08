@@ -1,0 +1,943 @@
+{
+  "synthetic": true,
+  "readOnly": true,
+  "capturedAt": "2026-10-08T19:15:07.920Z",
+  "overflow": [
+    {
+      "name": "dashboard",
+      "path": "/dashboard",
+      "width": 390,
+      "viewport": 390,
+      "documentWidth": 415,
+      "bodyWidth": 415,
+      "items": [
+        {
+          "tag": "SECTION",
+          "className": "card",
+          "text": "Scoring breakdownView forAll playersSam PatelMorgan ReedCharlie BrownJordan EvansDrew RobertsRobin WoodsAlex CarterJamie EllisRiley DaviesHarper ShawAlexander Montgomery-Johnson th",
+          "left": 12,
+          "right": 378,
+          "width": 366,
+          "clientWidth": 364,
+          "scrollWidth": 402,
+          "overflowX": "visible",
+          "whiteSpace": "normal",
+          "minWidth": "auto",
+          "display": "block",
+          "chain": "section.card < main.flex.flex-col.gap-4.fade-up < div.page < body"
+        },
+        {
+          "tag": "DIV",
+          "className": "flex flex-col gap-3",
+          "text": "View forAll playersSam PatelMorgan ReedCharlie BrownJordan EvansDrew RobertsRobin WoodsAlex CarterJamie EllisRiley DaviesHarper ShawAlexander Montgomery-Johnson the ThirdLee JonesC",
+          "left": 31,
+          "right": 359,
+          "width": 328,
+          "clientWidth": 328,
+          "scrollWidth": 384,
+          "overflowX": "visible",
+          "whiteSpace": "normal",
+          "minWidth": "0px",
+          "display": "flex",
+          "chain": "div.flex.flex-col.gap-3 < section.card < main.flex.flex-col.gap-4.fade-up < div.page"
+        },
+        {
+          "tag": "DIV",
+          "className": "flex items-center gap-2",
+          "text": "View forAll playersSam PatelMorgan ReedCharlie BrownJordan EvansDrew RobertsRobin WoodsAlex CarterJamie EllisRiley DaviesHarper ShawAlexander Montgomery-Johnson the ThirdLee JonesC",
+          "left": 31,
+          "right": 359,
+          "width": 328,
+          "clientWidth": 328,
+          "scrollWidth": 384,
+          "overflowX": "visible",
+          "whiteSpace": "normal",
+          "minWidth": "auto",
+          "display": "flex",
+          "chain": "div.flex.items-center.gap-2 < div.flex.flex-col.gap-3 < section.card < main.flex.flex-col.gap-4.fade-up"
+        },
+        {
+          "tag": "SELECT",
+          "className": "rounded-md border border-slate-300 px-3 py-1.5 text-sm",
+          "text": "All playersSam PatelMorgan ReedCharlie BrownJordan EvansDrew RobertsRobin WoodsAlex CarterJamie EllisRiley DaviesHarper ShawAlexander Montgomery-Johnson the ThirdLee JonesChris Tay",
+          "left": 92.34375,
+          "right": 415.34375,
+          "width": 323,
+          "clientWidth": 321,
+          "scrollWidth": 321,
+          "overflowX": "clip",
+          "whiteSpace": "pre",
+          "minWidth": "auto",
+          "display": "block",
+          "chain": "select.rounded-md.border.border-slate-300.px-3 < div.flex.items-center.gap-2 < div.flex.flex-col.gap-3 < section.card"
+        },
+        {
+          "tag": "CAPTION",
+          "className": "sr-only",
+          "text": "Performance weights and sample adjustments",
+          "left": 43,
+          "right": 44,
+          "width": 1,
+          "clientWidth": 1,
+          "scrollWidth": 263,
+          "overflowX": "hidden",
+          "whiteSpace": "nowrap",
+          "minWidth": "0px",
+          "display": "block",
+          "chain": "caption.sr-only < table.w-full.text-left.text-xs < div.overflow-x-auto < div.mt-3.space-y-3.text-slate-700"
+        }
+      ]
+    },
+    {
+      "name": "dashboard",
+      "path": "/dashboard",
+      "width": 320,
+      "viewport": 320,
+      "documentWidth": 415,
+      "bodyWidth": 415,
+      "items": [
+        {
+          "tag": "P",
+          "className": "mt-1 text-xl font-bold",
+          "text": "106/38",
+          "left": 43,
+          "right": 99.65625,
+          "width": 56.65625,
+          "clientWidth": 57,
+          "scrollWidth": 65,
+          "overflowX": "visible",
+          "whiteSpace": "normal",
+          "minWidth": "0px",
+          "display": "block",
+          "chain": "p.mt-1.text-xl.font-bold < div.rounded-xl.bg-slate-50.px-3.py-3 < div.grid.grid-cols-3.gap-2 < div.card"
+        },
+        {
+          "tag": "P",
+          "className": "text-[11px] font-semibold uppercase tracking-wide text-slate-500",
+          "text": "Checkout",
+          "left": 43,
+          "right": 99.65625,
+          "width": 56.65625,
+          "clientWidth": 57,
+          "scrollWidth": 61,
+          "overflowX": "visible",
+          "whiteSpace": "normal",
+          "minWidth": "0px",
+          "display": "block",
+          "chain": "p.text-[11px].font-semibold.uppercase.tracking-wide < div.rounded-xl.bg-slate-50.px-3.py-3 < div.grid.grid-cols-3.gap-2 < div.card"
+        },
+        {
+          "tag": "P",
+          "className": "text-[11px] font-semibold uppercase tracking-wide text-slate-500",
+          "text": "Darts/leg",
+          "left": 131.65625,
+          "right": 188.328125,
+          "width": 56.671875,
+          "clientWidth": 57,
+          "scrollWidth": 63,
+          "overflowX": "visible",
+          "whiteSpace": "normal",
+          "minWidth": "0px",
+          "display": "block",
+          "chain": "p.text-[11px].font-semibold.uppercase.tracking-wide < div.rounded-xl.bg-slate-50.px-3.py-3 < div.grid.grid-cols-3.gap-2 < div.card"
+        },
+        {
+          "tag": "CAPTION",
+          "className": "sr-only",
+          "text": "West Green and up to three teams above and below",
+          "left": 30,
+          "right": 31,
+          "width": 1,
+          "clientWidth": 1,
+          "scrollWidth": 341,
+          "overflowX": "hidden",
+          "whiteSpace": "nowrap",
+          "minWidth": "0px",
+          "display": "block",
+          "chain": "caption.sr-only < table.w-full.text-sm < div.mt-3.overflow-x-auto < section.card"
+        },
+        {
+          "tag": "SECTION",
+          "className": "card",
+          "text": "Scoring breakdownView forAll playersSam PatelMorgan ReedCharlie BrownJordan EvansDrew RobertsRobin WoodsAlex CarterJamie EllisRiley DaviesHarper ShawAlexander Montgomery-Johnson th",
+          "left": 12,
+          "right": 308,
+          "width": 296,
+          "clientWidth": 294,
+          "scrollWidth": 402,
+          "overflowX": "visible",
+          "whiteSpace": "normal",
+          "minWidth": "auto",
+          "display": "block",
+          "chain": "section.card < main.flex.flex-col.gap-4.fade-up < div.page < body"
+        },
+        {
+          "tag": "DIV",
+          "className": "flex flex-col gap-3",
+          "text": "View forAll playersSam PatelMorgan ReedCharlie BrownJordan EvansDrew RobertsRobin WoodsAlex CarterJamie EllisRiley DaviesHarper ShawAlexander Montgomery-Johnson the ThirdLee JonesC",
+          "left": 31,
+          "right": 289,
+          "width": 258,
+          "clientWidth": 258,
+          "scrollWidth": 384,
+          "overflowX": "visible",
+          "whiteSpace": "normal",
+          "minWidth": "0px",
+          "display": "flex",
+          "chain": "div.flex.flex-col.gap-3 < section.card < main.flex.flex-col.gap-4.fade-up < div.page"
+        },
+        {
+          "tag": "DIV",
+          "className": "flex items-center gap-2",
+          "text": "View forAll playersSam PatelMorgan ReedCharlie BrownJordan EvansDrew RobertsRobin WoodsAlex CarterJamie EllisRiley DaviesHarper ShawAlexander Montgomery-Johnson the ThirdLee JonesC",
+          "left": 31,
+          "right": 289,
+          "width": 258,
+          "clientWidth": 258,
+          "scrollWidth": 384,
+          "overflowX": "visible",
+          "whiteSpace": "normal",
+          "minWidth": "auto",
+          "display": "flex",
+          "chain": "div.flex.items-center.gap-2 < div.flex.flex-col.gap-3 < section.card < main.flex.flex-col.gap-4.fade-up"
+        },
+        {
+          "tag": "SELECT",
+          "className": "rounded-md border border-slate-300 px-3 py-1.5 text-sm",
+          "text": "All playersSam PatelMorgan ReedCharlie BrownJordan EvansDrew RobertsRobin WoodsAlex CarterJamie EllisRiley DaviesHarper ShawAlexander Montgomery-Johnson the ThirdLee JonesChris Tay",
+          "left": 92.34375,
+          "right": 415.34375,
+          "width": 323,
+          "clientWidth": 321,
+          "scrollWidth": 321,
+          "overflowX": "clip",
+          "whiteSpace": "pre",
+          "minWidth": "auto",
+          "display": "block",
+          "chain": "select.rounded-md.border.border-slate-300.px-3 < div.flex.items-center.gap-2 < div.flex.flex-col.gap-3 < section.card"
+        },
+        {
+          "tag": "CAPTION",
+          "className": "sr-only",
+          "text": "Performance weights and sample adjustments",
+          "left": 43,
+          "right": 44,
+          "width": 1,
+          "clientWidth": 1,
+          "scrollWidth": 263,
+          "overflowX": "hidden",
+          "whiteSpace": "nowrap",
+          "minWidth": "0px",
+          "display": "block",
+          "chain": "caption.sr-only < table.w-full.text-left.text-xs < div.overflow-x-auto < div.mt-3.space-y-3.text-slate-700"
+        },
+        {
+          "tag": "DIV",
+          "className": "grid grid-cols-1 gap-2 max-h-[600px] overflow-y-auto pr-1",
+          "text": "1Charlie Brown\u25beWWWWL3DA83.1First 990.6Performance 77.0/100QualifiedWon 8Played 10+680% win5 matches \u00b7 62 visitsHigh finish 10053 \u00d7 60+ \u00b7 2 \u00d7 26CO 47%20.0 darts/leg26 \u00d7 100+4 \u00d7 140+",
+          "left": 31,
+          "right": 289,
+          "width": 258,
+          "clientWidth": 258,
+          "scrollWidth": 284,
+          "overflowX": "auto",
+          "whiteSpace": "normal",
+          "minWidth": "0px",
+          "display": "grid",
+          "chain": "div.grid.grid-cols-1.gap-2.max-h-[600px] < div.space-y-3 < section.card < main.flex.flex-col.gap-4.fade-up"
+        },
+        {
+          "tag": "BUTTON",
+          "className": "flex flex-col gap-3 text-left sm:flex-row sm:items-center sm:justify-between",
+          "text": "1Morgan Reed\u25beWLWWW3DA83.1First 990.6Performance 77.0/100QualifiedWon 8Played 10+680% win",
+          "left": 48,
+          "right": 268,
+          "width": 220,
+          "clientWidth": 220,
+          "scrollWidth": 226,
+          "overflowX": "visible",
+          "whiteSpace": "normal",
+          "minWidth": "auto",
+          "display": "flex",
+          "chain": "button.flex.flex-col.gap-3.text-left < div.flex.flex-col.gap-3.rounded-2xl < div.grid.grid-cols-1.gap-2.max-h-[600px] < div.space-y-3"
+        },
+        {
+          "tag": "DIV",
+          "className": "w-full sm:w-auto",
+          "text": "1Morgan Reed\u25beWLWWW3DA83.1First 990.6",
+          "left": 48,
+          "right": 268,
+          "width": 220,
+          "clientWidth": 220,
+          "scrollWidth": 226,
+          "overflowX": "visible",
+          "whiteSpace": "normal",
+          "minWidth": "auto",
+          "display": "block",
+          "chain": "div.w-full.sm:w-auto < button.flex.flex-col.gap-3.text-left < div.flex.flex-col.gap-3.rounded-2xl < div.grid.grid-cols-1.gap-2.max-h-[600px]"
+        },
+        {
+          "tag": "P",
+          "className": "flex items-center gap-2 font-semibold",
+          "text": "1Morgan Reed\u25beWLWWW",
+          "left": 48,
+          "right": 268,
+          "width": 220,
+          "clientWidth": 220,
+          "scrollWidth": 226,
+          "overflowX": "visible",
+          "whiteSpace": "normal",
+          "minWidth": "0px",
+          "display": "flex",
+          "chain": "p.flex.items-center.gap-2.font-semibold < div.w-full.sm:w-auto < button.flex.flex-col.gap-3.text-left < div.flex.flex-col.gap-3.rounded-2xl"
+        },
+        {
+          "tag": "BUTTON",
+          "className": "flex flex-col gap-3 text-left sm:flex-row sm:items-center sm:justify-between",
+          "text": "4Drew Roberts\u25beWWWLW3DA81.7First 989.2Performance 64.6/100QualifiedWon 8Played 10+680% win",
+          "left": 48,
+          "right": 268,
+          "width": 220,
+          "clientWidth": 220,
+          "scrollWidth": 225,
+          "overflowX": "visible",
+          "whiteSpace": "normal",
+          "minWidth": "auto",
+          "display": "flex",
+          "chain": "button.flex.flex-col.gap-3.text-left < div.flex.flex-col.gap-3.rounded-2xl < div.grid.grid-cols-1.gap-2.max-h-[600px] < div.space-y-3"
+        },
+        {
+          "tag": "DIV",
+          "className": "w-full sm:w-auto",
+          "text": "4Drew Roberts\u25beWWWLW3DA81.7First 989.2",
+          "left": 48,
+          "right": 268,
+          "width": 220,
+          "clientWidth": 220,
+          "scrollWidth": 225,
+          "overflowX": "visible",
+          "whiteSpace": "normal",
+          "minWidth": "auto",
+          "display": "block",
+          "chain": "div.w-full.sm:w-auto < button.flex.flex-col.gap-3.text-left < div.flex.flex-col.gap-3.rounded-2xl < div.grid.grid-cols-1.gap-2.max-h-[600px]"
+        },
+        {
+          "tag": "P",
+          "className": "flex items-center gap-2 font-semibold",
+          "text": "4Drew Roberts\u25beWWWLW",
+          "left": 48,
+          "right": 268,
+          "width": 220,
+          "clientWidth": 220,
+          "scrollWidth": 225,
+          "overflowX": "visible",
+          "whiteSpace": "normal",
+          "minWidth": "0px",
+          "display": "flex",
+          "chain": "p.flex.items-center.gap-2.font-semibold < div.w-full.sm:w-auto < button.flex.flex-col.gap-3.text-left < div.flex.flex-col.gap-3.rounded-2xl"
+        },
+        {
+          "tag": "DIV",
+          "className": "flex flex-col gap-3 rounded-2xl border px-4 py-3 text-sm border-slate-200 bg-slate-50/40",
+          "text": "7Alexander Montgomery-Johnson the Third\u25beWWWWL3DA77.8First 983.4Performance 42.5/100QualifiedWon 8Played 10+680% win5 matches \u00b7 65 visitsHigh finish 10055 \u00d7 60+ \u00b7 2 \u00d7 26CO 50%20.0 d",
+          "left": 31,
+          "right": 285,
+          "width": 254,
+          "clientWidth": 252,
+          "scrollWidth": 283,
+          "overflowX": "visible",
+          "whiteSpace": "normal",
+          "minWidth": "auto",
+          "display": "flex",
+          "chain": "div.flex.flex-col.gap-3.rounded-2xl < div.grid.grid-cols-1.gap-2.max-h-[600px] < div.space-y-3 < section.card"
+        },
+        {
+          "tag": "BUTTON",
+          "className": "flex flex-col gap-3 text-left sm:flex-row sm:items-center sm:justify-between",
+          "text": "7Alexander Montgomery-Johnson the Third\u25beWWWWL3DA77.8First 983.4Performance 42.5/100QualifiedWon 8Played 10+680% win",
+          "left": 48,
+          "right": 268,
+          "width": 220,
+          "clientWidth": 220,
+          "scrollWidth": 267,
+          "overflowX": "visible",
+          "whiteSpace": "normal",
+          "minWidth": "auto",
+          "display": "flex",
+          "chain": "button.flex.flex-col.gap-3.text-left < div.flex.flex-col.gap-3.rounded-2xl < div.grid.grid-cols-1.gap-2.max-h-[600px] < div.space-y-3"
+        },
+        {
+          "tag": "DIV",
+          "className": "w-full sm:w-auto",
+          "text": "7Alexander Montgomery-Johnson the Third\u25beWWWWL3DA77.8First 983.4",
+          "left": 48,
+          "right": 268,
+          "width": 220,
+          "clientWidth": 220,
+          "scrollWidth": 267,
+          "overflowX": "visible",
+          "whiteSpace": "normal",
+          "minWidth": "auto",
+          "display": "block",
+          "chain": "div.w-full.sm:w-auto < button.flex.flex-col.gap-3.text-left < div.flex.flex-col.gap-3.rounded-2xl < div.grid.grid-cols-1.gap-2.max-h-[600px]"
+        },
+        {
+          "tag": "P",
+          "className": "flex items-center gap-2 font-semibold",
+          "text": "7Alexander Montgomery-Johnson the Third\u25beWWWWL",
+          "left": 48,
+          "right": 268,
+          "width": 220,
+          "clientWidth": 220,
+          "scrollWidth": 267,
+          "overflowX": "visible",
+          "whiteSpace": "normal",
+          "minWidth": "0px",
+          "display": "flex",
+          "chain": "p.flex.items-center.gap-2.font-semibold < div.w-full.sm:w-auto < button.flex.flex-col.gap-3.text-left < div.flex.flex-col.gap-3.rounded-2xl"
+        }
+      ]
+    },
+    {
+      "name": "doublesLanding",
+      "path": "/practice/doubles",
+      "width": 390,
+      "viewport": 390,
+      "documentWidth": 461,
+      "bodyWidth": 461,
+      "items": [
+        {
+          "tag": "SECTION",
+          "className": "card",
+          "text": "Start a gameAdd players (in throwing order)-- Select player --Alex CarterAlexander Montgomery-Johnson the ThirdCasey WilsonCharlie BrownChris TaylorDrew RobertsFinley BrooksHarper ",
+          "left": 12,
+          "right": 378,
+          "width": 366,
+          "clientWidth": 364,
+          "scrollWidth": 448,
+          "overflowX": "visible",
+          "whiteSpace": "normal",
+          "minWidth": "auto",
+          "display": "block",
+          "chain": "section.card < main.flex.flex-col.gap-4 < div.page < body"
+        },
+        {
+          "tag": "FORM",
+          "className": "flex flex-col gap-3",
+          "text": "Add players (in throwing order)-- Select player --Alex CarterAlexander Montgomery-Johnson the ThirdCasey WilsonCharlie BrownChris TaylorDrew RobertsFinley BrooksHarper ShawJamie El",
+          "left": 31,
+          "right": 359,
+          "width": 328,
+          "clientWidth": 328,
+          "scrollWidth": 430,
+          "overflowX": "visible",
+          "whiteSpace": "normal",
+          "minWidth": "0px",
+          "display": "flex",
+          "chain": "form.flex.flex-col.gap-3 < section.card < main.flex.flex-col.gap-4 < div.page"
+        },
+        {
+          "tag": "DIV",
+          "className": "flex flex-col gap-1",
+          "text": "Add players (in throwing order)-- Select player --Alex CarterAlexander Montgomery-Johnson the ThirdCasey WilsonCharlie BrownChris TaylorDrew RobertsFinley BrooksHarper ShawJamie El",
+          "left": 31,
+          "right": 359,
+          "width": 328,
+          "clientWidth": 328,
+          "scrollWidth": 430,
+          "overflowX": "visible",
+          "whiteSpace": "normal",
+          "minWidth": "auto",
+          "display": "flex",
+          "chain": "div.flex.flex-col.gap-1 < form.flex.flex-col.gap-3 < section.card < main.flex.flex-col.gap-4"
+        },
+        {
+          "tag": "DIV",
+          "className": "flex gap-2",
+          "text": "-- Select player --Alex CarterAlexander Montgomery-Johnson the ThirdCasey WilsonCharlie BrownChris TaylorDrew RobertsFinley BrooksHarper ShawJamie EllisJordan EvansLee JonesMorgan ",
+          "left": 31,
+          "right": 359,
+          "width": 328,
+          "clientWidth": 328,
+          "scrollWidth": 430,
+          "overflowX": "visible",
+          "whiteSpace": "normal",
+          "minWidth": "auto",
+          "display": "flex",
+          "chain": "div.flex.gap-2 < div.flex.flex-col.gap-1 < form.flex.flex-col.gap-3 < section.card"
+        },
+        {
+          "tag": "SELECT",
+          "className": "flex-1 rounded-md border border-slate-300 px-3 py-2",
+          "text": "-- Select player --Alex CarterAlexander Montgomery-Johnson the ThirdCasey WilsonCharlie BrownChris TaylorDrew RobertsFinley BrooksHarper ShawJamie EllisJordan EvansLee JonesMorgan ",
+          "left": 31,
+          "right": 394,
+          "width": 363,
+          "clientWidth": 361,
+          "scrollWidth": 361,
+          "overflowX": "clip",
+          "whiteSpace": "pre",
+          "minWidth": "auto",
+          "display": "block",
+          "chain": "select.flex-1.rounded-md.border.border-slate-300 < div.flex.gap-2 < div.flex.flex-col.gap-1 < form.flex.flex-col.gap-3"
+        },
+        {
+          "tag": "BUTTON",
+          "className": "rounded-md bg-slate-800 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-900 disabled:opacity-40",
+          "text": "Add",
+          "left": 402,
+          "right": 461.390625,
+          "width": 59.390625,
+          "clientWidth": 59,
+          "scrollWidth": 59,
+          "overflowX": "visible",
+          "whiteSpace": "normal",
+          "minWidth": "auto",
+          "display": "block",
+          "chain": "button.rounded-md.bg-slate-800.px-4.py-2 < div.flex.gap-2 < div.flex.flex-col.gap-1 < form.flex.flex-col.gap-3"
+        }
+      ]
+    },
+    {
+      "name": "doublesLanding",
+      "path": "/practice/doubles",
+      "width": 320,
+      "viewport": 320,
+      "documentWidth": 461,
+      "bodyWidth": 461,
+      "items": [
+        {
+          "tag": "SECTION",
+          "className": "card",
+          "text": "Start a gameAdd players (in throwing order)-- Select player --Alex CarterAlexander Montgomery-Johnson the ThirdCasey WilsonCharlie BrownChris TaylorDrew RobertsFinley BrooksHarper ",
+          "left": 12,
+          "right": 308,
+          "width": 296,
+          "clientWidth": 294,
+          "scrollWidth": 448,
+          "overflowX": "visible",
+          "whiteSpace": "normal",
+          "minWidth": "auto",
+          "display": "block",
+          "chain": "section.card < main.flex.flex-col.gap-4 < div.page < body"
+        },
+        {
+          "tag": "FORM",
+          "className": "flex flex-col gap-3",
+          "text": "Add players (in throwing order)-- Select player --Alex CarterAlexander Montgomery-Johnson the ThirdCasey WilsonCharlie BrownChris TaylorDrew RobertsFinley BrooksHarper ShawJamie El",
+          "left": 31,
+          "right": 289,
+          "width": 258,
+          "clientWidth": 258,
+          "scrollWidth": 430,
+          "overflowX": "visible",
+          "whiteSpace": "normal",
+          "minWidth": "0px",
+          "display": "flex",
+          "chain": "form.flex.flex-col.gap-3 < section.card < main.flex.flex-col.gap-4 < div.page"
+        },
+        {
+          "tag": "DIV",
+          "className": "flex flex-col gap-1",
+          "text": "Add players (in throwing order)-- Select player --Alex CarterAlexander Montgomery-Johnson the ThirdCasey WilsonCharlie BrownChris TaylorDrew RobertsFinley BrooksHarper ShawJamie El",
+          "left": 31,
+          "right": 289,
+          "width": 258,
+          "clientWidth": 258,
+          "scrollWidth": 430,
+          "overflowX": "visible",
+          "whiteSpace": "normal",
+          "minWidth": "auto",
+          "display": "flex",
+          "chain": "div.flex.flex-col.gap-1 < form.flex.flex-col.gap-3 < section.card < main.flex.flex-col.gap-4"
+        },
+        {
+          "tag": "DIV",
+          "className": "flex gap-2",
+          "text": "-- Select player --Alex CarterAlexander Montgomery-Johnson the ThirdCasey WilsonCharlie BrownChris TaylorDrew RobertsFinley BrooksHarper ShawJamie EllisJordan EvansLee JonesMorgan ",
+          "left": 31,
+          "right": 289,
+          "width": 258,
+          "clientWidth": 258,
+          "scrollWidth": 430,
+          "overflowX": "visible",
+          "whiteSpace": "normal",
+          "minWidth": "auto",
+          "display": "flex",
+          "chain": "div.flex.gap-2 < div.flex.flex-col.gap-1 < form.flex.flex-col.gap-3 < section.card"
+        },
+        {
+          "tag": "SELECT",
+          "className": "flex-1 rounded-md border border-slate-300 px-3 py-2",
+          "text": "-- Select player --Alex CarterAlexander Montgomery-Johnson the ThirdCasey WilsonCharlie BrownChris TaylorDrew RobertsFinley BrooksHarper ShawJamie EllisJordan EvansLee JonesMorgan ",
+          "left": 31,
+          "right": 394,
+          "width": 363,
+          "clientWidth": 361,
+          "scrollWidth": 361,
+          "overflowX": "clip",
+          "whiteSpace": "pre",
+          "minWidth": "auto",
+          "display": "block",
+          "chain": "select.flex-1.rounded-md.border.border-slate-300 < div.flex.gap-2 < div.flex.flex-col.gap-1 < form.flex.flex-col.gap-3"
+        },
+        {
+          "tag": "BUTTON",
+          "className": "rounded-md bg-slate-800 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-900 disabled:opacity-40",
+          "text": "Add",
+          "left": 402,
+          "right": 461.390625,
+          "width": 59.390625,
+          "clientWidth": 59,
+          "scrollWidth": 59,
+          "overflowX": "visible",
+          "whiteSpace": "normal",
+          "minWidth": "auto",
+          "display": "block",
+          "chain": "button.rounded-md.bg-slate-800.px-4.py-2 < div.flex.gap-2 < div.flex.flex-col.gap-1 < form.flex.flex-col.gap-3"
+        }
+      ]
+    },
+    {
+      "name": "leagueScoring",
+      "path": "/scoring?game=e3fb4ba7-7b02-41a4-a68d-3adfb055edb9&fixture=44466c5a-8361-40e9-ba41-96e98bdfff73&home=1",
+      "width": 390,
+      "viewport": 390,
+      "documentWidth": 390,
+      "bodyWidth": 390,
+      "items": []
+    },
+    {
+      "name": "leagueScoring",
+      "path": "/scoring?game=e3fb4ba7-7b02-41a4-a68d-3adfb055edb9&fixture=44466c5a-8361-40e9-ba41-96e98bdfff73&home=1",
+      "width": 320,
+      "viewport": 320,
+      "documentWidth": 320,
+      "bodyWidth": 320,
+      "items": []
+    },
+    {
+      "name": "practiceScoring",
+      "path": "/practice/scoring?session=d9d8b49e-941c-41b2-ae33-99081ce42be6&game=d193e514-7340-4f7d-b590-36ea550ace13",
+      "width": 390,
+      "viewport": 390,
+      "documentWidth": 445,
+      "bodyWidth": 445,
+      "items": [
+        {
+          "tag": "DIV",
+          "className": "card flex flex-col gap-3",
+          "text": "\u2190 DashboardSessionsLeg 1 of 3Alex CarterAlexander Montgomery-Johnson the Third\u2013Alex Carter401Alexander Montgomery-Johnson the Third441Saved \u27131234567890EnterClearUndoAlex Carter3DA:",
+          "left": 12,
+          "right": 378,
+          "width": 366,
+          "clientWidth": 364,
+          "scrollWidth": 432,
+          "overflowX": "visible",
+          "minWidth": "0px",
+          "whiteSpace": "normal",
+          "display": "flex"
+        },
+        {
+          "tag": "DIV",
+          "className": "flex gap-2",
+          "text": "Alex Carter401Alexander Montgomery-Johnson the Third441",
+          "left": 31,
+          "right": 359,
+          "width": 328,
+          "clientWidth": 328,
+          "scrollWidth": 414,
+          "overflowX": "visible",
+          "minWidth": "auto",
+          "whiteSpace": "normal",
+          "display": "flex"
+        },
+        {
+          "tag": "DIV",
+          "className": "flex-1 rounded-lg border px-3 py-2 border-slate-200 bg-white",
+          "text": "Alexander Montgomery-Johnson the Third441",
+          "left": 139.3125,
+          "right": 445.453125,
+          "width": 306.140625,
+          "clientWidth": 304,
+          "scrollWidth": 304,
+          "overflowX": "visible",
+          "minWidth": "auto",
+          "whiteSpace": "normal",
+          "display": "block"
+        },
+        {
+          "tag": "P",
+          "className": "text-xs uppercase font-medium text-slate-600 truncate",
+          "text": "Alexander Montgomery-Johnson the Third",
+          "left": 152.3125,
+          "right": 432.453125,
+          "width": 280.140625,
+          "clientWidth": 280,
+          "scrollWidth": 280,
+          "overflowX": "hidden",
+          "minWidth": "0px",
+          "whiteSpace": "nowrap",
+          "display": "block"
+        },
+        {
+          "tag": "P",
+          "className": "text-3xl font-bold text-slate-900",
+          "text": "441",
+          "left": 152.3125,
+          "right": 432.453125,
+          "width": 280.140625,
+          "clientWidth": 280,
+          "scrollWidth": 280,
+          "overflowX": "visible",
+          "minWidth": "0px",
+          "whiteSpace": "normal",
+          "display": "block"
+        },
+        {
+          "tag": "P",
+          "className": "text-xs font-semibold text-slate-700 truncate",
+          "text": "Alexander Montgomery-Johnson the Third",
+          "left": 201,
+          "right": 359,
+          "width": 158,
+          "clientWidth": 158,
+          "scrollWidth": 252,
+          "overflowX": "hidden",
+          "minWidth": "auto",
+          "whiteSpace": "nowrap",
+          "display": "block"
+        }
+      ]
+    },
+    {
+      "name": "practiceScoring",
+      "path": "/practice/scoring?session=d9d8b49e-941c-41b2-ae33-99081ce42be6&game=d193e514-7340-4f7d-b590-36ea550ace13",
+      "width": 320,
+      "viewport": 320,
+      "documentWidth": 445,
+      "bodyWidth": 445,
+      "items": [
+        {
+          "tag": "DIV",
+          "className": "card flex flex-col gap-3",
+          "text": "\u2190 DashboardSessionsLeg 1 of 3Alex CarterAlexander Montgomery-Johnson the Third\u2013Alex Carter401Alexander Montgomery-Johnson the Third441Saved \u27131234567890EnterClearUndoAlex Carter3DA:",
+          "left": 12,
+          "right": 308,
+          "width": 296,
+          "clientWidth": 294,
+          "scrollWidth": 432,
+          "overflowX": "visible",
+          "minWidth": "0px",
+          "whiteSpace": "normal",
+          "display": "flex"
+        },
+        {
+          "tag": "DIV",
+          "className": "flex gap-2",
+          "text": "Alex Carter401Alexander Montgomery-Johnson the Third441",
+          "left": 31,
+          "right": 289,
+          "width": 258,
+          "clientWidth": 258,
+          "scrollWidth": 414,
+          "overflowX": "visible",
+          "minWidth": "auto",
+          "whiteSpace": "normal",
+          "display": "flex"
+        },
+        {
+          "tag": "DIV",
+          "className": "flex-1 rounded-lg border px-3 py-2 border-slate-200 bg-white",
+          "text": "Alexander Montgomery-Johnson the Third441",
+          "left": 139.3125,
+          "right": 445.453125,
+          "width": 306.140625,
+          "clientWidth": 304,
+          "scrollWidth": 304,
+          "overflowX": "visible",
+          "minWidth": "auto",
+          "whiteSpace": "normal",
+          "display": "block"
+        },
+        {
+          "tag": "P",
+          "className": "text-xs uppercase font-medium text-slate-600 truncate",
+          "text": "Alexander Montgomery-Johnson the Third",
+          "left": 152.3125,
+          "right": 432.453125,
+          "width": 280.140625,
+          "clientWidth": 280,
+          "scrollWidth": 280,
+          "overflowX": "hidden",
+          "minWidth": "0px",
+          "whiteSpace": "nowrap",
+          "display": "block"
+        },
+        {
+          "tag": "P",
+          "className": "text-3xl font-bold text-slate-900",
+          "text": "441",
+          "left": 152.3125,
+          "right": 432.453125,
+          "width": 280.140625,
+          "clientWidth": 280,
+          "scrollWidth": 280,
+          "overflowX": "visible",
+          "minWidth": "0px",
+          "whiteSpace": "normal",
+          "display": "block"
+        },
+        {
+          "tag": "P",
+          "className": "text-xs font-semibold text-slate-700 truncate",
+          "text": "Alexander Montgomery-Johnson the Third",
+          "left": 166,
+          "right": 289,
+          "width": 123,
+          "clientWidth": 123,
+          "scrollWidth": 252,
+          "overflowX": "hidden",
+          "minWidth": "auto",
+          "whiteSpace": "nowrap",
+          "display": "block"
+        }
+      ]
+    }
+  ],
+  "keyboard": {
+    "practiceLegs": {
+      "initial": [
+        {
+          "value": "1",
+          "checked": false,
+          "tabIndex": 0,
+          "siblingClass": "flex flex-col items-center justify-center rounded-md border border-slate-300 px-2 py-3 text-center text-slate-700 hover:border-emerald-300 peer-checked:border-emerald-500 peer-checked:bg-emerald-600 peer-checked:text-white"
+        },
+        {
+          "value": "3",
+          "checked": true,
+          "tabIndex": 0,
+          "siblingClass": "flex flex-col items-center justify-center rounded-md border border-slate-300 px-2 py-3 text-center text-slate-700 hover:border-emerald-300 peer-checked:border-emerald-500 peer-checked:bg-emerald-600 peer-checked:text-white"
+        },
+        {
+          "value": "5",
+          "checked": false,
+          "tabIndex": 0,
+          "siblingClass": "flex flex-col items-center justify-center rounded-md border border-slate-300 px-2 py-3 text-center text-slate-700 hover:border-emerald-300 peer-checked:border-emerald-500 peer-checked:bg-emerald-600 peer-checked:text-white"
+        },
+        {
+          "value": "7",
+          "checked": false,
+          "tabIndex": 0,
+          "siblingClass": "flex flex-col items-center justify-center rounded-md border border-slate-300 px-2 py-3 text-center text-slate-700 hover:border-emerald-300 peer-checked:border-emerald-500 peer-checked:bg-emerald-600 peer-checked:text-white"
+        }
+      ],
+      "focused": {
+        "tag": "INPUT",
+        "type": "radio",
+        "value": "3",
+        "name": "legs",
+        "focusVisible": true,
+        "inputRect": {
+          "width": 1,
+          "height": 1,
+          "left": 114,
+          "top": 761
+        },
+        "visibleTileRect": {
+          "width": 76,
+          "height": 66
+        },
+        "visibleTileStyle": {
+          "outlineStyle": "none",
+          "outlineWidth": "3px",
+          "boxShadow": "none",
+          "borderColor": "rgb(47, 192, 138)"
+        }
+      },
+      "afterArrow": [
+        {
+          "value": "1",
+          "checked": false,
+          "focused": false
+        },
+        {
+          "value": "3",
+          "checked": false,
+          "focused": false
+        },
+        {
+          "value": "5",
+          "checked": true,
+          "focused": true
+        },
+        {
+          "value": "7",
+          "checked": false,
+          "focused": false
+        }
+      ],
+      "focusOverlay": {
+        "input": "3",
+        "tile": {
+          "top": 762,
+          "bottom": 828,
+          "left": 115,
+          "right": 191
+        },
+        "bottomNav": {
+          "top": 783.5,
+          "bottom": 844
+        },
+        "overlapPixels": 44.5
+      }
+    },
+    "pin": {
+      "before": 0,
+      "afterTyping": 0,
+      "afterButtonEnter": 1,
+      "afterBackspace": 1,
+      "inputs": 0,
+      "url": "http://127.0.0.1:3100/pin"
+    }
+  },
+  "instrumentation": {
+    "note": "Initial scoring geometry was invalid because the first pass blocked read-only Next server actions. The scoring entries were replaced after whitelisting exactly loadPracticeStateAction, loadGameStateAction and getLegSummariesAction. No scoring outcomes or form submits were clicked.",
+    "allowedReadActions": [
+      "loadPracticeStateAction",
+      "loadGameStateAction",
+      "getLegSummariesAction"
+    ],
+    "traffic": [
+      {
+        "method": "POST",
+        "readAction": "loadGameStateAction",
+        "accepted": true
+      },
+      {
+        "method": "POST",
+        "readAction": "loadGameStateAction",
+        "accepted": true
+      },
+      {
+        "method": "POST",
+        "readAction": "loadPracticeStateAction",
+        "accepted": true
+      },
+      {
+        "method": "POST",
+        "readAction": "loadPracticeStateAction",
+        "accepted": true
+      }
+    ]
+  },
+  "doublesAdd": {
+    "colour": "rgb(255, 255, 255)",
+    "background": "rgb(226, 234, 246)",
+    "opacity": "1",
+    "disabled": false,
+    "left": 402,
+    "right": 461.390625
+  }
+}
