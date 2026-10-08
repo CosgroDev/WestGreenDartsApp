@@ -14,6 +14,12 @@ Add **Settings → Appearance → Dark / Light**, with the choice saved per devi
 
 Keep the calmer visual direction in both themes: navy surfaces with green/gold accents in Dark; light neutral surfaces, dark readable text and the same restrained club accents in Light. Define shared semantic colors for surfaces, text, borders, actions and statuses rather than relying on the current inverted palette. Verify button/text contrast, chart readability, keyboard focus, selected/disabled states and theme persistence in both appearances.
 
+**Keep match night visible until all six matches are complete.** Use the fixture's calendar date in **Europe/London** to choose its label; passing the scheduled start time must not remove it. An incomplete future fixture is “Next game”; an incomplete fixture dated today is “Tonight's game”, before and after kickoff and between matches. Show progress such as “4 of 6 matches complete” and Start/Resume/View fixture as appropriate. Tonight does not imply that scoring has started.
+
+If midnight passes with fewer than six completed matches, retain the fixture as “Current game · Unfinished” until it is completed. When a newer match night arrives, prioritize today's fixture and keep older unfinished fixtures clearly accessible, with the next future fixture secondary. After all six matches finish, show the final result and promote the next fixture. Reopening a match or deleting a completed match makes the fixture incomplete again.
+
+Count six distinct completed **matches**, not six leg rows or six matches merely created. Each match must have all required legs finished, accounting for supported legacy match records and excluding deleted records. Use one shared completion rule for Home, Fixtures, fixture detail and summaries, and refresh their state after scoring or correction. This is part of the planned behavior changes; it has not yet been implemented.
+
 ## Browser review
 
 The existing production build passed compilation, lint, type validation and route generation. Chromium rendered **20 authenticated screens**, plus the locked PIN redirect, with additional checks at **320 × 568**, **390 × 844**, **844 × 390** and **1440 × 1000**. The dataset contains 15 synthetic players, including a long name, 12 completed six-match fixtures, scheduled/live fixtures, practice sessions and synthetic league data. There were no JavaScript page errors during the route survey.
@@ -90,6 +96,8 @@ The current page renders six summary tiles and the creation form before Score no
 
 With no matches, fixture totals are 0–0 and the page says “Draw”; partial totals can declare a team win before the fixture finishes. Unfinished equal-score matches also count as draws. Live and completed lists independently number from 1, so a later match changes number after earlier matches finish. Use Scheduled/Live/Final states, final results only when settled, stable positions 1–6, and consistent terms: **Fixture** = team night, **Match** = player versus opponent, **Leg** = individual 501 game. Rename “Best of 2” to “2 legs · draw possible.” Sources: [result calculation](../src/app/fixtures/%5Bid%5D/page.tsx#L129), [draw counts](../src/app/fixtures/%5Bid%5D/page.tsx#L242), [live numbering](../src/app/fixtures/%5Bid%5D/page.tsx#L290), [completed numbering](../src/app/fixtures/%5Bid%5D/page.tsx#L358), [scoring format](../src/app/scoring/ScoringClient.tsx#L216).
 
+The next-fixture selection uses `starts_at > now`, so the current night disappears from that callout at kickoff. Fixture list status can also become final as soon as all existing leg rows are completed, even when fewer than six matches exist. Replace both decisions with the shared six-match completion rule above; use the London calendar date for Tonight and preserve unfinished nights after kickoff and midnight. Sources: [future-only selection](../src/app/fixtures/page.tsx#L59), [premature fixture completion](../src/data/fixtures.ts#L61), [match grouping](../src/lib/matchKey.ts#L1).
+
 ### 5. Create real player profiles and compact Stats views — P1 / L
 
 Players leads with Add player; its only detail link is Edit. Performance/history lives inside the dashboard leaderboard, in a 600px internal scroll box with many badges, bars and nested disclosures. History cards do not link to the full match review. Stats → Players should open addressable profiles with overview, matches and practice records. Use compact rank/name/form/selected-metric leaderboard rows and ordinary page scrolling; put ranking explanations and full breakdowns on demand. Sources: [player administration](../src/app/players/page.tsx#L22), [edit-only detail](../src/app/players/%5Bid%5D/page.tsx#L25), [nested scroll](../src/app/dashboard/Leaderboard.tsx#L60), [dense rows](../src/app/dashboard/Leaderboard.tsx#L111), [unlinked history cards](../src/app/dashboard/Leaderboard.tsx#L197).
@@ -160,7 +168,7 @@ Practice's hidden radio inputs lack visible focus on their tiles and a fieldset/
 
 | Phase | Work | Result |
 | --- | --- | --- |
-| **1. Correct confusing behavior** | Destination-preserving PIN; honest fixture states/stable numbering; Doubles controls; X01 labels; accessible primary button colors; form feedback; safer delete placement; West Green-labelled hints and correct link labels | Users trust outcomes and know what each action did |
+| **1. Correct confusing behavior** | Destination-preserving PIN; shared six-match fixture completion, Tonight/current visibility and stable numbering; Doubles controls; X01 labels; accessible primary button colors; form feedback; safer delete placement; West Green-labelled hints and correct link labels | Users trust outcomes and know what each action did |
 | **2. Reorganize the main experience** | Four tabs; action-first Home; state-aware fixture layout; Stats Team/Players/League; player profiles; Settings/Manage team and per-device Dark/Light appearance; season context; exports near data | Each existing feature has a predictable home and frequent actions are easy to find |
 | **3. Unify every play mode** | Continue/history; Pause/End/Results; undo across phases and after finishes; inline save recovery; Killer persistence/rules; consistent setup | Starting, returning, correcting and finishing behave consistently |
 | **4. Polish and verify** | Shared visual primitives and both theme palettes; calmer surfaces; phone rows/touch/focus; readable charts; reduced motion; theme persistence and first-paint checks; broader tablet/desktop layout as warranted | The app feels coherent across devices and interaction methods |
@@ -171,6 +179,10 @@ The phases describe the recommended order, not a request to remove features or r
 
 - A returning scorer sees Resume/Tonight before detailed analytics at a normal phone viewport.
 - A scheduled fixture shows Not started; an incomplete fixture shows a live score; a final result appears only after all required matches settle.
+- An incomplete fixture dated today in Europe/London stays labelled Tonight's game before and after its scheduled start, including with no matches started or between completed matches. Its progress counts completed matches out of six.
+- A fixture with six completed leg rows, fewer than six completed matches, or six created matches with an unfinished leg remains incomplete. Deleted records do not count, and supported legacy completed matches retain their meaning.
+- An unfinished fixture remains accessible after midnight; today's fixture takes priority over older unfinished nights. Only completion of all six matches promotes the next fixture and final result; reopening/deleting a completed match restores incomplete status across Home, Fixtures and summaries.
+- Check fixture visibility at kickoff, London midnight and daylight-saving boundaries, and after the fifth/sixth match finishes, a result is reopened or a completed match is deleted.
 - Match positions 1–6 remain stable after completion, deletion/replacement and page reload.
 - Starting a match opens its scoring screen; finishing it offers the next match and fixture result without hunting through summary cards.
 - A locked fixture, match, practice or scoring deep link returns to the same full destination after PIN entry.
