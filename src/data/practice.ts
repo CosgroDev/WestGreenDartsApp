@@ -31,6 +31,7 @@ export async function createPracticeSession(params: {
   playerB: string | null;
   startScore: number;
   legsToPlay: number;
+  soloMode?: boolean;
 }): Promise<{ ok: boolean; sessionId?: string; gameId?: string; message?: string }> {
   const supabase = await supabaseServer();
   if (!supabase) return { ok: false, message: "Supabase not configured" };
@@ -42,7 +43,8 @@ export async function createPracticeSession(params: {
       player_a_id: params.playerA,
       player_b_id: params.playerB,
       start_score: params.startScore,
-      legs_to_play: params.legsToPlay
+      legs_to_play: params.legsToPlay,
+      solo_mode: params.soloMode ?? false
     })
     .select("id")
     .single();
@@ -55,16 +57,19 @@ export async function createPracticeSession(params: {
     .select("id")
     .single();
 
-  if (gameErr || !game) return { ok: false, message: gameErr?.message || "Failed to create first leg" };
+  if (gameErr || !game) {
+    await supabase.from("practice_sessions").delete().eq("id", data.id);
+    return { ok: false, message: gameErr?.message || "Failed to create first leg" };
+  }
 
   return { ok: true, sessionId: data.id, gameId: game.id };
 }
 
 export async function getPracticeSessions(): Promise<PracticeSession[]> {
   const supabase = await supabaseServer();
-  if (!supabase) return [];
+  if (!supabase) throw new Error("Practice storage is not configured.");
 
-  const { data, error } = await supabase
+  const { data, error } = await allRows(() => supabase
     .from("practice_sessions")
     .select(
       `id, start_score, legs_to_play, status, created_at, completed_at,
@@ -72,10 +77,10 @@ export async function getPracticeSessions(): Promise<PracticeSession[]> {
        player_a:player_a_id(name),
        player_b:player_b_id(name)`
     )
-    .order("created_at", { ascending: false })
-    .limit(20);
+    .eq("team_id", process.env.TEAM_ID)
+    .order("created_at", { ascending: false }).order("id", { ascending: false }));
 
-  if (error || !data) return [];
+  if (error || !data) throw new Error("Could not load practice sessions.");
 
   return data.map((s: any) => ({
     id: s.id,
@@ -105,17 +110,17 @@ export type PracticePlayerStat = {
 
 export async function getPracticePlayerStats(): Promise<PracticePlayerStat[]> {
   const supabase = await supabaseServer();
-  if (!supabase) return [];
+  if (!supabase) throw new Error("Practice storage is not configured.");
 
   const { data: sessions } = await allRows(() => supabase
     .from("practice_sessions")
-    .select("id, player_a_id, player_b_id, player_a:player_a_id(name), player_b:player_b_id(name)").order("id", { ascending: true }));
+    .select("id, player_a_id, player_b_id, player_a:player_a_id(name), player_b:player_b_id(name)").eq("team_id", process.env.TEAM_ID).order("id", { ascending: true }));
   if (!sessions?.length) return [];
 
-  const { data: games } = await allRows(() => supabase
+  const games = await rowsForIds(sessions.map((s: any) => s.id), ids => supabase
     .from("practice_games")
     .select("id, session_id, winner")
-    .eq("status", "completed").order("id", { ascending: true }));
+    .in("session_id", ids).eq("status", "completed").order("id", { ascending: true }));
   if (!games?.length) return [];
 
   const sessionMap = new Map(sessions.map((s: any) => [s.id, s]));

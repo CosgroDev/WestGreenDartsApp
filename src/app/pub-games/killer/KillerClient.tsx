@@ -13,7 +13,9 @@ import {
   setFirstSegment,
   hitTarget,
   missDart,
-  undoDart,
+  applyKillerAction,
+  undoKillerAction,
+  isKillerGame,
   setNewSegment,
   finalProofHit,
   finalProofMiss,
@@ -30,24 +32,37 @@ function loadGame(): KillerGame | null {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return null;
-    return JSON.parse(raw) as KillerGame;
+    const saved = JSON.parse(raw);
+    const game = saved.game ?? saved;
+    return isKillerGame(game) ? game : null;
   } catch {
     return null;
   }
 }
 
-function saveGame(game: KillerGame): void {
+function saveGame(game: KillerGame, history: KillerGame[]): boolean {
   try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(game));
+    localStorage.setItem(
+      STORAGE_KEY,
+      JSON.stringify({ version: 2, game, previous: history }),
+    );
+    return true;
   } catch {
-    // ignore storage errors
+    return false;
   }
 }
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
-function LivesDisplay({ lives, isEliminated }: { lives: number; isEliminated: boolean }) {
-  if (isEliminated) return <span className="text-red-500 font-bold text-lg">✕</span>;
+function LivesDisplay({
+  lives,
+  isEliminated,
+}: {
+  lives: number;
+  isEliminated: boolean;
+}) {
+  if (isEliminated)
+    return <span className="text-red-500 font-bold text-lg">✕</span>;
   return (
     <span className="text-base leading-none">
       {Array.from({ length: INITIAL_LIVES }).map((_, i) => (
@@ -82,19 +97,63 @@ function DartIndicator({ thrown, total }: { thrown: number; total: number }) {
 
 type Multiplier = "SO" | "SI" | "D" | "T";
 
-const MULTIPLIER_OPTIONS: { value: Multiplier; label: string; sub: string; style: string; activeStyle: string }[] = [
-  { value: "SO", label: "S", sub: "big",   style: "bg-slate-100 text-slate-800 border-2 border-slate-200", activeStyle: "bg-emerald-600 text-white border-2 border-emerald-700" },
-  { value: "SI", label: "S", sub: "small", style: "bg-slate-100 text-slate-800 border-2 border-slate-200", activeStyle: "bg-emerald-600 text-white border-2 border-emerald-700" },
-  { value: "D",  label: "D", sub: "double", style: "bg-blue-50 text-blue-800 border-2 border-blue-200",   activeStyle: "bg-blue-600 text-white border-2 border-blue-700" },
-  { value: "T",  label: "T", sub: "treble", style: "bg-purple-50 text-purple-800 border-2 border-purple-200", activeStyle: "bg-purple-600 text-white border-2 border-purple-700" },
+const MULTIPLIER_OPTIONS: {
+  value: Multiplier;
+  label: string;
+  sub: string;
+  style: string;
+  activeStyle: string;
+}[] = [
+  {
+    value: "SO",
+    label: "S",
+    sub: "big",
+    style: "bg-slate-100 text-slate-800 border-2 border-slate-200",
+    activeStyle: "bg-emerald-600 text-white border-2 border-emerald-700",
+  },
+  {
+    value: "SI",
+    label: "S",
+    sub: "small",
+    style: "bg-slate-100 text-slate-800 border-2 border-slate-200",
+    activeStyle: "bg-emerald-600 text-white border-2 border-emerald-700",
+  },
+  {
+    value: "D",
+    label: "D",
+    sub: "double",
+    style: "bg-blue-50 text-blue-800 border-2 border-blue-200",
+    activeStyle: "bg-blue-600 text-white border-2 border-blue-700",
+  },
+  {
+    value: "T",
+    label: "T",
+    sub: "treble",
+    style: "bg-purple-50 text-purple-800 border-2 border-purple-200",
+    activeStyle: "bg-purple-600 text-white border-2 border-purple-700",
+  },
 ];
 
-function SegmentKeypad({ onSelect, label }: { onSelect: (seg: string) => void; label: string }) {
+function SegmentKeypad({
+  onSelect,
+  label,
+}: {
+  onSelect: (seg: string) => void;
+  label: string;
+}) {
   const [multiplier, setMultiplier] = useState<Multiplier | null>(null);
 
   const handleNumber = (n: number | "25" | "BULL") => {
-    if (n === "25") { onSelect("25"); setMultiplier(null); return; }
-    if (n === "BULL") { onSelect("BULL"); setMultiplier(null); return; }
+    if (n === "25") {
+      onSelect("25");
+      setMultiplier(null);
+      return;
+    }
+    if (n === "BULL") {
+      onSelect("BULL");
+      setMultiplier(null);
+      return;
+    }
     if (!multiplier) return;
     onSelect(`${multiplier}${n}`);
     setMultiplier(null);
@@ -118,7 +177,9 @@ function SegmentKeypad({ onSelect, label }: { onSelect: (seg: string) => void; l
             }`}
           >
             <span className="text-xl font-black">{opt.label}</span>
-            <span className="text-[10px] font-medium opacity-70">{opt.sub}</span>
+            <span className="text-[10px] font-medium opacity-70">
+              {opt.sub}
+            </span>
           </button>
         ))}
         <button
@@ -153,7 +214,9 @@ function SegmentKeypad({ onSelect, label }: { onSelect: (seg: string) => void; l
       )}
 
       {!multiplier && (
-        <p className="text-center text-sm text-slate-400 italic">Select a segment type above</p>
+        <p className="text-center text-sm text-slate-400 italic">
+          Select a segment type above
+        </p>
       )}
     </div>
   );
@@ -172,7 +235,10 @@ function PlayerList({
 }) {
   const sorted = [...game.players].sort((a, b) => a.turn_order - b.turn_order);
   const currentPlayer =
-    game.state !== "waiting_for_players" && game.state !== "shuffle_animation" && game.state !== "game_over" && game.state !== "rollover"
+    game.state !== "waiting_for_players" &&
+    game.state !== "shuffle_animation" &&
+    game.state !== "game_over" &&
+    game.state !== "rollover"
       ? game.players[game.current_player_index]
       : null;
 
@@ -189,14 +255,16 @@ function PlayerList({
               isEliminated
                 ? "bg-slate-50 border-slate-100 opacity-50"
                 : isCurrent
-                ? "bg-emerald-50 border-emerald-300"
-                : isOwner
-                ? "bg-amber-50 border-amber-200"
-                : "bg-white border-slate-200"
+                  ? "bg-emerald-50 border-emerald-300"
+                  : isOwner
+                    ? "bg-amber-50 border-amber-200"
+                    : "bg-white border-slate-200"
             }`}
           >
             <div className="flex items-center gap-2 min-w-0">
-              <span className={`text-base font-semibold truncate ${isEliminated ? "line-through text-slate-400" : ""}`}>
+              <span
+                className={`text-base font-semibold truncate ${isEliminated ? "line-through text-slate-400" : ""}`}
+              >
                 {isCurrent && <span className="text-emerald-600 mr-1">▶</span>}
                 {p.name}
               </span>
@@ -208,22 +276,24 @@ function PlayerList({
             </div>
             <div className="flex items-center gap-2 shrink-0">
               <LivesDisplay lives={p.lives} isEliminated={isEliminated} />
-              {showAdmin && game.state !== "waiting_for_players" && !isEliminated && (
-                <div className="flex gap-1 ml-2">
-                  <button
-                    onClick={() => onUpdate(adjustLives(game, p.id, -1))}
-                    className="w-7 h-7 rounded bg-red-100 text-red-700 font-bold text-sm flex items-center justify-center active:scale-90"
-                  >
-                    −
-                  </button>
-                  <button
-                    onClick={() => onUpdate(adjustLives(game, p.id, +1))}
-                    className="w-7 h-7 rounded bg-emerald-100 text-emerald-700 font-bold text-sm flex items-center justify-center active:scale-90"
-                  >
-                    +
-                  </button>
-                </div>
-              )}
+              {showAdmin &&
+                game.state !== "waiting_for_players" &&
+                !isEliminated && (
+                  <div className="flex gap-1 ml-2">
+                    <button
+                      onClick={() => onUpdate(adjustLives(game, p.id, -1))}
+                      className="w-7 h-7 rounded bg-red-100 text-red-700 font-bold text-sm flex items-center justify-center active:scale-90"
+                    >
+                      −
+                    </button>
+                    <button
+                      onClick={() => onUpdate(adjustLives(game, p.id, +1))}
+                      className="w-7 h-7 rounded bg-emerald-100 text-emerald-700 font-bold text-sm flex items-center justify-center active:scale-90"
+                    >
+                      +
+                    </button>
+                  </div>
+                )}
             </div>
           </div>
         );
@@ -234,13 +304,31 @@ function PlayerList({
 
 // ── Screens ───────────────────────────────────────────────────────────────────
 
-function LobbyScreen({ game, onUpdate }: { game: KillerGame; onUpdate: (g: KillerGame) => void }) {
+function LobbyScreen({
+  game,
+  onUpdate,
+  roster,
+}: {
+  game: KillerGame;
+  onUpdate: (g: KillerGame) => void;
+  roster: string[];
+}) {
   const [name, setName] = useState("");
+  const [nameError, setNameError] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const handleAdd = () => {
     if (!name.trim()) return;
-    onUpdate(addPlayer(game, name));
+    const next = addPlayer(game, name);
+    if (next === game) {
+      setNameError(
+        `${name.trim()} is already playing. Use a different name to distinguish players.`,
+      );
+      inputRef.current?.focus();
+      return;
+    }
+    onUpdate(next);
+    setNameError(null);
     setName("");
     inputRef.current?.focus();
   };
@@ -266,12 +354,17 @@ function LobbyScreen({ game, onUpdate }: { game: KillerGame; onUpdate: (g: Kille
         </div>
 
         {game.players.length === 0 && (
-          <p className="text-slate-400 text-sm text-center py-4">No players yet — add at least 2</p>
+          <p className="text-slate-400 text-sm text-center py-4">
+            No players yet — add at least 2
+          </p>
         )}
 
         <div className="flex flex-col gap-1 mb-4">
           {game.players.map((p) => (
-            <div key={p.id} className="flex items-center justify-between rounded-lg border border-slate-200 px-3 py-2.5 bg-white">
+            <div
+              key={p.id}
+              className="flex items-center justify-between rounded-lg border border-slate-200 px-3 py-2.5 bg-white"
+            >
               <span className="font-medium">{p.name}</span>
               <button
                 onClick={() => onUpdate(removePlayer(game, p.id))}
@@ -283,16 +376,34 @@ function LobbyScreen({ game, onUpdate }: { game: KillerGame; onUpdate: (g: Kille
           ))}
         </div>
 
+        {nameError && (
+          <p
+            id="killer-name-error"
+            role="alert"
+            className="mb-2 text-sm text-red-700"
+          >
+            {nameError}
+          </p>
+        )}
+        <label className="block text-sm mb-2" htmlFor="killer-player-name">
+          Guest name
+        </label>
         <div className="flex gap-2">
           <input
+            id="killer-player-name"
             ref={inputRef}
             type="text"
             value={name}
-            onChange={(e) => setName(e.target.value)}
+            onChange={(e) => {
+              setName(e.target.value);
+              setNameError(null);
+            }}
             onKeyDown={(e) => e.key === "Enter" && handleAdd()}
+            aria-invalid={!!nameError}
+            aria-describedby={nameError ? "killer-name-error" : undefined}
             placeholder="Player name"
             maxLength={20}
-            className="flex-1 rounded-lg border border-slate-300 px-3 py-2.5 text-base focus:outline-none focus:ring-2 focus:ring-emerald-500"
+            className="min-w-0 flex-1 rounded-lg border border-slate-300 px-3 py-2.5 text-base focus:outline-none focus:ring-2 focus:ring-emerald-500"
           />
           <button
             onClick={handleAdd}
@@ -304,6 +415,35 @@ function LobbyScreen({ game, onUpdate }: { game: KillerGame; onUpdate: (g: Kille
         </div>
       </div>
 
+      {roster.length > 0 && (
+        <div className="card">
+          <label htmlFor="killer-roster" className="block text-sm mb-2">
+            Add a West Green player
+          </label>
+          <select
+            id="killer-roster"
+            className="w-full rounded-md border border-slate-300 p-3"
+            value=""
+            onChange={(e) => {
+              if (e.target.value) onUpdate(addPlayer(game, e.target.value));
+            }}
+          >
+            <option value="">Choose a team player</option>
+            {roster
+              .filter(
+                (n) =>
+                  !game.players.some(
+                    (p) => p.name.toLowerCase() === n.toLowerCase(),
+                  ),
+              )
+              .map((n) => (
+                <option key={n} value={n}>
+                  {n}
+                </option>
+              ))}
+          </select>
+        </div>
+      )}
       <button
         onClick={() => onUpdate(startGame(game))}
         disabled={game.players.length < 2}
@@ -315,7 +455,13 @@ function LobbyScreen({ game, onUpdate }: { game: KillerGame; onUpdate: (g: Kille
   );
 }
 
-function ShuffleScreen({ game, onUpdate }: { game: KillerGame; onUpdate: (g: KillerGame) => void }) {
+function ShuffleScreen({
+  game,
+  onUpdate,
+}: {
+  game: KillerGame;
+  onUpdate: (g: KillerGame) => void;
+}) {
   const [displayOrder, setDisplayOrder] = useState<Player[]>([...game.players]);
   const [done, setDone] = useState(false);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -326,7 +472,9 @@ function ShuffleScreen({ game, onUpdate }: { game: KillerGame; onUpdate: (g: Kil
     intervalRef.current = setInterval(() => {
       count++;
       if (count >= totalSteps) {
-        setDisplayOrder([...game.players].sort((a, b) => a.turn_order - b.turn_order));
+        setDisplayOrder(
+          [...game.players].sort((a, b) => a.turn_order - b.turn_order),
+        );
         setDone(true);
         if (intervalRef.current) clearInterval(intervalRef.current);
       } else {
@@ -334,7 +482,9 @@ function ShuffleScreen({ game, onUpdate }: { game: KillerGame; onUpdate: (g: Kil
         setDisplayOrder(shuffled);
       }
     }, 150);
-    return () => { if (intervalRef.current) clearInterval(intervalRef.current); };
+    return () => {
+      if (intervalRef.current) clearInterval(intervalRef.current);
+    };
   }, [game.players]);
 
   const sorted = [...game.players].sort((a, b) => a.turn_order - b.turn_order);
@@ -352,10 +502,14 @@ function ShuffleScreen({ game, onUpdate }: { game: KillerGame; onUpdate: (g: Kil
             <div
               key={p.id}
               className={`flex items-center gap-3 rounded-lg px-4 py-3 transition-all duration-75 ${
-                done ? "bg-emerald-50 border border-emerald-200" : "bg-slate-50 border border-slate-200"
+                done
+                  ? "bg-emerald-50 border border-emerald-200"
+                  : "bg-slate-50 border border-slate-200"
               }`}
             >
-              <span className={`w-7 h-7 rounded-full flex items-center justify-center text-sm font-bold ${done ? "bg-emerald-600 text-white" : "bg-slate-300 text-slate-700"}`}>
+              <span
+                className={`w-7 h-7 rounded-full flex items-center justify-center text-sm font-bold ${done ? "bg-emerald-600 text-white" : "bg-slate-300 text-slate-700"}`}
+              >
                 {i + 1}
               </span>
               <span className="font-semibold text-lg">{p.name}</span>
@@ -381,14 +535,24 @@ function ShuffleScreen({ game, onUpdate }: { game: KillerGame; onUpdate: (g: Kil
   );
 }
 
-function FirstSegmentScreen({ game, onUpdate }: { game: KillerGame; onUpdate: (g: KillerGame) => void }) {
+function FirstSegmentScreen({
+  game,
+  onUpdate,
+}: {
+  game: KillerGame;
+  onUpdate: (g: KillerGame) => void;
+}) {
   const firstPlayer = game.players[0];
   return (
     <div className="flex flex-col gap-4">
       <div className="card text-center">
-        <p className="text-sm text-slate-500 uppercase tracking-wide font-semibold">First Segment</p>
+        <p className="text-sm text-slate-500 uppercase tracking-wide font-semibold">
+          First Segment
+        </p>
         <h2 className="text-2xl font-bold mt-1">{firstPlayer?.name}</h2>
-        <p className="text-slate-500 text-sm mt-1">Throw <strong>left handed</strong> — first segment hit sets the game</p>
+        <p className="text-slate-500 text-sm mt-1">
+          Throw <strong>left handed</strong> — first segment hit sets the game
+        </p>
       </div>
 
       <div className="card">
@@ -422,20 +586,36 @@ function AttackScreen({
       <div className="card">
         <div className="grid grid-cols-2 gap-2 text-center text-sm">
           <div>
-            <p className="text-slate-500 text-xs uppercase tracking-wide">Target</p>
-            <p className="text-3xl font-black text-emerald-700 leading-none mt-0.5">{game.current_segment}</p>
+            <p className="text-slate-500 text-xs uppercase tracking-wide">
+              Target
+            </p>
+            <p className="text-3xl font-black text-emerald-700 leading-none mt-0.5">
+              {game.current_segment}
+            </p>
           </div>
           <div>
-            <p className="text-slate-500 text-xs uppercase tracking-wide">Owner</p>
-            <p className="text-lg font-bold leading-none mt-0.5">{owner?.name ?? "—"}</p>
+            <p className="text-slate-500 text-xs uppercase tracking-wide">
+              Owner
+            </p>
+            <p className="text-lg font-bold leading-none mt-0.5">
+              {owner?.name ?? "—"}
+            </p>
           </div>
           <div>
-            <p className="text-slate-500 text-xs uppercase tracking-wide">Pot</p>
-            <p className="text-lg font-bold leading-none mt-0.5">£{game.pot + game.rollover_pot}</p>
+            <p className="text-slate-500 text-xs uppercase tracking-wide">
+              Pot
+            </p>
+            <p className="text-lg font-bold leading-none mt-0.5">
+              £{game.pot + game.rollover_pot}
+            </p>
           </div>
           <div>
-            <p className="text-slate-500 text-xs uppercase tracking-wide">Alive</p>
-            <p className="text-lg font-bold leading-none mt-0.5">{getAlivePlayers(game).length}</p>
+            <p className="text-slate-500 text-xs uppercase tracking-wide">
+              Alive
+            </p>
+            <p className="text-lg font-bold leading-none mt-0.5">
+              {getAlivePlayers(game).length}
+            </p>
           </div>
         </div>
       </div>
@@ -447,12 +627,18 @@ function AttackScreen({
 
       {/* Current player + darts */}
       <div className="card bg-emerald-50 border-emerald-200 text-center">
-        <p className="text-xs text-emerald-600 uppercase tracking-wide font-semibold">Now throwing</p>
-        <p className="text-2xl font-black text-emerald-800 mt-0.5">{currentPlayer?.name}</p>
+        <p className="text-xs text-emerald-600 uppercase tracking-wide font-semibold">
+          Now throwing
+        </p>
+        <p className="text-2xl font-black text-emerald-800 mt-0.5">
+          {currentPlayer?.name}
+        </p>
         <div className="mt-2">
           <DartIndicator thrown={game.darts_thrown_this_turn} total={3} />
         </div>
-        <p className="text-sm text-emerald-600 mt-1">{dartsLeft} dart{dartsLeft !== 1 ? "s" : ""} remaining</p>
+        <p className="text-sm text-emerald-600 mt-1">
+          {dartsLeft} dart{dartsLeft !== 1 ? "s" : ""} remaining
+        </p>
       </div>
 
       {/* Action buttons */}
@@ -470,19 +656,15 @@ function AttackScreen({
           >
             MISS
           </button>
-          <button
-            onClick={() => onUpdate(undoDart(game))}
-            disabled={game.darts_thrown_this_turn === 0}
-            className="rounded-xl bg-slate-200 py-4 text-lg font-bold text-slate-700 hover:bg-slate-300 disabled:opacity-40 active:scale-95 transition-transform"
-          >
-            UNDO
-          </button>
         </div>
       </div>
 
       {/* Admin controls */}
       <div className="card border-dashed border-slate-300">
-        <button onClick={onToggleAdmin} className="w-full text-sm text-slate-500 flex items-center justify-between">
+        <button
+          onClick={onToggleAdmin}
+          className="w-full text-sm text-slate-500 flex items-center justify-between"
+        >
           <span>Admin controls</span>
           <span>{showAdmin ? "▲" : "▼"}</span>
         </button>
@@ -495,7 +677,10 @@ function AttackScreen({
               Skip current player
             </button>
             <button
-              onClick={() => { if (confirm("Reset game?")) onUpdate(resetGame(game.rollover_pot)); }}
+              onClick={() => {
+                if (confirm("Reset game?"))
+                  onUpdate(resetGame(game.rollover_pot));
+              }}
               className="w-full rounded-lg bg-red-100 py-2.5 text-sm font-semibold text-red-700 hover:bg-red-200"
             >
               Reset game
@@ -507,17 +692,28 @@ function AttackScreen({
   );
 }
 
-function SegmentSettingScreen({ game, onUpdate }: { game: KillerGame; onUpdate: (g: KillerGame) => void }) {
+function SegmentSettingScreen({
+  game,
+  onUpdate,
+}: {
+  game: KillerGame;
+  onUpdate: (g: KillerGame) => void;
+}) {
   const currentPlayer = game.players[game.current_player_index];
   const owner = game.players.find((p) => p.id === game.segment_owner_id);
 
   return (
     <div className="flex flex-col gap-4">
       <div className="card text-center">
-        <p className="text-sm text-slate-500 uppercase tracking-wide font-semibold">Segment Setting</p>
-        <h2 className="text-2xl font-bold mt-1">{currentPlayer?.name ?? owner?.name}</h2>
+        <p className="text-sm text-slate-500 uppercase tracking-wide font-semibold">
+          Segment Setting
+        </p>
+        <h2 className="text-2xl font-bold mt-1">
+          {currentPlayer?.name ?? owner?.name}
+        </h2>
         <p className="text-slate-500 text-sm mt-1">
-          You hit <strong>{game.current_segment}</strong>! Now set the next target with 2 darts.
+          You hit <strong>{game.current_segment}</strong>! Now set the next
+          target with 2 darts.
         </p>
       </div>
 
@@ -535,7 +731,13 @@ function SegmentSettingScreen({ game, onUpdate }: { game: KillerGame; onUpdate: 
   );
 }
 
-function FinalProofScreen({ game, onUpdate }: { game: KillerGame; onUpdate: (g: KillerGame) => void }) {
+function FinalProofScreen({
+  game,
+  onUpdate,
+}: {
+  game: KillerGame;
+  onUpdate: (g: KillerGame) => void;
+}) {
   const owner = game.players.find((p) => p.id === game.segment_owner_id);
   const allowedDarts = (owner?.lives ?? 1) * 3;
   const dartsLeft = allowedDarts - game.darts_thrown_this_turn;
@@ -543,10 +745,15 @@ function FinalProofScreen({ game, onUpdate }: { game: KillerGame; onUpdate: (g: 
   return (
     <div className="flex flex-col gap-4">
       <div className="card bg-amber-50 border-amber-300 text-center">
-        <p className="text-sm text-amber-700 uppercase tracking-wide font-semibold">Final Proof</p>
-        <h2 className="text-2xl font-bold mt-1 text-amber-900">{owner?.name}</h2>
+        <p className="text-sm text-amber-700 uppercase tracking-wide font-semibold">
+          Final Proof
+        </p>
+        <h2 className="text-2xl font-bold mt-1 text-amber-900">
+          {owner?.name}
+        </h2>
         <p className="text-amber-700 text-sm mt-1">
-          Must prove <strong>{game.current_segment}</strong> with {allowedDarts} dart{allowedDarts !== 1 ? "s" : ""}
+          Must prove <strong>{game.current_segment}</strong> with {allowedDarts}{" "}
+          dart{allowedDarts !== 1 ? "s" : ""}
         </p>
       </div>
 
@@ -556,9 +763,14 @@ function FinalProofScreen({ game, onUpdate }: { game: KillerGame; onUpdate: (g: 
 
       <div className="card bg-amber-50 border-amber-200 text-center">
         <div className="mt-1">
-          <DartIndicator thrown={game.darts_thrown_this_turn} total={allowedDarts} />
+          <DartIndicator
+            thrown={game.darts_thrown_this_turn}
+            total={allowedDarts}
+          />
         </div>
-        <p className="text-sm text-amber-700 mt-2">{dartsLeft} dart{dartsLeft !== 1 ? "s" : ""} remaining</p>
+        <p className="text-sm text-amber-700 mt-2">
+          {dartsLeft} dart{dartsLeft !== 1 ? "s" : ""} remaining
+        </p>
       </div>
 
       <div className="flex flex-col gap-2">
@@ -579,7 +791,13 @@ function FinalProofScreen({ game, onUpdate }: { game: KillerGame; onUpdate: (g: 
   );
 }
 
-function GameOverScreen({ game, onUpdate }: { game: KillerGame; onUpdate: (g: KillerGame) => void }) {
+function GameOverScreen({
+  game,
+  onUpdate,
+}: {
+  game: KillerGame;
+  onUpdate: (g: KillerGame) => void;
+}) {
   const winner = game.players.find((p) => p.id === game.winner_id);
   const totalPot = game.pot + game.rollover_pot;
 
@@ -589,10 +807,16 @@ function GameOverScreen({ game, onUpdate }: { game: KillerGame; onUpdate: (g: Ki
         <p className="text-4xl mb-2">🎯</p>
         <h2 className="text-3xl font-black text-emerald-700">Winner!</h2>
         <p className="text-2xl font-bold mt-2">{winner?.name ?? "Unknown"}</p>
-        <p className="text-slate-500 mt-1 text-sm">Proved <strong>{game.current_segment}</strong></p>
+        <p className="text-slate-500 mt-1 text-sm">
+          Proved <strong>{game.current_segment}</strong>
+        </p>
         <div className="mt-4 rounded-xl bg-emerald-50 border border-emerald-200 py-4">
-          <p className="text-sm text-emerald-600 uppercase tracking-wide font-semibold">Pot won</p>
-          <p className="text-4xl font-black text-emerald-700 mt-1">£{totalPot}</p>
+          <p className="text-sm text-emerald-600 uppercase tracking-wide font-semibold">
+            Pot won
+          </p>
+          <p className="text-4xl font-black text-emerald-700 mt-1">
+            £{totalPot}
+          </p>
         </div>
       </div>
 
@@ -611,7 +835,13 @@ function GameOverScreen({ game, onUpdate }: { game: KillerGame; onUpdate: (g: Ki
   );
 }
 
-function RolloverScreen({ game, onUpdate }: { game: KillerGame; onUpdate: (g: KillerGame) => void }) {
+function RolloverScreen({
+  game,
+  onUpdate,
+}: {
+  game: KillerGame;
+  onUpdate: (g: KillerGame) => void;
+}) {
   const owner = game.players.find((p) => p.id === game.segment_owner_id);
   const totalPot = game.pot + game.rollover_pot;
 
@@ -621,12 +851,17 @@ function RolloverScreen({ game, onUpdate }: { game: KillerGame; onUpdate: (g: Ki
         <p className="text-4xl mb-2">🔄</p>
         <h2 className="text-3xl font-black text-amber-600">Rollover!</h2>
         <p className="text-slate-600 mt-1">
-          {owner?.name} missed the proof on <strong>{game.current_segment}</strong>
+          {owner?.name} missed the proof on{" "}
+          <strong>{game.current_segment}</strong>
         </p>
         <div className="mt-4 rounded-xl bg-amber-50 border border-amber-200 py-4">
-          <p className="text-sm text-amber-600 uppercase tracking-wide font-semibold">Pot carries over</p>
+          <p className="text-sm text-amber-600 uppercase tracking-wide font-semibold">
+            Pot carries over
+          </p>
           <p className="text-4xl font-black text-amber-700 mt-1">£{totalPot}</p>
-          <p className="text-sm text-amber-600 mt-1">Plus £1 per new player who re-enrols</p>
+          <p className="text-sm text-amber-600 mt-1">
+            Plus £1 per new player who re-enrols
+          </p>
         </div>
       </div>
 
@@ -648,19 +883,46 @@ function RolloverScreen({ game, onUpdate }: { game: KillerGame; onUpdate: (g: Ki
 
 // ── Root Component ────────────────────────────────────────────────────────────
 
-export function KillerClient() {
+export function KillerClient({ roster = [] }: { roster?: string[] }) {
   const [game, setGame] = useState<KillerGame | null>(null);
   const [showAdmin, setShowAdmin] = useState(false);
+  const [previous, setPrevious] = useState<KillerGame[]>([]);
+  const [resume, setResume] = useState(false);
+  const [storageError, setStorageError] = useState(false);
 
   useEffect(() => {
     const saved = loadGame();
     setGame(saved ?? createGame());
+    setResume(!!saved && saved.state !== "waiting_for_players");
+    try {
+      const stored = JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}");
+      const history =
+        stored.previous ??
+        JSON.parse(localStorage.getItem("wgd_killer_history") || "[]");
+      if (Array.isArray(history))
+        setPrevious(history.filter(isKillerGame).slice(-100));
+    } catch {
+      setPrevious([]);
+    }
   }, []);
 
-  const update = useCallback((newGame: KillerGame) => {
-    setGame(newGame);
-    saveGame(newGame);
-  }, []);
+  const update = useCallback(
+    (newGame: KillerGame) => {
+      if (!game) return;
+      const next = applyKillerAction({ game, previous }, newGame);
+      setGame(next.game);
+      setPrevious(next.previous);
+      setStorageError(!saveGame(next.game, next.previous));
+    },
+    [game, previous],
+  );
+  const undo = () => {
+    if (!game) return;
+    const next = undoKillerAction({ game, previous });
+    setGame(next.game);
+    setPrevious(next.previous);
+    setStorageError(!saveGame(next.game, next.previous));
+  };
 
   if (!game) {
     return (
@@ -673,7 +935,7 @@ export function KillerClient() {
   const renderScreen = () => {
     switch (game.state) {
       case "waiting_for_players":
-        return <LobbyScreen game={game} onUpdate={update} />;
+        return <LobbyScreen game={game} onUpdate={update} roster={roster} />;
       case "shuffle_animation":
         return <ShuffleScreen game={game} onUpdate={update} />;
       case "setting_first_segment":
@@ -714,23 +976,92 @@ export function KillerClient() {
           <div className="flex items-center gap-2">
             {isInGame && (
               <button
-                onClick={() => { if (confirm("Reset to lobby?")) { update(resetGame(0)); setShowAdmin(false); } }}
+                onClick={() => {
+                  if (confirm("Reset to lobby?")) {
+                    update(resetGame(0));
+                    setShowAdmin(false);
+                  }
+                }}
                 className="text-xs text-slate-500 border border-slate-200 rounded px-2 py-1 hover:bg-slate-50"
               >
                 Reset
               </button>
             )}
             <Link
-              href="/dashboard"
+              href="/practice"
               className="text-xs text-slate-500 border border-slate-200 rounded px-2 py-1 hover:bg-slate-50"
             >
-              ← Dashboard
+              ← Practice
             </Link>
           </div>
         </div>
       </header>
 
-      {renderScreen()}
+      <p className="text-xs text-slate-600" role="status">
+        {storageError
+          ? "Device storage is unavailable. This game will be lost when you leave."
+          : "Saved on this device only · not synced to the team database."}
+      </p>
+      {storageError && (
+        <button
+          className="btn-secondary"
+          onClick={() => setStorageError(!saveGame(game, previous))}
+        >
+          Retry saving on this device
+        </button>
+      )}
+      <details className="card">
+        <summary>Killer rules</summary>
+        <p className="mt-3 text-sm">
+          Each player starts with 3 lives and adds £1 to the pot. The shuffled
+          first player sets a target with their left hand. Other players have 3
+          darts to hit that exact segment; 3 misses cost one life. A hit makes
+          you the owner and you set the next target. The owner waits while
+          others attack. The final survivor must prove their segment within 3
+          darts per remaining life. A hit wins the pot; missing all proof darts
+          rolls the pot into the next game.
+        </p>
+        <p className="mt-2 text-sm">
+          Undo restores the complete previous action, including life loss,
+          elimination, ownership and final proof.
+        </p>
+      </details>
+      {resume ? (
+        <section className="card flex flex-col gap-3">
+          <h2 className="text-xl font-semibold">Resume the game saved here?</h2>
+          <p>{game.players.map((p) => p.name).join(", ")}</p>
+          <button className="btn-primary" onClick={() => setResume(false)}>
+            Resume game
+          </button>
+          <button
+            className="btn-secondary"
+            onClick={() => {
+              if (confirm("Start a new game and clear the current pot?")) {
+                update(createGame());
+                setResume(false);
+              }
+            }}
+          >
+            New game
+          </button>
+        </section>
+      ) : (
+        <>
+          <div className="flex flex-wrap gap-2">
+            <button
+              className="btn-secondary"
+              disabled={!previous.length}
+              onClick={undo}
+            >
+              Undo last action
+            </button>
+            <Link href="/practice" className="btn-secondary">
+              Pause &amp; save
+            </Link>
+          </div>
+          {renderScreen()}
+        </>
+      )}
     </main>
   );
 }

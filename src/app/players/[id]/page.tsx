@@ -1,3 +1,5 @@
+import Link from "next/link";
+import { ActionForm, PendingButton, ConfirmSubmitButton } from "@/components/ActionForm";
 import { getPlayers } from "@/data/players";
 import { updatePlayerAction, deletePlayerAction } from "../actions";
 import { notFound } from "next/navigation";
@@ -11,24 +13,24 @@ export default async function PlayerEditPage({ params: paramsPromise }: Props) {
   if (!player) return notFound();
 
   return (
-    <main className="flex flex-col gap-4">
-      <header className="card flex items-center gap-2">
-        <a
+    <main className="mx-auto flex max-w-2xl flex-col gap-5">
+      <header className="flex min-w-0 items-center gap-3">
+        <Link
           href="/players"
           className="inline-flex items-center justify-center rounded-full bg-slate-100 px-3 py-2 text-sm font-semibold text-slate-800 hover:bg-slate-200"
           aria-label="Back to players"
           title="Back to players"
         >
           ←
-        </a>
-        <div>
-          <p className="text-sm text-slate-600">Edit player</p>
+        </Link>
+        <div className="min-w-0 break-words">
+          <p className="text-sm text-slate-600">Manage player</p>
           <h1 className="text-2xl font-semibold">{player.name}</h1>
         </div>
       </header>
 
       <section className="card">
-        <form action={updatePlayerAction} className="flex flex-col gap-3">
+        <ActionForm action={updatePlayerAction} className="flex flex-col gap-3" successMessage="Player updated.">
           <input type="hidden" name="id" value={player.id} />
           <div className="flex flex-col gap-1">
             <label className="text-sm text-slate-700" htmlFor="name">Name</label>
@@ -81,39 +83,30 @@ export default async function PlayerEditPage({ params: paramsPromise }: Props) {
             Active
           </label>
           <div className="flex gap-2">
-            <button
-              type="submit"
-              className="rounded-md bg-emerald-600 px-4 py-2 text-white font-semibold hover:bg-emerald-700"
-            >
-              Save
-            </button>
-            <a
+            <PendingButton>Save player</PendingButton>
+            <Link
               href="/players"
               className="inline-flex items-center justify-center rounded-md border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 hover:border-emerald-200"
             >
               Cancel
-            </a>
+            </Link>
           </div>
-        </form>
+        </ActionForm>
       </section>
 
       <section className="card">
-        <h2 className="text-lg font-semibold mb-2">Delete player</h2>
-        <p className="text-sm text-slate-600 mb-3">Player must be inactive before deletion.</p>
-        <form action={deletePlayerAction}>
-          <input type="hidden" name="id" value={player.id} />
-          <button
-            type="submit"
-            className="rounded-md bg-red-600 px-4 py-2 text-white font-semibold hover:bg-red-700 disabled:opacity-50"
-            disabled={player.active}
-          >
-            Delete player
-          </button>
-          {player.active && (
-            <p className="text-xs text-red-700 mt-2">Deactivate this player first to enable deletion.</p>
-          )}
-        </form>
+        <h2 className="text-lg font-semibold">Recorded history</h2>
+        <Link href={`/stats/players/${player.id}`} className="mt-3 inline-flex min-h-11 items-center text-emerald-700">View performance and match history →</Link>
+        <p className="mt-2 text-sm text-slate-600">Deactivate the player to remove them from team selections while keeping their name and history.</p>
       </section>
+      <details className="card">
+        <summary className="cursor-pointer font-semibold text-red-700">Delete player permanently</summary>
+        <p className="my-3 text-sm text-slate-600">Only inactive players can be deleted. Recorded matches may prevent deletion; practice records may lose their player link. Keep the player inactive to retain their history.</p>
+        {player.active ? <p className="text-sm text-slate-600">Deactivate and save this player first.</p> : <ActionForm action={deletePlayerAction} successMessage="Player deleted.">
+          <input type="hidden" name="id" value={player.id} />
+          <ConfirmSubmitButton message={`Permanently delete ${player.name}? This cannot be undone and may unlink their practice history. Deactivation preserves their history.`} confirmLabel="Delete permanently" className="btn-secondary text-red-700" pendingLabel="Deleting…">Delete player</ConfirmSubmitButton>
+        </ActionForm>}
+      </details>
     </main>
   );
 }

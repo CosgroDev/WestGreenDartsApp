@@ -1,90 +1,24 @@
 import Link from "next/link";
 import { getPlayers } from "@/data/players";
 import { getDoublesPlayerStats } from "@/data/doublesPractice";
+import { getSavedPractice } from "@/data/practiceHistory";
 import { DOUBLES_SEQUENCE } from "@/lib/doublesPractice";
+import SavedSessions from "../SavedSessions";
 import DoublesStartForm from "./DoublesStartForm";
-
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 export default async function DoublesPage() {
-  const [players, stats] = await Promise.all([getPlayers(), getDoublesPlayerStats()]);
-
-  return (
-    <main className="flex flex-col gap-4">
-      <header className="card">
-        <div className="flex items-center justify-between mb-1">
-          <p className="text-sm text-slate-600">Practice arena</p>
-          <Link
-            href="/practice"
-            className="rounded-md border border-slate-300 px-2 py-1 text-xs font-semibold text-slate-600 hover:border-slate-400 hover:text-slate-800"
-          >
-            ← Practice
-          </Link>
-        </div>
-        <h1 className="text-2xl font-semibold">Doubles Switch</h1>
-        <p className="text-sm text-slate-500 mt-1">
-          Rotate through the finishing doubles, then random ones — get used to switching.
-        </p>
-      </header>
-
-      {/* How to play */}
-      <section className="card">
-        <h2 className="text-base font-semibold mb-2 text-slate-700">How to play</h2>
-        <ul className="text-sm text-slate-600 flex flex-col gap-1 list-none">
-          <li>🎯 Each player throws at the running double: {DOUBLES_SEQUENCE.map((d) => `D${d}`).join(" → ")}</li>
-          <li>🎲 After the {DOUBLES_SEQUENCE.length} in order, you get <strong>random</strong> doubles until you end</li>
-          <li>🎯 Up to <strong>3 darts</strong> per double — tap the dart that hits, or miss all 3</li>
-          <li>🏆 Earlier hits score more: <strong>1st = 3</strong>, 2nd = 2, 3rd = 1</li>
-          <li>🔁 Players take turns in order; everyone advances independently</li>
-        </ul>
-      </section>
-
-      {/* Start game */}
-      <section className="card">
-        <h2 className="text-lg font-semibold mb-3">Start a game</h2>
-        <DoublesStartForm players={players.map((p) => ({ id: p.id, name: p.name }))} />
-      </section>
-
-      {/* Player stats */}
-      {stats.length > 0 && (
-        <section className="card">
-          <h2 className="text-lg font-semibold mb-3">Player stats</h2>
-          <div className="flex flex-col gap-2">
-            {stats.map((p) => (
-              <div
-                key={p.player_id}
-                className="flex items-center justify-between rounded-md border border-slate-200 px-3 py-2.5 text-sm"
-              >
-                <div>
-                  <p className="font-semibold">{p.name}</p>
-                  <div className="flex flex-wrap gap-3 text-xs text-slate-500 mt-0.5">
-                    {p.double_pct !== null && (
-                      <span>Doubles: <strong className="text-slate-700">{p.double_pct}%</strong></span>
-                    )}
-                    {p.first_dart_pct !== null && (
-                      <span>1st dart: <strong className="text-slate-700">{p.first_dart_pct}%</strong></span>
-                    )}
-                    {p.weakest_doubles.length > 0 && (
-                      <span>Weakest: <strong className="text-red-600">{p.weakest_doubles.map((d) => `D${d}`).join(", ")}</strong></span>
-                    )}
-                  </div>
-                </div>
-                <div className="flex gap-2 items-center">
-                  {p.games_won > 0 && (
-                    <span className="rounded-full bg-emerald-50 text-emerald-700 px-3 py-1 text-xs font-semibold">
-                      🏆 {p.games_won}
-                    </span>
-                  )}
-                  <span className="rounded-full bg-slate-100 text-slate-600 px-3 py-1 text-xs font-semibold">
-                    {p.games_played} played
-                  </span>
-                </div>
-              </div>
-            ))}
-          </div>
-        </section>
-      )}
-    </main>
-  );
+  const [roster, records, saved] = await Promise.allSettled([getPlayers(), getDoublesPlayerStats(), getSavedPractice("doubles")]);
+  const players = roster.status === "fulfilled" ? roster.value : [];
+  const stats = records.status === "fulfilled" ? records.value : [];
+  const sessions = saved.status === "fulfilled" ? saved.value : [];
+  return <main className="flex flex-col gap-4">
+    <header><Link href="/practice" className="btn btn-secondary mb-3">← Practice</Link><h1 className="text-2xl font-bold">Doubles Switch</h1><p className="mt-1 text-sm text-slate-600">Solo or group · Rotate through doubles, then random targets.</p></header>
+    <SavedSessions sessions={sessions} players={players} errors={saved.status === "rejected" ? ["Doubles Switch"] : []} modeFilter={false} retryHref="/practice/doubles" kind="active" />
+    <section className="card"><h2 className="mb-3 text-lg font-semibold">Start a game</h2>{roster.status === "rejected" ? <p role="alert">The roster could not be loaded. <Link href="/practice/doubles" className="underline">Retry</Link></p> : <DoublesStartForm players={players.filter(p => p.active)} />}</section>
+    <details className="card"><summary className="cursor-pointer font-semibold">How to play</summary><div className="mt-3 flex flex-col gap-3 text-sm text-slate-600"><p>Each player throws at their running double: {DOUBLES_SEQUENCE.map(d => `D${d}`).join(" → ")}.</p><p>After these {DOUBLES_SEQUENCE.length} targets, random doubles follow until you end the game. Each player advances independently, taking turns in your chosen order.</p><p>Throw up to three darts and choose one visit outcome: Hit on dart 1 (3 points), dart 2 (2 points), dart 3 (1 point), or Missed all 3 (0 points).</p><p>For a fair group result, finish the current round so everyone has the same number of turns. Pause to continue later.</p></div></details>
+    <SavedSessions sessions={sessions} players={players} modeFilter={false} retryHref="/practice/doubles" kind="results" />
+    <details className="card"><summary className="cursor-pointer font-semibold">Player records</summary>{records.status === "rejected" ? <p role="alert" className="mt-3">Records could not be loaded. <Link href="/practice/doubles" className="underline">Retry</Link></p> : stats.length ? <ul className="mt-3 divide-y divide-slate-200">{stats.map(p => <li key={p.player_id} className="flex flex-wrap justify-between gap-3 py-3 text-sm"><span className="min-w-0 break-words"><strong>{p.name}</strong><span className="block text-slate-600">Doubles {p.double_pct ?? "–"}% · First dart {p.first_dart_pct ?? "–"}%{p.weakest_doubles.length ? ` · Practice ${p.weakest_doubles.map(d => `D${d}`).join(", ")}` : ""}</span></span><span>{p.games_won} won · {p.games_played} played</span></li>)}</ul> : <p className="mt-3 text-sm text-slate-600">No completed games yet.</p>}</details>
+  </main>;
 }

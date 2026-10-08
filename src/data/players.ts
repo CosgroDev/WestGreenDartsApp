@@ -32,8 +32,7 @@ export async function getPlayers(): Promise<Player[]> {
   }
 
   if (error || !data) {
-    console.warn("Falling back to mock players", error?.message);
-    return mockPlayers;
+    throw new Error("Could not load the team roster. Please try again.");
   }
 
   return data as Player[];

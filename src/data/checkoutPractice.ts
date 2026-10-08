@@ -12,12 +12,12 @@ export type CheckoutPlayerStat = {
 
 export async function getCheckoutPlayerStats(): Promise<CheckoutPlayerStat[]> {
   const supabase = await supabaseServer();
-  if (!supabase) return [];
+  if (!supabase) throw new Error("Practice storage is not configured.");
 
   const { data: sessions } = await allRows(() => supabase
     .from("checkout_practice_sessions")
     .select("id, player_id, player:player_id(name)")
-    .not("player_id", "is", null).order("id", { ascending: true }));
+    .eq("team_id", process.env.TEAM_ID).not("player_id", "is", null).order("id", { ascending: true }));
   if (!sessions?.length) return [];
 
   const sessionIds = (sessions as any[]).map((s) => s.id);

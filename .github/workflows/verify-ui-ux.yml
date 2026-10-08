@@ -1,0 +1,42 @@
+name: Verify UI and UX
+
+on:
+  push:
+    branches: ["feat/ui-ux-redesign"]
+  pull_request:
+    branches: ["main"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run lint
+      - run: npm test -- --runInBand
+      - run: npm run test:database
+      - run: npm run test:fixtures
+      - run: npm run test:league-reviews
+      - run: npm run test:practice-lifecycle
+      - run: npm run build
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: http://127.0.0.1:3101
+      - run: npm install --prefix "$RUNNER_TEMP/wgd-browser" --no-save --package-lock=false playwright@1.58.2
+      - run: '"$RUNNER_TEMP/wgd-browser/node_modules/.bin/playwright" install --only-shell chromium'
+      - run: npm run test:ui
+        env:
+          PLAYWRIGHT_MODULE_PATH: ${{ runner.temp }}/wgd-browser/node_modules/playwright/index.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ui-ux-verification
+          path: ui-ux-verification/

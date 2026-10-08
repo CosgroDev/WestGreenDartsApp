@@ -1,3 +1,4 @@
+import { summariseFixture, type FixtureLeg } from "@/lib/fixtureState";
 import { allRows } from "@/lib/database";
 import { supabaseServer } from "@/lib/supabaseServer";
 
@@ -10,8 +11,10 @@ export type Fixture = {
   notes: string | null;
   home: boolean;
   games_count: number;
+  matches_count: number;
+  completed_matches: number;
   status?: "win" | "loss" | "draw" | "in_progress" | "scheduled";
-  games?: { winner: string | null; status: string; deleted?: boolean | null }[];
+  games?: FixtureLeg[];
 };
 
 export type FixtureDetail = {
@@ -36,7 +39,7 @@ export async function getFixtures(seasonId?: string, includeGames = true): Promi
     .select(
       `id, starts_at, opponent, venue, notes, home,
        seasons(name)
-       ${includeGames ? ", games:games(status,winner,deleted)" : ""}`
+       ${includeGames ? ", games:games(id,match_id,fixture_id,west_green_player_id,opponent_player,status,winner,deleted,created_at)" : ""}`
     )
     .order("starts_at", { ascending: true }).order("id", { ascending: true });
     if (seasonId) query = query.eq("season_id", seasonId);
@@ -47,7 +50,8 @@ export async function getFixtures(seasonId?: string, includeGames = true): Promi
 
   return data.map((f: any) => {
     const seasonName = Array.isArray(f.seasons) ? f.seasons[0]?.name ?? "" : f.seasons?.name ?? "";
-    const activeGames = (f.games || []).filter((g: any) => g.deleted === false || g.deleted == null);
+    const activeGames = (f.games || []).filter((g: any) => g.deleted !== true);
+    const state = summariseFixture(activeGames);
     return {
       id: f.id,
       season: seasonName,
@@ -57,22 +61,10 @@ export async function getFixtures(seasonId?: string, includeGames = true): Promi
       notes: f.notes,
       home: f.home,
       games_count: activeGames.length,
-      games: activeGames,
-      status: !includeGames ? undefined : (() => {
-        // No games added yet → the fixture is merely scheduled/upcoming.
-        if (activeGames.length === 0) return "scheduled";
-        // Any game still being played → the fixture is actively in progress,
-        // even if some games have already been completed.
-        const hasInProgress = activeGames.some((g: any) => g.status !== "completed");
-        if (hasInProgress) return "in_progress";
-        // All games completed → settle the fixture result.
-        const completed = activeGames.filter((g: any) => g.status === "completed");
-        const wins = completed.filter((g: any) => g.winner === "west_green").length;
-        const losses = completed.filter((g: any) => g.winner === "opponent").length;
-        if (wins > losses) return "win";
-        if (losses > wins) return "loss";
-        return "draw";
-      })()
+      games: includeGames ? activeGames : undefined,
+      matches_count: state.matches.length,
+      completed_matches: state.completedMatches,
+      status: includeGames ? state.status : undefined
     };
   });
 }
@@ -87,7 +79,8 @@ export async function getFixtureById(id: string): Promise<FixtureDetail | null> 
     .eq("id", id)
     .single();
 
-  if (error || !data) return null;
+  if (error && error.code !== "PGRST116") throw new Error(`Unable to load fixture: ${error.message}`);
+  if (!data) return null;
 
   const seasonName = Array.isArray(data.seasons)
     ? (data.seasons[0] as any)?.name ?? ""

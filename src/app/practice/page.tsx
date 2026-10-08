@@ -1,224 +1,37 @@
-﻿import Link from "next/link";
-import { notFound } from "next/navigation";
-import { getPracticeSessions, getPracticePlayerStats } from "@/data/practice";
+import Link from "next/link";
 import { getPlayers } from "@/data/players";
-import { StatBar } from "@/components/StatBar";
-import { createPracticeSessionAction } from "./actions";
+import { getPracticePlayerStats } from "@/data/practice";
+import { getSavedPractice, type PracticeMode } from "@/data/practiceHistory";
+import SavedSessions from "./SavedSessions";
+import X01StartForm from "./X01StartForm";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
+const modes: { id: PracticeMode; name: string; href: string; description: string }[] = [
+  { id: "x01", name: "X01", href: "#x01", description: "301, 501 or 701 · Solo or two players · Double out" },
+  { id: "121", name: "121 Challenge", href: "/practice/121", description: "Solo · Work from 121 to 170 in three visits per target" },
+  { id: "doubles", name: "Doubles Switch", href: "/practice/doubles", description: "Solo or group · Rotate through doubles, then random targets" },
+  { id: "checkout", name: "Random Checkout", href: "/practice/checkout", description: "Solo · Finish a random target in up to three darts" },
+];
 
 export default async function PracticePage() {
-  const [sessions, players, practiceStats] = await Promise.all([
-    getPracticeSessions(),
-    getPlayers(),
-    getPracticePlayerStats(),
-  ]);
-
-  return (
-    <main className="flex flex-col gap-4">
-      <header>
-        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-emerald-700">Practice arena</p>
-        <h1 className="text-2xl font-bold">Practice sessions</h1>
-      </header>
-
-      {/* Quick links to other practice games */}
-      <section className="card">
-        <h2 className="text-base font-semibold mb-2 text-slate-700">Practice games</h2>
-        <div className="flex flex-col gap-2">
-          <Link
-            href="/practice/121"
-            className="flex items-center justify-between rounded-md border border-purple-200 bg-purple-50 px-4 py-3 hover:bg-purple-100"
-          >
-            <div>
-              <p className="font-semibold text-purple-900">121 Challenge</p>
-              <p className="text-xs text-purple-600 mt-0.5">Progress from checkout 121 → 170</p>
-            </div>
-            <span className="text-purple-700 font-semibold text-sm">Play →</span>
-          </Link>
-          <Link
-            href="/practice/doubles"
-            className="flex items-center justify-between rounded-md border border-emerald-200 bg-emerald-50 px-4 py-3 hover:bg-emerald-100"
-          >
-            <div>
-              <p className="font-semibold text-emerald-900">Doubles Switch</p>
-              <p className="text-xs text-emerald-600 mt-0.5">Team doubles drill — rotate then random</p>
-            </div>
-            <span className="text-emerald-700 font-semibold text-sm">Play →</span>
-          </Link>
-          <Link
-            href="/practice/checkout"
-            className="flex items-center justify-between rounded-md border border-blue-200 bg-blue-50 px-4 py-3 hover:bg-blue-100"
-          >
-            <div>
-              <p className="font-semibold text-blue-900">Random Checkout</p>
-              <p className="text-xs text-blue-600 mt-0.5">Finish a random 2–170 checkout</p>
-            </div>
-            <span className="text-blue-700 font-semibold text-sm">Play →</span>
-          </Link>
-        </div>
-      </section>
-
-      <section className="card">
-        <h2 className="text-lg font-semibold mb-3">Start a session</h2>
-        <form action={createPracticeSessionAction} className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <div className="flex flex-col gap-1">
-            <label className="text-sm text-slate-700" htmlFor="playerA">
-              Player A (WGD)
-            </label>
-            <select id="playerA" name="playerA" className="rounded-md border border-slate-300 px-3 py-2">
-              <option value="">Select player</option>
-              {players.map((p) => (
-                <option key={p.id} value={p.id}>
-                  {p.name}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div className="flex flex-col gap-1">
-            <label className="text-sm text-slate-700" htmlFor="playerB">
-              Player B (WGD)
-            </label>
-            <select id="playerB" name="playerB" className="rounded-md border border-slate-300 px-3 py-2">
-              <option value="">Select player</option>
-              {players.map((p) => (
-                <option key={p.id} value={p.id}>
-                  {p.name}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div className="flex flex-col gap-1">
-            <label className="text-sm text-slate-700" htmlFor="startScore">
-              Start score
-            </label>
-            <select id="startScore" name="startScore" className="rounded-md border border-slate-300 px-3 py-2" defaultValue="501">
-              <option value="301">301</option>
-              <option value="501">501</option>
-              <option value="701">701</option>
-            </select>
-          </div>
-          <div className="flex flex-col gap-1 sm:col-span-2">
-            <p className="text-sm text-slate-700">Legs to play</p>
-            <div className="grid grid-cols-4 gap-2">
-              {[
-                { value: "1", label: "1", sub: "single" },
-                { value: "3", label: "3", sub: "best of 3" },
-                { value: "5", label: "5", sub: "best of 5" },
-                { value: "7", label: "7", sub: "best of 7" },
-              ].map((opt) => (
-                <label key={opt.value} className="cursor-pointer">
-                  <input
-                    type="radio"
-                    name="legs"
-                    value={opt.value}
-                    defaultChecked={opt.value === "3"}
-                    className="peer sr-only"
-                  />
-                  <span className="flex flex-col items-center justify-center rounded-md border border-slate-300 px-2 py-3 text-center text-slate-700 hover:border-emerald-300 peer-checked:border-emerald-500 peer-checked:bg-emerald-600 peer-checked:text-white">
-                    <span className="text-xl font-bold leading-none">{opt.label}</span>
-                    <span className="text-xs mt-1 opacity-75">{opt.sub}</span>
-                  </span>
-                </label>
-              ))}
-            </div>
-          </div>
-          <button
-            type="submit"
-            className="rounded-md bg-emerald-600 px-4 py-3 text-white font-semibold hover:bg-emerald-700 w-full sm:col-span-2"
-          >
-            Start practice
-          </button>
-        </form>
-      </section>
-
-      {practiceStats.length > 0 && (
-        <>
-          <section className="card">
-            <h2 className="text-lg font-semibold mb-3">Player stats</h2>
-            <div className="flex flex-col gap-2">
-              {practiceStats.map((p) => {
-                const diff = p.legs_won - (p.legs_played - p.legs_won);
-                const diffColor = diff > 0 ? "bg-emerald-50 text-emerald-700" : diff < 0 ? "bg-red-50 text-red-700" : "bg-slate-100 text-slate-700";
-                const diffLabel = diff > 0 ? `+${diff}` : `${diff}`;
-                return (
-                  <div key={p.player_id} className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 rounded-md border border-slate-200 px-3 py-3 text-sm">
-                    <div className="w-full sm:w-auto">
-                      <p className="font-semibold">{p.name}</p>
-                      <div className="mt-1 grid grid-cols-1 sm:grid-cols-2 gap-2">
-                        <StatBar label="3DA" value={p.three_dart_avg} max={80} />
-                        <StatBar label="First 9" value={p.first_nine_avg} max={100} />
-                      </div>
-                      <div className="mt-1 flex gap-3 text-xs text-slate-500">
-                        {p.high_finish && <span>High finish: <strong className="text-slate-700">{p.high_finish}</strong></span>}
-                        {p.twenty_six > 0 && <span>26s: <strong className="text-slate-700">{p.twenty_six}</strong></span>}
-                        {p.one_eighty > 0 && <span className="text-purple-700">180s: <strong>{p.one_eighty}</strong></span>}
-                      </div>
-                    </div>
-                    <div className="flex flex-wrap gap-2">
-                      <span className="rounded-full bg-emerald-50 text-emerald-700 px-4 py-1.5 text-sm font-semibold">
-                        Won {p.legs_won}
-                      </span>
-                      <span className="rounded-full bg-slate-100 text-slate-700 px-4 py-1.5 text-sm font-semibold">
-                        Played {p.legs_played}
-                      </span>
-                      <span className={`rounded-full px-4 py-1.5 text-sm font-semibold ${diffColor}`}>
-                        {diffLabel}
-                      </span>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </section>
-
-          {practiceStats.some((p) => p.one_eighty > 0) && (
-            <section className="card">
-              <h2 className="text-lg font-semibold mb-2">180s hit</h2>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                {practiceStats
-                  .filter((p) => p.one_eighty > 0)
-                  .map((p) => (
-                    <div key={p.player_id} className="flex items-center justify-between rounded-md border border-slate-200 px-3 py-2 text-sm">
-                      <span className="font-semibold">{p.name}</span>
-                      <span className="rounded-full bg-purple-50 text-purple-700 px-3 py-1 text-sm font-semibold">
-                        {p.one_eighty} × 180
-                      </span>
-                    </div>
-                  ))}
-              </div>
-            </section>
-          )}
-        </>
-      )}
-
-      <section className="card">
-        <h2 className="text-lg font-semibold mb-3">Recent sessions</h2>
-        {!sessions.length ? (
-          <p className="text-sm text-slate-600">No practice sessions yet.</p>
-        ) : (
-          <div className="flex flex-col gap-2">
-            {sessions.map((s) => (
-              <div key={s.id} className="flex items-center justify-between rounded-md border border-slate-200 px-3 py-2.5 text-sm">
-                <div className="flex flex-col">
-                  <span className="font-semibold">
-                    {s.player_a_name || "Player A"} vs {s.player_b_name || "Player B"}
-                  </span>
-                  <span className="text-slate-500 text-xs mt-0.5">
-                    {s.start_score} · {s.legs_to_play} leg{s.legs_to_play !== 1 ? "s" : ""} · {s.status}
-                  </span>
-                </div>
-                <Link
-                  href={`/practice/scoring?session=${s.id}`}
-                  className="rounded-md bg-emerald-600 px-4 py-2 text-sm text-white font-semibold hover:bg-emerald-700"
-                >
-                  Open
-                </Link>
-              </div>
-            ))}
-          </div>
-        )}
-      </section>
-    </main>
-  );
+  const [roster, stats, ...saved] = await Promise.allSettled([getPlayers(), getPracticePlayerStats(), ...modes.map(m => getSavedPractice(m.id))]);
+  const players = roster.status === "fulfilled" ? roster.value as Awaited<ReturnType<typeof getPlayers>> : [];
+  const practiceStats = stats.status === "fulfilled" ? stats.value as Awaited<ReturnType<typeof getPracticePlayerStats>> : [];
+  const sessions = saved.flatMap(result => result.status === "fulfilled" ? result.value as Awaited<ReturnType<typeof getSavedPractice>> : []);
+  const errors = saved.flatMap((result, index) => result.status === "rejected" ? [modes[index].name] : []);
+  return <main className="flex flex-col gap-5">
+    <header><p className="text-sm text-slate-600">Choose, continue and improve</p><h1 className="text-2xl font-bold">Practice</h1></header>
+    <SavedSessions sessions={sessions} players={players} errors={errors} kind="active" />
+    <section className="card"><h2 className="mb-3 text-lg font-semibold">Choose a game</h2><div className="grid gap-2 sm:grid-cols-2">
+      {modes.map(mode => <Link key={mode.id} href={mode.href} className="flex min-w-0 flex-col gap-1 rounded-lg border border-slate-200 p-4"><strong>{mode.name} →</strong><span className="text-sm text-slate-600">{mode.description}</span></Link>)}
+    </div><h3 className="mb-2 mt-4 font-semibold">Pub games</h3><Link href="/pub-games/killer" className="flex flex-col gap-1 rounded-lg border border-slate-200 p-4"><strong>Killer →</strong><span className="text-sm text-slate-600">Group elimination game · Saved on this device only</span></Link></section>
+    <section className="card scroll-mt-24" id="x01"><h2 className="mb-3 text-lg font-semibold">Start X01</h2>
+      {roster.status === "rejected" ? <p role="alert">The roster could not be loaded. <Link href="/practice" className="underline">Retry loading</Link> before starting.</p> : <X01StartForm players={players.filter(p => p.active)} />}
+    </section>
+    <SavedSessions sessions={sessions} players={players} errors={errors} kind="results" />
+    <details className="card"><summary className="cursor-pointer font-semibold">X01 player records</summary>
+      {stats.status === "rejected" ? <p role="alert" className="mt-3 text-sm">Player records could not be loaded. <Link href="/practice" className="underline">Retry</Link></p> : !practiceStats.length ? <p className="mt-3 text-sm text-slate-600">Complete a team-player leg to start building practice records.</p> : <ul className="mt-3 divide-y divide-slate-200">{practiceStats.map(p => <li key={p.player_id} className="flex flex-wrap justify-between gap-3 py-3 text-sm"><span className="min-w-0 break-words font-semibold">{p.name}</span><span>{p.legs_won}/{p.legs_played} legs won · 3DA {p.three_dart_avg?.toFixed(1) ?? "–"} · First 9 {p.first_nine_avg?.toFixed(1) ?? "–"}{p.high_finish ? ` · High finish ${p.high_finish}` : ""}{p.one_eighty ? ` · ${p.one_eighty} × 180` : ""}{p.twenty_six ? ` · ${p.twenty_six} × 26` : ""}</span></li>)}</ul>}
+    </details>
+  </main>;
 }

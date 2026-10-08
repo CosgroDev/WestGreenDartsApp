@@ -13,6 +13,8 @@ const revalidateAllDashboards = () => {
   revalidatePath("/dashboard");
   revalidatePath("/fixtures");
   revalidatePath("/players");
+  revalidatePath("/stats");
+  revalidatePath("/matches", "layout");
 };
 
 type Visit = {
@@ -214,6 +216,7 @@ export async function recordVisitAction(gameId: string, score: number, dartsOver
 export async function newLegAction(gameId: string): Promise<any> {
   const result = await scoringCommand(gameId, false, "new_leg");
   if (!result.ok) return result;
+  revalidateAllDashboards();
   return { ok: true, gameId: result.next_game_id };
 }
 
@@ -221,7 +224,9 @@ export async function undoLastVisitAction(gameId: string, revision?: number, req
   const result = await scoringCommand(gameId, false, "undo", { revision, requestId, returnState: true });
   if (!result.ok) return result;
   revalidateAllDashboards();
-  const state = await loadGameStateAction(gameId);
+  const state = result.state ? withSummaries(leagueScoreSnapshot(result.state, result.undidThrower)) : await loadGameStateAction(result.reopened_game_id || gameId);
+  if (state.meta && result.undidThrower === "west_green") state.meta.activeSide = "west";
+  else if (state.meta && result.undidThrower === "opponent") state.meta.activeSide = "opponent";
   if (state.meta?.fixture_id) revalidatePath(`/fixtures/${state.meta.fixture_id}`);
-  return state;
+  return { ...state, undidThrower: result.undidThrower };
 }

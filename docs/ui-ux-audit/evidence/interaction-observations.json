@@ -1,0 +1,46 @@
+{
+  "scope": "Actual browser and SQL operations on synthetic local data. Setup writes, offline and lost-response recovery were not tested.",
+  "records": [
+    {
+      "story": "League checkout/next leg/complete/review",
+      "observed": "Browser accepted a one-dart opponent checkout, opened leg two, completed a West checkout and opened match review. Local data contains the two completed legs.",
+      "legs": [
+        {
+          "status": "completed",
+          "winner": "opponent"
+        },
+        {
+          "status": "completed",
+          "winner": "west_green"
+        }
+      ]
+    },
+    {
+      "story": "X01 save/reload/undo",
+      "observed": "Browser saw 401→341 after a 60-point visit, 341 after reload, and 401 after Undo. Local event is marked undone."
+    },
+    {
+      "story": "121 checkout/confirmation/reload",
+      "observed": "Browser entered 121, confirmed double-out, saw target122, and retained122 after reload.",
+      "target": 122,
+      "remaining": 122
+    },
+    {
+      "story": "Doubles completed visit",
+      "observed": "Miss/Miss/Hit writes dart_hit3 and1point in local SQL; outcome correction remains absent.",
+      "attempts": [
+        {
+          "dart_hit": 3,
+          "points": 1
+        }
+      ]
+    },
+    {
+      "story": "Random Checkout record/end/results",
+      "observed": "Missed attempt persists; End displays0% checkout result with Play again and Back to Practice.",
+      "attempts": 1,
+      "undoControls": 0
+    }
+  ],
+  "pageErrors": []
+}

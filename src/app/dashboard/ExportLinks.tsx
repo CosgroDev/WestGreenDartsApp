@@ -30,7 +30,7 @@ export function ExportLinks({ seasons, fixtures, currentSeasonId }: Props) {
     return `/api/exports/fixtures?${params.toString()}`;
   }, [seasonId, format]);
 
-  const playerStatsUrl = useMemo(() => `/api/exports/player-stats?format=${format}`, [format]);
+  const playerStatsUrl = useMemo(() => `/api/exports/player-stats?format=${format}${seasonId ? `&season=${encodeURIComponent(seasonId)}` : ""}`, [format, seasonId]);
 
   return (
     <div className="flex flex-col gap-3 text-sm">

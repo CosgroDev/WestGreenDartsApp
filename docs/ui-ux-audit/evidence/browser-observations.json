@@ -1,0 +1,4903 @@
+{
+  "auditedMain": "b9b9ee56a6dac2250e6bfa4a0dd0aa353bec519e",
+  "dataset": "Synthetic local data, PGlite-backed restricted REST adapter",
+  "metrics": [
+    {
+      "label": "dashboard",
+      "route": "/dashboard",
+      "status": 200,
+      "title": "Dashboard",
+      "width": 390,
+      "height": 844,
+      "documentWidth": 415,
+      "documentHeight": 9644,
+      "pageWidth": 390,
+      "text": "West Green Darts\n\nTEAM HQ\n\nDashboard\nSeason 26/27\n\nMATCH IN PROGRESS\n\nAlex Carter vs Taylor Guest\n\nThe Red Lion · 5 Oct\n\nResume scoring\nView fixture\nTeam snapshot\n\nLEGS W/L\n\n106/38\n\nWIN RATE\n\n74%\n\n3DA\n\n80.6\n\nCHECKOUT\n\n46%\n\nDARTS/LEG\n\n20.0\n\nHIGH FINISH\n\n100\n\n📅 Fixtures\n→\n🎯 Practice\n→\n👥 Players\n→\n💀 Killer\n→\n\nLeague insights\n\nTeam form, head-to-head results and upcoming fixture estimates\n\n→\nLeague snapshot\nChecking…\n\nBarnsley Townend Monday Night League 2\n\nAuto-refresh every 5 minutes from Monday 8pm to Tuesday 11:59pm (UK time). Manual refresh is always available.\n\nLoading live standings…\n\nLeague insights →View full league table ↗\n✨ AI season summary\n\n🔥 ON FIRE\n\nRiley Davies\n\n4 wins in their last 5 matches · on a 4-match streak\n\nL\nW\nW\nW\nW\nHonours board\n\nSeason 26/27 · Rate awards need at least six completed legs. Matches and legs played are shown so each result has context. Equal results share the honour.\n\n🏆 Winning impact\n\n80.0%\n\nAlexander Montgomery-Johnson the Third\n\n8 wins from 10 legs\n\n5 matches with completed legs · 10 legs played\n\nCharlie Brown\n\n8 wins from 10 legs\n\n5 matches with completed legs · 10 legs played\n\nDrew Roberts\n\n8 wins from 10 legs\n\n5 matches with completed legs · 10 legs played\n\nHarper Shaw\n\n8 wins from 10 legs\n\n5 matches with completed legs · 10 legs played\n\nJordan Evans\n\n8 wins from 10 legs\n\n5 matches with completed legs · 10 legs played\n\nMorgan Reed\n\n8 wins from 10 legs\n\n5 matches with completed legs · 10 legs played\n\nRiley Davies\n\n8 wins from 10 legs\n\n5 matches with completed legs · 10 legs played\n\nRobin Woods\n\n8 wins from 10 legs\n\n5 matches with completed legs · 10 legs played\n\nSam Patel\n\n8 wins from 10 legs\n\n5 matches with completed legs · 10 legs played\n\nHighest leg win percentage · 6+ completed legs\n\n🎯 Best scorer\n\n83.1\n\nCharlie Brown\n\n3-dart average across 178 recorded darts\n\n5 matches with completed legs · 10 legs played\n\nMorgan Reed\n\n3-dart average across 178 recorded darts\n\n5 matches with completed legs · 10 legs played\n\nSam Patel\n\n3-dart average across 178 recorded darts\n\n5 matches with completed legs · 10 legs played\n\nHighest three-dart average · 6+ completed legs\n\n🚀 Strongest starter\n\n90.6\n\nCharlie Brown\n\nFirst-nine average across 10 legs\n\n5 matches with completed legs · 10 legs played\n\nMorgan Reed\n\nFirst-nine average across 10 legs\n\n5 matches with completed legs · 10 legs played\n\nSam Patel\n\nFirst-nine average across 10 legs\n\n5 matches with completed legs · 10 legs played\n\nHighest first-nine average · 6+ recorded opening nines\n\n🧊 Checkout efficiency\n\n50.0%\n\nAlexander Montgomery-Johnson the Third\n\n8 checkouts from 16 visits with a possible finish\n\n5 matches with completed legs · 10 legs played\n\nHarper Shaw\n\n8 checkouts from 16 visits with a possible finish\n\n5 matches with completed legs · 10 legs played\n\nRiley Davies\n\n8 checkouts from 16 visits with a possible finish\n\n5 matches with completed legs · 10 legs played\n\nHighest finishing-visit success rate · 6+ legs and 10+ finishing visits\n\n⚡ Fastest finisher\n\n20.0 darts\n\nAlex Carter\n\nAverage across 8 wins with recorded dart counts\n\n6 matches with completed legs · 12 legs played\n\nAlexander Montgomery-Johnson the Third\n\nAverage across 8 wins with recorded dart counts\n\n5 matches with completed legs · 10 legs played\n\nCasey Wilson\n\nAverage across 6 wins with recorded dart counts\n\n5 matches with completed legs · 10 legs played\n\nCharlie Brown\n\nAverage across 8 wins with recorded dart counts\n\n5 matches with completed legs · 10 legs played\n\nChris Taylor\n\nAverage across 6 wins with recorded dart counts\n\n5 matches with completed legs · 10 legs played\n\nDrew Roberts\n\nAverage across 8 wins with recorded dart counts\n\n5 matches with completed legs · 10 legs played\n\nHarper Shaw\n\nAverage across 8 wins with recorded dart counts\n\n5 matches with completed legs · 10 legs played\n\nJamie Ellis\n\nAverage across 8 wins with recorded dart counts\n\n6 matches with completed legs · 12 legs played\n\nJordan Evans\n\nAverage across 8 wins with recorded dart counts\n\n5 matches with completed legs · 10 legs played\n\nLee Jones\n\nAverage across 6 wins with recorded dart counts\n\n5 matches with completed legs · 10 legs played\n\nMorgan Reed\n\nAverage across 8 wins with recorded dart counts\n\n5 matches with completed legs · 10 legs played\n\nRiley Davies\n\nAverage across 8 wins with recorded dart counts\n\n5 matches with completed legs · 10 legs played\n\nRobin Woods\n\nAverage across 8 wins with recorded dart counts\n\n5 matches with completed legs · 10 legs played\n\nSam Patel\n\nAverage across 8 wins with recorded dart counts\n\n5 matches with completed legs · 10 legs played\n\nFewest average darts per leg won · 6+ legs and 3+ wins with dart counts\n\n💯 Ton frequency\n\n41.9%\n\nCharlie Brown\n\n26 visits of 100+ from 62 visits (includes 140+ and 180)\n\n5 matches with completed legs · 10 legs played\n\nMorgan Reed\n\n26 visits of 100+ from 62 visits (includes 140+ and 180)\n\n5 matches with completed legs · 10 legs played\n\nSam Patel\n\n26 visits of 100+ from 62 visits (includes 140+ and 180)\n\n5 matches with completed legs · 10 legs played\n\nMost 100+ visits per 100 visits · 6+ legs and 30+ recorded visits\n\n✨ Highest checkout\n\n100\n\nAlex Carter\n\nSingle-leg achievement\n\n6 matches with completed legs · 12 legs played\n\nAlexander Montgomery-Johnson the Third\n\nSingle-leg achievement\n\n5 matches with completed legs · 10 legs played\n\nCharlie Brown\n\nSingle-leg achievement\n\n5 matches with completed legs · 10 legs played\n\nDrew Roberts\n\nSingle-leg achievement\n\n5 matches with completed legs · 10 legs played\n\nHarper Shaw\n\nSingle-leg achievement\n\n5 matches with completed legs · 10 legs played\n\nJamie Ellis\n\nSingle-leg achievement\n\n6 matches with completed legs · 12 legs played\n\nJordan Evans\n\nSingle-leg achievement\n\n5 matches with completed legs · 10 legs played\n\nMorgan Reed\n\nSingle-leg achievement\n\n5 matches with completed legs · 10 legs played\n\nRiley Davies\n\nSingle-leg achievement\n\n5 matches with completed legs · 10 legs played\n\nRobin Woods\n\nSingle-leg achievement\n\n5 matches with completed legs · 10 legs played\n\nSam Patel\n\nSingle-leg achievement\n\n5 matches with completed legs · 10 legs played\n\nBest single checkout · no minimum appearances\n\nCheckout efficiency counts visits that start on a possible finish, including busts. It is a visit success rate; darts attempted at doubles are not recorded.\n\nScoring breakdown\nView for\nAll players\nSam Patel\nMorgan Reed\nCharlie Brown\nJordan Evans\nDrew Roberts\nRobin Woods\nAlex Carter\nJamie Ellis\nRiley Davies\nHarper Shaw\nAlexander Montgomery-Johnson the Third\nLee Jones\nChris Taylor\nCasey Wilson\n\n60+ VISITS\n\n772\n\n100+ TONS\n\n348\n\n140+ TONS\n\n44\n\n180S\n\n25\n\nLeaderboard season performance · tap a player for game-by-game\nRank players by\nOverall performance\nLeg win %\n\nResults, scoring and finishing, adjusted for sample size. Provisional players follow qualified players.\n\nHow the performance score is calculated\n\n1\nCharlie Brown\n▾\nW\nW\nW\nW\nL\n\n3DA\n83.1\nFirst 9\n90.6\nPerformance 77.0/100\nQualified\nWon 8\nPlayed 10\n+6\n80% win\n5 matches · 62 visits\nHigh finish 100\n53 × 60+ · 2 × 26\nCO 47%\n20.0 darts/leg\n26 × 100+\n4 × 140+\n2 × 180\nScore breakdown\n\n1\nMorgan Reed\n▾\nW\nL\nW\nW\nW\n\n3DA\n83.1\nFirst 9\n90.6\nPerformance 77.0/100\nQualified\nWon 8\nPlayed 10\n+6\n80% win\n5 matches · 62 visits\nHigh finish 100\n53 × 60+ · 2 × 26\nCO 47%\n20.0 darts/leg\n26 × 100+\n4 × 140+\n2 × 180\nScore breakdown\n\n1\nSam Patel\n▾\nL\nW\nW\nW\nW\n\n3DA\n83.1\nFirst 9\n90.6\nPerformance 77.0/100\nQualified\nWon 8\nPlayed 10\n+6\n80% win\n5 matches · 62 visits\nHigh finish 100\n53 × 60+ · 2 × 26\nCO 47%\n20.0 darts/leg\n26 × 100+\n4 × 140+\n2 × 180\nScore breakdown\n\n4\nDrew Roberts\n▾\nW\nW\nW\nL\nW\n\n3DA\n81.7\nFirst 9\n89.2\nPerformance 64.6/100\nQualified\nWon 8\nPlayed 10\n+6\n80% win\n5 matches · 63 visits\nHigh finish 100\n55 × 60+ · 2 × 26\nCO 47%\n20.0 darts/leg\n25 × 100+\n3 × 140+\n2 × 180\nScore breakdown\n\n4\nJordan Evans\n▾\nW\nW\nL\nW\nW\n\n3DA\n81.7\nFirst 9\n89.2\nPerformance 64.6/100\nQualified\nWon 8\nPlayed 10\n+6\n80% win\n5 matches · 63 visits\nHigh finish 100\n55 × 60+ · 2 × 26\nCO 47%\n20.0 darts/leg\n25 × 100+\n3 × 140+\n2 × 180\nScore breakdown\n\n4\nRobin Woods\n▾\nW\nL\nW\nW\nW\n\n3DA\n81.7\nFirst 9\n89.2\nPerformance 64.6/100\nQualified\nWon 8\nPlayed 10\n+6\n80% win\n5 matches · 63 visits\nHigh finish 100\n55 × 60+ · 2 × 26\nCO 47%\n20.0 darts/leg\n25 × 100+\n3 × 140+\n2 × 180\nScore breakdown\n\n7\nAlexander Montgomery-Johnson the Third\n▾\nW\nW\nW\nW\nL\n\n3DA\n77.8\nFirst 9\n83.4\nPerformance 42.5/100\nQualified\nWon 8\nPlayed 10\n+6\n80% win\n5 matches · 65 visits\nHigh finish 100\n55 × 60+ · 2 × 26\nCO 50%\n20.0 darts/leg\n23 × 100+\n2 × 140+\n1 × 180\nScore breakdown\n\n7\nHarper Shaw\n▾\nW\nL\nW\nW\nW\n\n3DA\n77.8\nFirst 9\n83.4\nPerformance 42.5/100\nQualified\nWon 8\nPlayed 10\n+6\n80% win\n5 matches · 65 visits\nHigh finish 100\n55 × 60+ · 2 × 26\nCO 50%\n20.0 darts/leg\n23 × 100+\n2 × 140+\n1 × 180\nScore breakdown\n\n7\nRiley Davies\n▾\nL\nW\nW\nW\nW\n\n3DA\n77.8\nFirst 9\n83.4\nPerformance 42.5/100\nQualified\nWon 8\nPlayed 10\n+6\n80% win\n5 matches · 65 visits\nHigh finish 100\n55 × 60+ · 2 × 26\nCO 50%\n20.0 darts/leg\n23 × 100+\n2 × 140+\n1 × 180\nScore breakdown\n\n10\nAlex Carter\n▾\nW\nL\nW\nW\nW\n\n3DA\n80.9\nFirst 9\n88.4\nPerformance 37.3/100\nQualified\nWon 8\nPlayed 12\n+4\n67% win\n6 matches · 74 visits\nHigh finish 100\n64 × 60+ · 2 × 26\nCO 44%\n20.0 darts/leg\n29 × 100+\n4 × 140+\n2 × 180\nScore breakdown\n\n11\nJamie Ellis\n▾\nW\nW\nL\nW\nL\n\n3DA\n80.1\nFirst 9\n88.4\nPerformance 34.8/100\nQualified\nWon 8\nPlayed 12\n+4\n67% win\n6 matches · 74 visits\nHigh finish 100\n63 × 60+ · 2 × 26\nCO 44%\n20.0 darts/leg\n28 × 100+\n4 × 140+\n2 × 180\nScore breakdown\n\n12\nCasey Wilson\n▾\nL\nW\nL\nW\nW\n\n3DA\n79.8\nFirst 9\n89.2\nPerformance 25.2/100\nQualified\nWon 6\nPlayed 10\n+2\n60% win\n5 matches · 61 visits\nHigh finish 60\n52 × 60+ · 2 × 26\nCO 40%\n20.0 darts/leg\n23 × 100+\n3 × 140+\n2 × 180\nScore breakdown\n\n12\nChris Taylor\n▾\nW\nW\nL\nW\nL\n\n3DA\n79.8\nFirst 9\n89.2\nPerformance 25.2/100\nQualified\nWon 6\nPlayed 10\n+2\n60% win\n5 matches · 61 visits\nHigh finish 60\n52 × 60+ · 2 × 26\nCO 40%\n20.0 darts/leg\n23 × 100+\n3 × 140+\n2 × 180\nScore breakdown\n\n12\nLee Jones\n▾\nW\nL\nW\nL\nW\n\n3DA\n79.8\nFirst 9\n89.2\nPerformance 25.2/100\nQualified\nWon 6\nPlayed 10\n+2\n60% win\n5 matches · 61 visits\nHigh finish 60\n52 × 60+ · 2 × 26\nCO 40%\n20.0 darts/leg\n23 × 100+\n3 × 140+\n2 × 180\nScore breakdown\n180s hit\nSam Patel\n2 × 180\nMorgan Reed\n2 × 180\nCharlie Brown\n2 × 180\nJordan Evans\n2 × 180\nDrew Roberts\n2 × 180\nRobin Woods\n2 × 180\nPerformance charts\nExports\nDashboard\nFixtures\nPlayers\nPractice",
+      "headings": [
+        {
+          "text": "Dashboard",
+          "y": 91
+        },
+        {
+          "text": "Alex Carter vs Taylor Guest",
+          "y": 178
+        },
+        {
+          "text": "Team snapshot",
+          "y": 342
+        },
+        {
+          "text": "League snapshot",
+          "y": 856
+        },
+        {
+          "text": "✨ AI season summary",
+          "y": 1090
+        },
+        {
+          "text": "Honours board",
+          "y": 1322
+        },
+        {
+          "text": "🏆 Winning impact",
+          "y": 1463
+        },
+        {
+          "text": "🎯 Best scorer",
+          "y": 2550
+        },
+        {
+          "text": "🚀 Strongest starter",
+          "y": 3013
+        },
+        {
+          "text": "🧊 Checkout efficiency",
+          "y": 3476
+        },
+        {
+          "text": "⚡ Fastest finisher",
+          "y": 4023
+        },
+        {
+          "text": "💯 Ton frequency",
+          "y": 5890
+        },
+        {
+          "text": "✨ Highest checkout",
+          "y": 6413
+        },
+        {
+          "text": "Scoring breakdown",
+          "y": 7817
+        },
+        {
+          "text": "Leaderboard season performance · tap a player for game-by-game",
+          "y": 8126
+        },
+        {
+          "text": "How the performance score is calculated",
+          "y": 8326
+        },
+        {
+          "text": "Score breakdown",
+          "y": 8716
+        },
+        {
+          "text": "Score breakdown",
+          "y": 9098
+        },
+        {
+          "text": "Score breakdown",
+          "y": 9480
+        },
+        {
+          "text": "Score breakdown",
+          "y": 9862
+        },
+        {
+          "text": "Score breakdown",
+          "y": 10244
+        },
+        {
+          "text": "Score breakdown",
+          "y": 10626
+        },
+        {
+          "text": "Score breakdown",
+          "y": 11064
+        },
+        {
+          "text": "Score breakdown",
+          "y": 11446
+        },
+        {
+          "text": "Score breakdown",
+          "y": 11828
+        },
+        {
+          "text": "Score breakdown",
+          "y": 12210
+        },
+        {
+          "text": "Score breakdown",
+          "y": 12592
+        },
+        {
+          "text": "Score breakdown",
+          "y": 12974
+        },
+        {
+          "text": "Score breakdown",
+          "y": 13356
+        },
+        {
+          "text": "Score breakdown",
+          "y": 13738
+        },
+        {
+          "text": "180s hit",
+          "y": 9025
+        },
+        {
+          "text": "Performance charts",
+          "y": 9431
+        },
+        {
+          "text": "Exports",
+          "y": 9513
+        }
+      ],
+      "controls": [
+        {
+          "name": "Resume scoring",
+          "tag": "A",
+          "x": 31,
+          "y": 242,
+          "width": 159,
+          "height": 46,
+          "color": "rgb(255, 255, 255)",
+          "background": "rgb(12, 166, 120)",
+          "disabled": false
+        },
+        {
+          "name": "View fixture",
+          "tag": "A",
+          "x": 198,
+          "y": 242,
+          "width": 130,
+          "height": 46,
+          "color": "rgb(226, 234, 246)",
+          "background": "rgb(26, 42, 68)",
+          "disabled": false
+        },
+        {
+          "name": "📅 Fixtures→",
+          "tag": "A",
+          "x": 12,
+          "y": 568,
+          "width": 179,
+          "height": 58,
+          "color": "rgb(232, 238, 247)",
+          "background": "rgba(0, 0, 0, 0)",
+          "disabled": false
+        },
+        {
+          "name": "🎯 Practice→",
+          "tag": "A",
+          "x": 199,
+          "y": 568,
+          "width": 179,
+          "height": 58,
+          "color": "rgb(232, 238, 247)",
+          "background": "rgba(0, 0, 0, 0)",
+          "disabled": false
+        },
+        {
+          "name": "👥 Players→",
+          "tag": "A",
+          "x": 12,
+          "y": 634,
+          "width": 179,
+          "height": 58,
+          "color": "rgb(232, 238, 247)",
+          "background": "rgba(0, 0, 0, 0)",
+          "disabled": false
+        },
+        {
+          "name": "💀 Killer→",
+          "tag": "A",
+          "x": 199,
+          "y": 634,
+          "width": 179,
+          "height": 58,
+          "color": "rgb(232, 238, 247)",
+          "background": "rgba(0, 0, 0, 0)",
+          "disabled": false
+        },
+        {
+          "name": "League insightsTeam form, head-to-head results and upcoming fixture estimates→",
+          "tag": "A",
+          "x": 12,
+          "y": 708,
+          "width": 366,
+          "height": 106,
+          "color": "rgb(232, 238, 247)",
+          "background": "rgba(0, 0, 0, 0)",
+          "disabled": false
+        },
+        {
+          "name": "Checking…",
+          "tag": "BUTTON",
+          "x": 248,
+          "y": 849,
+          "width": 111,
+          "height": 42,
+          "color": "rgb(226, 234, 246)",
+          "background": "rgb(26, 42, 68)",
+          "disabled": true
+        },
+        {
+          "name": "League insights →",
+          "tag": "A",
+          "x": 31,
+          "y": 1015,
+          "width": 128,
+          "height": 20,
+          "color": "rgb(99, 230, 190)",
+          "background": "rgba(0, 0, 0, 0)",
+          "disabled": false
+        },
+        {
+          "name": "View full league table ↗",
+          "tag": "A",
+          "x": 175,
+          "y": 1015,
+          "width": 152,
+          "height": 20,
+          "color": "rgb(99, 230, 190)",
+          "background": "rgba(0, 0, 0, 0)",
+          "disabled": false
+        },
+        {
+          "name": "All playersSam PatelMorgan ReedCharlie BrownJordan EvansDrew RobertsRobin WoodsAlex Carter",
+          "tag": "SELECT",
+          "x": 92,
+          "y": 7857,
+          "width": 323,
+          "height": 35,
+          "color": "rgb(232, 238, 247)",
+          "background": "rgb(14, 26, 46)",
+          "disabled": false
+        },
+        {
+          "name": "Overall performanceLeg win %",
+          "tag": "SELECT",
+          "x": 150,
+          "y": 8190,
+          "width": 182,
+          "height": 39,
+          "color": "rgb(232, 238, 247)",
+          "background": "rgb(19, 34, 59)",
+          "disabled": false
+        },
+        {
+          "name": "1Charlie Brown▾WWWWL3DA83.1First 990.6Performance 77.0/100QualifiedWon 8Played 10+680% win",
+          "tag": "BUTTON",
+          "x": 48,
+          "y": 8384,
+          "width": 290,
+          "height": 170,
+          "color": "rgb(232, 238, 247)",
+          "background": "rgba(0, 0, 0, 0)",
+          "disabled": false
+        },
+        {
+          "name": "1Morgan Reed▾WLWWW3DA83.1First 990.6Performance 77.0/100QualifiedWon 8Played 10+680% win",
+          "tag": "BUTTON",
+          "x": 48,
+          "y": 8766,
+          "width": 290,
+          "height": 170,
+          "color": "rgb(232, 238, 247)",
+          "background": "rgba(0, 0, 0, 0)",
+          "disabled": false
+        },
+        {
+          "name": "1Sam Patel▾LWWWW3DA83.1First 990.6Performance 77.0/100QualifiedWon 8Played 10+680% win",
+          "tag": "BUTTON",
+          "x": 48,
+          "y": 9148,
+          "width": 290,
+          "height": 170,
+          "color": "rgb(232, 238, 247)",
+          "background": "rgba(0, 0, 0, 0)",
+          "disabled": false
+        },
+        {
+          "name": "4Drew Roberts▾WWWLW3DA81.7First 989.2Performance 64.6/100QualifiedWon 8Played 10+680% win",
+          "tag": "BUTTON",
+          "x": 48,
+          "y": 9530,
+          "width": 290,
+          "height": 170,
+          "color": "rgb(232, 238, 247)",
+          "background": "rgba(0, 0, 0, 0)",
+          "disabled": false
+        },
+        {
+          "name": "4Jordan Evans▾WWLWW3DA81.7First 989.2Performance 64.6/100QualifiedWon 8Played 10+680% win",
+          "tag": "BUTTON",
+          "x": 48,
+          "y": 9912,
+          "width": 290,
+          "height": 170,
+          "color": "rgb(232, 238, 247)",
+          "background": "rgba(0, 0, 0, 0)",
+          "disabled": false
+        },
+        {
+          "name": "4Robin Woods▾WLWWW3DA81.7First 989.2Performance 64.6/100QualifiedWon 8Played 10+680% win",
+          "tag": "BUTTON",
+          "x": 48,
+          "y": 10294,
+          "width": 290,
+          "height": 170,
+          "color": "rgb(232, 238, 247)",
+          "background": "rgba(0, 0, 0, 0)",
+          "disabled": false
+        },
+        {
+          "name": "7Alexander Montgomery-Johnson the Third▾WWWWL3DA77.8First 983.4Performance 42.5/100Qualifi",
+          "tag": "BUTTON",
+          "x": 48,
+          "y": 10676,
+          "width": 290,
+          "height": 226,
+          "color": "rgb(232, 238, 247)",
+          "background": "rgba(0, 0, 0, 0)",
+          "disabled": false
+        },
+        {
+          "name": "7Harper Shaw▾WLWWW3DA77.8First 983.4Performance 42.5/100QualifiedWon 8Played 10+680% win",
+          "tag": "BUTTON",
+          "x": 48,
+          "y": 11114,
+          "width": 290,
+          "height": 170,
+          "color": "rgb(232, 238, 247)",
+          "background": "rgba(0, 0, 0, 0)",
+          "disabled": false
+        },
+        {
+          "name": "7Riley Davies▾LWWWW3DA77.8First 983.4Performance 42.5/100QualifiedWon 8Played 10+680% win",
+          "tag": "BUTTON",
+          "x": 48,
+          "y": 11496,
+          "width": 290,
+          "height": 170,
+          "color": "rgb(232, 238, 247)",
+          "background": "rgba(0, 0, 0, 0)",
+          "disabled": false
+        },
+        {
+          "name": "10Alex Carter▾WLWWW3DA80.9First 988.4Performance 37.3/100QualifiedWon 8Played 12+467% win",
+          "tag": "BUTTON",
+          "x": 48,
+          "y": 11878,
+          "width": 290,
+          "height": 170,
+          "color": "rgb(232, 238, 247)",
+          "background": "rgba(0, 0, 0, 0)",
+          "disabled": false
+        },
+        {
+          "name": "11Jamie Ellis▾WWLWL3DA80.1First 988.4Performance 34.8/100QualifiedWon 8Played 12+467% win",
+          "tag": "BUTTON",
+          "x": 48,
+          "y": 12260,
+          "width": 290,
+          "height": 170,
+          "color": "rgb(232, 238, 247)",
+          "background": "rgba(0, 0, 0, 0)",
+          "disabled": false
+        },
+        {
+          "name": "12Casey Wilson▾LWLWW3DA79.8First 989.2Performance 25.2/100QualifiedWon 6Played 10+260% win",
+          "tag": "BUTTON",
+          "x": 48,
+          "y": 12642,
+          "width": 290,
+          "height": 170,
+          "color": "rgb(232, 238, 247)",
+          "background": "rgba(0, 0, 0, 0)",
+          "disabled": false
+        },
+        {
+          "name": "12Chris Taylor▾WWLWL3DA79.8First 989.2Performance 25.2/100QualifiedWon 6Played 10+260% win",
+          "tag": "BUTTON",
+          "x": 48,
+          "y": 13024,
+          "width": 290,
+          "height": 170,
+          "color": "rgb(232, 238, 247)",
+          "background": "rgba(0, 0, 0, 0)",
+          "disabled": false
+        },
+        {
+          "name": "12Lee Jones▾WLWLW3DA79.8First 989.2Performance 25.2/100QualifiedWon 6Played 10+260% win",
+          "tag": "BUTTON",
+          "x": 48,
+          "y": 13406,
+          "width": 290,
+          "height": 170,
+          "color": "rgb(232, 238, 247)",
+          "background": "rgba(0, 0, 0, 0)",
+          "disabled": false
+        },
+        {
+          "name": "All seasons26/27 (current)25/26",
+          "tag": "SELECT",
+          "x": 31,
+          "y": 9565,
+          "width": 328,
+          "height": 31,
+          "color": "rgb(232, 238, 247)",
+          "background": "rgb(14, 26, 46)",
+          "disabled": false
+        },
+        {
+          "name": "All fixturesOldfield Club (25/26)Oakfield Arms (26/27)Central Club (26/27)Riverside Tavern",
+          "tag": "SELECT",
+          "x": 31,
+          "y": 9628,
+          "width": 328,
+          "height": 31,
+          "color": "rgb(232, 238, 247)",
+          "background": "rgb(14, 26, 46)",
+          "disabled": false
+        },
+        {
+          "name": "CSVJSON",
+          "tag": "SELECT",
+          "x": 31,
+          "y": 9691,
+          "width": 328,
+          "height": 31,
+          "color": "rgb(232, 238, 247)",
+          "background": "rgb(14, 26, 46)",
+          "disabled": false
+        },
+        {
+          "name": "Download scoring events",
+          "tag": "A",
+          "x": 31,
+          "y": 9734,
+          "width": 328,
+          "height": 20,
+          "color": "rgb(18, 184, 134)",
+          "background": "rgba(0, 0, 0, 0)",
+          "disabled": false
+        },
+        {
+          "name": "Download fixtures",
+          "tag": "A",
+          "x": 31,
+          "y": 9762,
+          "width": 328,
+          "height": 20,
+          "color": "rgb(18, 184, 134)",
+          "background": "rgba(0, 0, 0, 0)",
+          "disabled": false
+        },
+        {
+          "name": "Download player stats",
+          "tag": "A",
+          "x": 31,
+          "y": 9790,
+          "width": 328,
+          "height": 20,
+          "color": "rgb(18, 184, 134)",
+          "background": "rgba(0, 0, 0, 0)",
+          "disabled": false
+        }
+      ],
+      "activeNav": "Dashboard",
+      "ariaCurrentNav": null,
+      "primaryStyle": {
+        "color": "rgb(255, 255, 255)",
+        "background": "rgb(12, 166, 120)",
+        "fontSize": "16px"
+      },
+      "errorScreen": false
+    },
+    {
+      "label": "fixtures",
+      "route": "/fixtures",
+      "status": 200,
+      "title": "Fixtures",
+      "width": 390,
+      "height": 844,
+      "documentWidth": 390,
+      "documentHeight": 1914,
+      "pageWidth": 390,
+      "text": "West Green Darts\n\nMATCH CALENDAR\n\nFixtures\n\n14 fixtures\n\nManage seasons\nSeason\nAll seasons\n26/27\n25/26\n\nFIXTURE WINS\n\n12\n\nFIXTURE DRAWS\n\n0\n\nFIXTURE LOSSES\n\n0\n\n+/− LEGS\n\n+68\n\n106 for / 38 against\n\nGAME IN PROGRESS\n\nHome vs The Red Lion\n\n1 game added · Mon 5 Oct, 19:00\n\nOpen\n\nNEXT MATCH · IN 4 DAYS\n\nAway @ Southbank Darts & Social Club\n\nMon 12 Oct, 19:00\n\nVisitors Social Club\n\nOpen\nSuggested team\n\nvs Southbank Darts & Social Club · win your last match, or draw just 1 of your last 2, and you keep your spot. Half tags show where a player's record is strongest (games 1–3 vs 4–6).\n\nJust a suggestion\n✓\nJordan Evans\n1st half\nW\nW\n✓\nRiley Davies\n2nd half\nW\nW\n✓\nRobin Woods\n1st half\nW\nW\n✓\nAlex Carter\n2nd half\nW\nW\n✓\nCasey Wilson\n1st half\nW\nW\n✓\nSam Patel\n2nd half\nW\nW\n+\nAdd fixture\ntap to expand\nUpcoming & in progress\n2\n26/27\nAway\nUpcoming\nAway @ Southbank Darts & Social Club\nMon 12 Oct, 19:00\n\nVisitors Social Club\n\nArrive at 7:30pm. Bring team shirts.\n\n26/27\nHome\nIn progress\nHome vs The Red Lion\nMon 5 Oct, 19:00\n\nWest Green Club\n\nSynthetic active fixture for the audit.\n\nCompleted\n12\nDashboard\nFixtures\nPlayers\nPractice",
+      "headings": [
+        {
+          "text": "Fixtures",
+          "y": 110
+        },
+        {
+          "text": "Home vs The Red Lion",
+          "y": 459
+        },
+        {
+          "text": "Away @ Southbank Darts & Social Club",
+          "y": 583
+        },
+        {
+          "text": "Suggested team",
+          "y": 741
+        },
+        {
+          "text": "+Add fixturetap to expand",
+          "y": 1243
+        },
+        {
+          "text": "Upcoming & in progress2",
+          "y": 1329
+        },
+        {
+          "text": "Away @ Southbank Darts & Social Club",
+          "y": 1412
+        },
+        {
+          "text": "Home vs The Red Lion",
+          "y": 1618
+        },
+        {
+          "text": "Completed12",
+          "y": 1783
+        },
+        {
+          "text": "Away @ The Kingfisher",
+          "y": 1866
+        },
+        {
+          "text": "Home vs Northside Social",
+          "y": 2012
+        },
+        {
+          "text": "Away @ Crown & Anchor",
+          "y": 2158
+        },
+        {
+          "text": "Home vs Riverside Tavern",
+          "y": 2304
+        },
+        {
+          "text": "Away @ Central Club",
+          "y": 2450
+        },
+        {
+          "text": "Home vs Oakfield Arms",
+          "y": 2596
+        },
+        {
+          "text": "Away @ The Kingfisher",
+          "y": 2742
+        },
+        {
+          "text": "Home vs Northside Social",
+          "y": 2888
+        },
+        {
+          "text": "Away @ Crown & Anchor",
+          "y": 3034
+        },
+        {
+          "text": "Home vs Riverside Tavern",
+          "y": 3180
+        },
+        {
+          "text": "Away @ Central Club",
+          "y": 3326
+        },
+        {
+          "text": "Home vs Oakfield Arms",
+          "y": 3472
+        }
+      ],
+      "controls": [
+        {
+          "name": "Manage seasons",
+          "tag": "A",
+          "x": 234,
+          "y": 94,
+          "width": 125,
+          "height": 26,
+          "color": "rgb(198, 211, 232)",
+          "background": "rgb(19, 31, 51)",
+          "disabled": false
+        },
+        {
+          "name": "All seasons26/2725/26",
+          "tag": "SELECT",
+          "x": 86,
+          "y": 178,
+          "width": 273,
+          "height": 39,
+          "color": "rgb(244, 247, 252)",
+          "background": "rgb(19, 31, 51)",
+          "disabled": false
+        },
+        {
+          "name": "Open",
+          "tag": "A",
+          "x": 290,
+          "y": 464,
+          "width": 69,
+          "height": 40,
+          "color": "rgb(255, 255, 255)",
+          "background": "rgb(12, 166, 120)",
+          "disabled": false
+        },
+        {
+          "name": "Open",
+          "tag": "A",
+          "x": 290,
+          "y": 563,
+          "width": 69,
+          "height": 40,
+          "color": "rgb(255, 255, 255)",
+          "background": "rgb(12, 166, 120)",
+          "disabled": false
+        },
+        {
+          "name": "Select season26/27 (current)25/26",
+          "tag": "SELECT",
+          "x": 31,
+          "y": 1311,
+          "width": 328,
+          "height": 42,
+          "color": "rgb(232, 238, 247)",
+          "background": "rgb(14, 26, 46)",
+          "disabled": false
+        },
+        {
+          "name": "startsAt",
+          "tag": "INPUT",
+          "x": 31,
+          "y": 1389,
+          "width": 328,
+          "height": 44,
+          "color": "rgb(232, 238, 247)",
+          "background": "rgb(14, 26, 46)",
+          "disabled": false
+        },
+        {
+          "name": "",
+          "tag": "INPUT",
+          "x": 31,
+          "y": 1447,
+          "width": 16,
+          "height": 16,
+          "color": "rgb(232, 238, 247)",
+          "background": "rgb(14, 26, 46)",
+          "disabled": false
+        },
+        {
+          "name": "opponent",
+          "tag": "INPUT",
+          "x": 31,
+          "y": 1501,
+          "width": 328,
+          "height": 42,
+          "color": "rgb(232, 238, 247)",
+          "background": "rgb(14, 26, 46)",
+          "disabled": false
+        },
+        {
+          "name": "venue",
+          "tag": "INPUT",
+          "x": 31,
+          "y": 1579,
+          "width": 328,
+          "height": 42,
+          "color": "rgb(232, 238, 247)",
+          "background": "rgb(14, 26, 46)",
+          "disabled": false
+        },
+        {
+          "name": "Save fixture",
+          "tag": "BUTTON",
+          "x": 31,
+          "y": 1735,
+          "width": 328,
+          "height": 40,
+          "color": "rgb(255, 255, 255)",
+          "background": "rgb(12, 166, 120)",
+          "disabled": false
+        },
+        {
+          "name": "Open fixture",
+          "tag": "A",
+          "x": 260,
+          "y": 1388,
+          "width": 36,
+          "height": 36,
+          "color": "rgb(18, 184, 134)",
+          "background": "rgb(11, 46, 34)",
+          "disabled": false
+        },
+        {
+          "name": "Delete fixture",
+          "tag": "BUTTON",
+          "x": 304,
+          "y": 1388,
+          "width": 36,
+          "height": 36,
+          "color": "rgb(147, 165, 196)",
+          "background": "rgba(0, 0, 0, 0)",
+          "disabled": false
+        },
+        {
+          "name": "Open fixture",
+          "tag": "A",
+          "x": 304,
+          "y": 1594,
+          "width": 36,
+          "height": 36,
+          "color": "rgb(18, 184, 134)",
+          "background": "rgb(11, 46, 34)",
+          "disabled": false
+        },
+        {
+          "name": "Open fixture",
+          "tag": "A",
+          "x": 304,
+          "y": 1842,
+          "width": 36,
+          "height": 36,
+          "color": "rgb(18, 184, 134)",
+          "background": "rgb(11, 46, 34)",
+          "disabled": false
+        },
+        {
+          "name": "Open fixture",
+          "tag": "A",
+          "x": 304,
+          "y": 1988,
+          "width": 36,
+          "height": 36,
+          "color": "rgb(18, 184, 134)",
+          "background": "rgb(11, 46, 34)",
+          "disabled": false
+        },
+        {
+          "name": "Open fixture",
+          "tag": "A",
+          "x": 304,
+          "y": 2134,
+          "width": 36,
+          "height": 36,
+          "color": "rgb(18, 184, 134)",
+          "background": "rgb(11, 46, 34)",
+          "disabled": false
+        },
+        {
+          "name": "Open fixture",
+          "tag": "A",
+          "x": 304,
+          "y": 2280,
+          "width": 36,
+          "height": 36,
+          "color": "rgb(18, 184, 134)",
+          "background": "rgb(11, 46, 34)",
+          "disabled": false
+        },
+        {
+          "name": "Open fixture",
+          "tag": "A",
+          "x": 304,
+          "y": 2426,
+          "width": 36,
+          "height": 36,
+          "color": "rgb(18, 184, 134)",
+          "background": "rgb(11, 46, 34)",
+          "disabled": false
+        },
+        {
+          "name": "Open fixture",
+          "tag": "A",
+          "x": 304,
+          "y": 2572,
+          "width": 36,
+          "height": 36,
+          "color": "rgb(18, 184, 134)",
+          "background": "rgb(11, 46, 34)",
+          "disabled": false
+        },
+        {
+          "name": "Open fixture",
+          "tag": "A",
+          "x": 304,
+          "y": 2718,
+          "width": 36,
+          "height": 36,
+          "color": "rgb(18, 184, 134)",
+          "background": "rgb(11, 46, 34)",
+          "disabled": false
+        },
+        {
+          "name": "Open fixture",
+          "tag": "A",
+          "x": 304,
+          "y": 2864,
+          "width": 36,
+          "height": 36,
+          "color": "rgb(18, 184, 134)",
+          "background": "rgb(11, 46, 34)",
+          "disabled": false
+        },
+        {
+          "name": "Open fixture",
+          "tag": "A",
+          "x": 304,
+          "y": 3010,
+          "width": 36,
+          "height": 36,
+          "color": "rgb(18, 184, 134)",
+          "background": "rgb(11, 46, 34)",
+          "disabled": false
+        },
+        {
+          "name": "Open fixture",
+          "tag": "A",
+          "x": 304,
+          "y": 3156,
+          "width": 36,
+          "height": 36,
+          "color": "rgb(18, 184, 134)",
+          "background": "rgb(11, 46, 34)",
+          "disabled": false
+        },
+        {
+          "name": "Open fixture",
+          "tag": "A",
+          "x": 304,
+          "y": 3302,
+          "width": 36,
+          "height": 36,
+          "color": "rgb(18, 184, 134)",
+          "background": "rgb(11, 46, 34)",
+          "disabled": false
+        },
+        {
+          "name": "Open fixture",
+          "tag": "A",
+          "x": 304,
+          "y": 3448,
+          "width": 36,
+          "height": 36,
+          "color": "rgb(18, 184, 134)",
+          "background": "rgb(11, 46, 34)",
+          "disabled": false
+        }
+      ],
+      "activeNav": "Fixtures",
+      "ariaCurrentNav": null,
+      "primaryStyle": {
+        "color": "rgb(255, 255, 255)",
+        "background": "rgb(12, 166, 120)",
+        "fontSize": "14px"
+      },
+      "errorScreen": false
+    },
+    {
+      "label": "fixture-live",
+      "route": "/fixtures/44466c5a-8361-40e9-ba41-96e98bdfff73",
+      "status": 200,
+      "title": "Home vs The Red Lion",
+      "width": 390,
+      "height": 844,
+      "documentWidth": 390,
+      "documentHeight": 1559,
+      "pageWidth": 390,
+      "text": "West Green Darts\n26/27\nHome vs The Red Lion\n\nWest Green Club\n\nRESULT\n\nDraw\n\nLEGS\n\n0 - 0\n\nTotal legs across all games\n\n+/− LEGS\n\n+0\n\nDifference (West Green - The Red Lion)\n\nFixture summary\n\nGAMES PLAYED\n\n1 (0 completed)\n\nW / D / L\n\n0 / 1 / 0\n\nFINISHES\n\nLeast darts: —\n\nHighest finish: —\n\n26s hit: 0\n\nCreate game 1/6\nWest Green player\nSelect player\nAlex Carter\nAlexander Montgomery-Johnson the Third\nCasey Wilson\nCharlie Brown\nChris Taylor\nDrew Roberts\nFinley Brooks\nHarper Shaw\nJamie Ellis\nJordan Evans\nLee Jones\nMorgan Reed\nRiley Davies\nRobin Woods\nSam Patel\nOpponent player\nCreate game\nGames\nGame 1\nAlex Carter vs Taylor Guest\nResult: In progress\nHigh checkout: —\n🎯 Score now\nSummary\nShow completed games (0)\nDashboard\nFixtures\nPlayers\nPractice",
+      "headings": [
+        {
+          "text": "Home vs The Red Lion",
+          "y": 142
+        },
+        {
+          "text": "Fixture summary",
+          "y": 554
+        },
+        {
+          "text": "Create game 1/6",
+          "y": 926
+        },
+        {
+          "text": "Games",
+          "y": 1216
+        },
+        {
+          "text": "Show completed games (0)",
+          "y": 1423
+        }
+      ],
+      "controls": [
+        {
+          "name": "Back to fixtures",
+          "tag": "A",
+          "x": 31,
+          "y": 94,
+          "width": 36,
+          "height": 36,
+          "color": "rgb(198, 211, 232)",
+          "background": "rgb(26, 42, 68)",
+          "disabled": false
+        },
+        {
+          "name": "Select playerAlex CarterAlexander Montgomery-Johnson the ThirdCasey WilsonCharlie BrownChr",
+          "tag": "SELECT",
+          "x": 31,
+          "y": 990,
+          "width": 328,
+          "height": 42,
+          "color": "rgb(232, 238, 247)",
+          "background": "rgb(14, 26, 46)",
+          "disabled": false
+        },
+        {
+          "name": "opponent",
+          "tag": "INPUT",
+          "x": 31,
+          "y": 1068,
+          "width": 328,
+          "height": 42,
+          "color": "rgb(232, 238, 247)",
+          "background": "rgb(14, 26, 46)",
+          "disabled": false
+        },
+        {
+          "name": "Create game",
+          "tag": "BUTTON",
+          "x": 31,
+          "y": 1122,
+          "width": 134,
+          "height": 40,
+          "color": "rgb(255, 255, 255)",
+          "background": "rgb(12, 166, 120)",
+          "disabled": false
+        },
+        {
+          "name": "🎯 Score now",
+          "tag": "A",
+          "x": 44,
+          "y": 1349,
+          "width": 124,
+          "height": 36,
+          "color": "rgb(255, 255, 255)",
+          "background": "rgb(12, 166, 120)",
+          "disabled": false
+        },
+        {
+          "name": "Summary",
+          "tag": "A",
+          "x": 180,
+          "y": 1357,
+          "width": 63,
+          "height": 20,
+          "color": "rgb(169, 186, 214)",
+          "background": "rgba(0, 0, 0, 0)",
+          "disabled": false
+        },
+        {
+          "name": "Delete game",
+          "tag": "BUTTON",
+          "x": 310,
+          "y": 1305,
+          "width": 36,
+          "height": 36,
+          "color": "rgb(147, 165, 196)",
+          "background": "rgba(0, 0, 0, 0)",
+          "disabled": false
+        }
+      ],
+      "activeNav": "Fixtures",
+      "ariaCurrentNav": null,
+      "primaryStyle": {
+        "color": "rgb(255, 255, 255)",
+        "background": "rgb(12, 166, 120)",
+        "fontSize": "14px"
+      },
+      "errorScreen": false
+    },
+    {
+      "label": "fixture-scheduled",
+      "route": "/fixtures/1a010986-ccf9-4aa6-9ba5-7333056a6c30",
+      "status": 200,
+      "title": "Away @ Southbank Darts & Social Club",
+      "width": 390,
+      "height": 844,
+      "documentWidth": 390,
+      "documentHeight": 1449,
+      "pageWidth": 390,
+      "text": "West Green Darts\n26/27\nAway @ Southbank Darts & Social Club\n\nVisitors Social Club\n\nRESULT\n\nDraw\n\nLEGS\n\n0 - 0\n\nTotal legs across all games\n\n+/− LEGS\n\n+0\n\nDifference (West Green - Southbank Darts & Social Club)\n\nFixture summary\n\nGAMES PLAYED\n\n0 (0 completed)\n\nW / D / L\n\n0 / 0 / 0\n\nFINISHES\n\nLeast darts: —\n\nHighest finish: —\n\n26s hit: 0\n\nCreate game 0/6\nWest Green player\nSelect player\nAlex Carter\nAlexander Montgomery-Johnson the Third\nCasey Wilson\nCharlie Brown\nChris Taylor\nDrew Roberts\nFinley Brooks\nHarper Shaw\nJamie Ellis\nJordan Evans\nLee Jones\nMorgan Reed\nRiley Davies\nRobin Woods\nSam Patel\nOpponent player\nCreate game\nGames\nNo games yet. Create one below.\nDashboard\nFixtures\nPlayers\nPractice",
+      "headings": [
+        {
+          "text": "Away @ Southbank Darts & Social Club",
+          "y": 142
+        },
+        {
+          "text": "Fixture summary",
+          "y": 602
+        },
+        {
+          "text": "Create game 0/6",
+          "y": 974
+        },
+        {
+          "text": "Games",
+          "y": 1264
+        }
+      ],
+      "controls": [
+        {
+          "name": "Back to fixtures",
+          "tag": "A",
+          "x": 31,
+          "y": 94,
+          "width": 36,
+          "height": 36,
+          "color": "rgb(198, 211, 232)",
+          "background": "rgb(26, 42, 68)",
+          "disabled": false
+        },
+        {
+          "name": "Select playerAlex CarterAlexander Montgomery-Johnson the ThirdCasey WilsonCharlie BrownChr",
+          "tag": "SELECT",
+          "x": 31,
+          "y": 1038,
+          "width": 328,
+          "height": 42,
+          "color": "rgb(232, 238, 247)",
+          "background": "rgb(14, 26, 46)",
+          "disabled": false
+        },
+        {
+          "name": "opponent",
+          "tag": "INPUT",
+          "x": 31,
+          "y": 1116,
+          "width": 328,
+          "height": 42,
+          "color": "rgb(232, 238, 247)",
+          "background": "rgb(14, 26, 46)",
+          "disabled": false
+        },
+        {
+          "name": "Create game",
+          "tag": "BUTTON",
+          "x": 31,
+          "y": 1170,
+          "width": 134,
+          "height": 40,
+          "color": "rgb(255, 255, 255)",
+          "background": "rgb(12, 166, 120)",
+          "disabled": false
+        }
+      ],
+      "activeNav": "Fixtures",
+      "ariaCurrentNav": null,
+      "primaryStyle": null,
+      "errorScreen": false
+    },
+    {
+      "label": "match-summary",
+      "route": "/matches/456e1b92-1918-4675-bf2c-3ee324ef2815",
+      "status": 200,
+      "title": "Alex Carter vs Guest 1",
+      "width": 390,
+      "height": 844,
+      "documentWidth": 390,
+      "documentHeight": 1301,
+      "pageWidth": 390,
+      "text": "West Green Darts\n\nMATCH SUMMARY\n\nAlex Carter vs Guest 1\n\nHome vs Oakfield Arms\n\nLoss\n\nAlex Carter went down 0-2 to Guest 1 averaging 70.2.\n\n0-2\n\nThe numbers\n\n3DA\n\n70.2\n\nFIRST 9\n\n77.5\n\nCHECKOUT\n\n0/1\n\nHIGH FINISH\n\n–\n\nBEST LEG\n\n–\n\nBUSTS\n\n0\n\n3 × 100+\n11 × 60+\nLeg by leg\n\nLeg 1 Guest 1 won\n\n18 darts · 66.8 avg\n\n60\n45\n100\n60\n60\n76\n\nLeg 2 Guest 1 won\n\n18 darts · 73.5 avg\n\n100\n60\n100\n60\n60\n61\n\nVisits shown for Alex Carter only — opponent visits aren't tracked. 🎯 checkout · ✕ bust\n\nCoach's verdict\n\nWHAT WENT WELL\n\n✓\nHeavy scoring — a 70.2 three-dart average is league-winning stuff.\n\nWORK-ONS\n\n▲\nNothing glaring this match — keep the routine going.\n✨ AI performance review\n\nAI match reviews are available once an Anthropic API key is configured on the server (ANTHROPIC_API_KEY).\n\nDashboard\nFixtures\nPlayers\nPractice",
+      "headings": [
+        {
+          "text": "Alex Carter vs Guest 1",
+          "y": 91
+        },
+        {
+          "text": "The numbers",
+          "y": 295
+        },
+        {
+          "text": "Leg by leg",
+          "y": 582
+        },
+        {
+          "text": "Coach's verdict",
+          "y": 907
+        },
+        {
+          "text": "✨ AI performance review",
+          "y": 1129
+        }
+      ],
+      "controls": [
+        {
+          "name": "Back to fixture",
+          "tag": "A",
+          "x": 12,
+          "y": 85,
+          "width": 40,
+          "height": 40,
+          "color": "rgb(198, 211, 232)",
+          "background": "rgb(26, 42, 68)",
+          "disabled": false
+        }
+      ],
+      "activeNav": null,
+      "ariaCurrentNav": null,
+      "primaryStyle": null,
+      "errorScreen": false
+    },
+    {
+      "label": "players",
+      "route": "/players",
+      "status": 200,
+      "title": "Players",
+      "width": 390,
+      "height": 844,
+      "documentWidth": 390,
+      "documentHeight": 1530,
+      "pageWidth": 390,
+      "text": "West Green Darts\n\nTEAM ROSTER\n\nPlayers\nAdd player\nName\nActive\nSave player\nActive players\nAC\n\nAlex Carter\n\nEdit\nDeactivate\nAM\n\nAlexander Montgomery-Johnson the Third\n\nEdit\nDeactivate\nCW\n\nCasey Wilson\n\nEdit\nDeactivate\nCB\n\nCharlie Brown\n\nEdit\nDeactivate\nCT\n\nChris Taylor\n\nEdit\nDeactivate\nDR\n\nDrew Roberts\n\nEdit\nDeactivate\nHS\n\nHarper Shaw\n\nEdit\nDeactivate\nJE\n\nJamie Ellis\n\nEdit\nDeactivate\nJE\n\nJordan Evans\n\nEdit\nDeactivate\nLJ\n\nLee Jones\n\nEdit\nDeactivate\nMR\n\nMorgan Reed\n\nEdit\nDeactivate\nRD\n\nRiley Davies\n\nEdit\nDeactivate\nRW\n\nRobin Woods\n\nEdit\nDeactivate\nSP\n\nSam Patel\n\nEdit\nDeactivate\nInactive players\nDashboard\nFixtures\nPlayers\nPractice",
+      "headings": [
+        {
+          "text": "Players",
+          "y": 91
+        },
+        {
+          "text": "Add player",
+          "y": 158
+        },
+        {
+          "text": "Active players",
+          "y": 403
+        },
+        {
+          "text": "Inactive players",
+          "y": 1390
+        }
+      ],
+      "controls": [
+        {
+          "name": "name",
+          "tag": "INPUT",
+          "x": 31,
+          "y": 222,
+          "width": 328,
+          "height": 42,
+          "color": "rgb(232, 238, 247)",
+          "background": "rgb(14, 26, 46)",
+          "disabled": false
+        },
+        {
+          "name": "",
+          "tag": "INPUT",
+          "x": 31,
+          "y": 278,
+          "width": 16,
+          "height": 16,
+          "color": "rgb(232, 238, 247)",
+          "background": "rgb(14, 26, 46)",
+          "disabled": false
+        },
+        {
+          "name": "Save player",
+          "tag": "BUTTON",
+          "x": 31,
+          "y": 308,
+          "width": 124,
+          "height": 40,
+          "color": "rgb(255, 255, 255)",
+          "background": "rgb(12, 166, 120)",
+          "disabled": false
+        },
+        {
+          "name": "Edit Alex Carter",
+          "tag": "A",
+          "x": 184,
+          "y": 456,
+          "width": 53,
+          "height": 30,
+          "color": "rgb(232, 238, 247)",
+          "background": "rgba(0, 0, 0, 0)",
+          "disabled": false
+        },
+        {
+          "name": "Deactivate",
+          "tag": "BUTTON",
+          "x": 245,
+          "y": 456,
+          "width": 101,
+          "height": 30,
+          "color": "rgb(232, 238, 247)",
+          "background": "rgba(0, 0, 0, 0)",
+          "disabled": false
+        },
+        {
+          "name": "Edit Alexander Montgomery-Johnson the Third",
+          "tag": "A",
+          "x": 205,
+          "y": 545,
+          "width": 53,
+          "height": 30,
+          "color": "rgb(232, 238, 247)",
+          "background": "rgba(0, 0, 0, 0)",
+          "disabled": false
+        },
+        {
+          "name": "Deactivate",
+          "tag": "BUTTON",
+          "x": 266,
+          "y": 545,
+          "width": 101,
+          "height": 30,
+          "color": "rgb(232, 238, 247)",
+          "background": "rgba(0, 0, 0, 0)",
+          "disabled": false
+        },
+        {
+          "name": "Edit Casey Wilson",
+          "tag": "A",
+          "x": 184,
+          "y": 634,
+          "width": 53,
+          "height": 30,
+          "color": "rgb(232, 238, 247)",
+          "background": "rgba(0, 0, 0, 0)",
+          "disabled": false
+        },
+        {
+          "name": "Deactivate",
+          "tag": "BUTTON",
+          "x": 245,
+          "y": 634,
+          "width": 101,
+          "height": 30,
+          "color": "rgb(232, 238, 247)",
+          "background": "rgba(0, 0, 0, 0)",
+          "disabled": false
+        },
+        {
+          "name": "Edit Charlie Brown",
+          "tag": "A",
+          "x": 184,
+          "y": 699,
+          "width": 53,
+          "height": 30,
+          "color": "rgb(232, 238, 247)",
+          "background": "rgba(0, 0, 0, 0)",
+          "disabled": false
+        },
+        {
+          "name": "Deactivate",
+          "tag": "BUTTON",
+          "x": 245,
+          "y": 699,
+          "width": 101,
+          "height": 30,
+          "color": "rgb(232, 238, 247)",
+          "background": "rgba(0, 0, 0, 0)",
+          "disabled": false
+        },
+        {
+          "name": "Edit Chris Taylor",
+          "tag": "A",
+          "x": 184,
+          "y": 764,
+          "width": 53,
+          "height": 30,
+          "color": "rgb(232, 238, 247)",
+          "background": "rgba(0, 0, 0, 0)",
+          "disabled": false
+        },
+        {
+          "name": "Deactivate",
+          "tag": "BUTTON",
+          "x": 245,
+          "y": 764,
+          "width": 101,
+          "height": 30,
+          "color": "rgb(232, 238, 247)",
+          "background": "rgba(0, 0, 0, 0)",
+          "disabled": false
+        },
+        {
+          "name": "Edit Drew Roberts",
+          "tag": "A",
+          "x": 184,
+          "y": 829,
+          "width": 53,
+          "height": 30,
+          "color": "rgb(232, 238, 247)",
+          "background": "rgba(0, 0, 0, 0)",
+          "disabled": false
+        },
+        {
+          "name": "Deactivate",
+          "tag": "BUTTON",
+          "x": 245,
+          "y": 829,
+          "width": 101,
+          "height": 30,
+          "color": "rgb(232, 238, 247)",
+          "background": "rgba(0, 0, 0, 0)",
+          "disabled": false
+        },
+        {
+          "name": "Edit Harper Shaw",
+          "tag": "A",
+          "x": 184,
+          "y": 894,
+          "width": 53,
+          "height": 30,
+          "color": "rgb(232, 238, 247)",
+          "background": "rgba(0, 0, 0, 0)",
+          "disabled": false
+        },
+        {
+          "name": "Deactivate",
+          "tag": "BUTTON",
+          "x": 245,
+          "y": 894,
+          "width": 101,
+          "height": 30,
+          "color": "rgb(232, 238, 247)",
+          "background": "rgba(0, 0, 0, 0)",
+          "disabled": false
+        },
+        {
+          "name": "Edit Jamie Ellis",
+          "tag": "A",
+          "x": 184,
+          "y": 955,
+          "width": 53,
+          "height": 30,
+          "color": "rgb(232, 238, 247)",
+          "background": "rgba(0, 0, 0, 0)",
+          "disabled": false
+        },
+        {
+          "name": "Deactivate",
+          "tag": "BUTTON",
+          "x": 245,
+          "y": 955,
+          "width": 101,
+          "height": 30,
+          "color": "rgb(232, 238, 247)",
+          "background": "rgba(0, 0, 0, 0)",
+          "disabled": false
+        },
+        {
+          "name": "Edit Jordan Evans",
+          "tag": "A",
+          "x": 184,
+          "y": 1016,
+          "width": 53,
+          "height": 30,
+          "color": "rgb(232, 238, 247)",
+          "background": "rgba(0, 0, 0, 0)",
+          "disabled": false
+        },
+        {
+          "name": "Deactivate",
+          "tag": "BUTTON",
+          "x": 245,
+          "y": 1016,
+          "width": 101,
+          "height": 30,
+          "color": "rgb(232, 238, 247)",
+          "background": "rgba(0, 0, 0, 0)",
+          "disabled": false
+        },
+        {
+          "name": "Edit Lee Jones",
+          "tag": "A",
+          "x": 184,
+          "y": 1077,
+          "width": 53,
+          "height": 30,
+          "color": "rgb(232, 238, 247)",
+          "background": "rgba(0, 0, 0, 0)",
+          "disabled": false
+        },
+        {
+          "name": "Deactivate",
+          "tag": "BUTTON",
+          "x": 245,
+          "y": 1077,
+          "width": 101,
+          "height": 30,
+          "color": "rgb(232, 238, 247)",
+          "background": "rgba(0, 0, 0, 0)",
+          "disabled": false
+        },
+        {
+          "name": "Edit Morgan Reed",
+          "tag": "A",
+          "x": 184,
+          "y": 1138,
+          "width": 53,
+          "height": 30,
+          "color": "rgb(232, 238, 247)",
+          "background": "rgba(0, 0, 0, 0)",
+          "disabled": false
+        },
+        {
+          "name": "Deactivate",
+          "tag": "BUTTON",
+          "x": 245,
+          "y": 1138,
+          "width": 101,
+          "height": 30,
+          "color": "rgb(232, 238, 247)",
+          "background": "rgba(0, 0, 0, 0)",
+          "disabled": false
+        },
+        {
+          "name": "Edit Riley Davies",
+          "tag": "A",
+          "x": 184,
+          "y": 1203,
+          "width": 53,
+          "height": 30,
+          "color": "rgb(232, 238, 247)",
+          "background": "rgba(0, 0, 0, 0)",
+          "disabled": false
+        },
+        {
+          "name": "Deactivate",
+          "tag": "BUTTON",
+          "x": 245,
+          "y": 1203,
+          "width": 101,
+          "height": 30,
+          "color": "rgb(232, 238, 247)",
+          "background": "rgba(0, 0, 0, 0)",
+          "disabled": false
+        },
+        {
+          "name": "Edit Robin Woods",
+          "tag": "A",
+          "x": 184,
+          "y": 1268,
+          "width": 53,
+          "height": 30,
+          "color": "rgb(232, 238, 247)",
+          "background": "rgba(0, 0, 0, 0)",
+          "disabled": false
+        },
+        {
+          "name": "Deactivate",
+          "tag": "BUTTON",
+          "x": 245,
+          "y": 1268,
+          "width": 101,
+          "height": 30,
+          "color": "rgb(232, 238, 247)",
+          "background": "rgba(0, 0, 0, 0)",
+          "disabled": false
+        },
+        {
+          "name": "Edit Sam Patel",
+          "tag": "A",
+          "x": 184,
+          "y": 1329,
+          "width": 53,
+          "height": 30,
+          "color": "rgb(232, 238, 247)",
+          "background": "rgba(0, 0, 0, 0)",
+          "disabled": false
+        },
+        {
+          "name": "Deactivate",
+          "tag": "BUTTON",
+          "x": 245,
+          "y": 1329,
+          "width": 101,
+          "height": 30,
+          "color": "rgb(232, 238, 247)",
+          "background": "rgba(0, 0, 0, 0)",
+          "disabled": false
+        },
+        {
+          "name": "Edit Finley Brooks",
+          "tag": "A",
+          "x": 201,
+          "y": 1443,
+          "width": 53,
+          "height": 30,
+          "color": "rgb(232, 238, 247)",
+          "background": "rgba(0, 0, 0, 0)",
+          "disabled": false
+        },
+        {
+          "name": "Activate",
+          "tag": "BUTTON",
+          "x": 262,
+          "y": 1443,
+          "width": 84,
+          "height": 30,
+          "color": "rgb(232, 238, 247)",
+          "background": "rgba(0, 0, 0, 0)",
+          "disabled": false
+        }
+      ],
+      "activeNav": "Players",
+      "ariaCurrentNav": null,
+      "primaryStyle": null,
+      "errorScreen": false
+    },
+    {
+      "label": "player-edit",
+      "route": "/players/930e6f5c-a4ce-4174-9a6e-a10e69605cfc",
+      "status": 200,
+      "title": "Alex Carter",
+      "width": 390,
+      "height": 844,
+      "documentWidth": 390,
+      "documentHeight": 873,
+      "pageWidth": 390,
+      "text": "West Green Darts\n←\n\nEdit player\n\nAlex Carter\nName\nDart model\nStem length\nFlight type\nActive\nSave\nCancel\nDelete player\n\nPlayer must be inactive before deletion.\n\nDelete player\n\nDeactivate this player first to enable deletion.\n\nDashboard\nFixtures\nPlayers\nPractice",
+      "headings": [
+        {
+          "text": "Alex Carter",
+          "y": 114
+        },
+        {
+          "text": "Delete player",
+          "y": 638
+        }
+      ],
+      "controls": [
+        {
+          "name": "Back to players",
+          "tag": "A",
+          "x": 31,
+          "y": 102,
+          "width": 38,
+          "height": 36,
+          "color": "rgb(226, 234, 246)",
+          "background": "rgb(26, 42, 68)",
+          "disabled": false
+        },
+        {
+          "name": "name",
+          "tag": "INPUT",
+          "x": 31,
+          "y": 224,
+          "width": 328,
+          "height": 42,
+          "color": "rgb(232, 238, 247)",
+          "background": "rgb(14, 26, 46)",
+          "disabled": false
+        },
+        {
+          "name": "dart_model",
+          "tag": "INPUT",
+          "x": 31,
+          "y": 302,
+          "width": 328,
+          "height": 42,
+          "color": "rgb(232, 238, 247)",
+          "background": "rgb(14, 26, 46)",
+          "disabled": false
+        },
+        {
+          "name": "stem_length",
+          "tag": "INPUT",
+          "x": 31,
+          "y": 380,
+          "width": 328,
+          "height": 42,
+          "color": "rgb(232, 238, 247)",
+          "background": "rgb(14, 26, 46)",
+          "disabled": false
+        },
+        {
+          "name": "flight_type",
+          "tag": "INPUT",
+          "x": 31,
+          "y": 458,
+          "width": 328,
+          "height": 42,
+          "color": "rgb(232, 238, 247)",
+          "background": "rgb(14, 26, 46)",
+          "disabled": false
+        },
+        {
+          "name": "",
+          "tag": "INPUT",
+          "x": 31,
+          "y": 514,
+          "width": 16,
+          "height": 16,
+          "color": "rgb(232, 238, 247)",
+          "background": "rgb(14, 26, 46)",
+          "disabled": false
+        },
+        {
+          "name": "Save",
+          "tag": "BUTTON",
+          "x": 31,
+          "y": 544,
+          "width": 69,
+          "height": 40,
+          "color": "rgb(255, 255, 255)",
+          "background": "rgb(12, 166, 120)",
+          "disabled": false
+        },
+        {
+          "name": "Cancel",
+          "tag": "A",
+          "x": 108,
+          "y": 544,
+          "width": 80,
+          "height": 40,
+          "color": "rgb(198, 211, 232)",
+          "background": "rgba(0, 0, 0, 0)",
+          "disabled": false
+        },
+        {
+          "name": "Delete player",
+          "tag": "BUTTON",
+          "x": 31,
+          "y": 706,
+          "width": 139,
+          "height": 40,
+          "color": "rgb(255, 255, 255)",
+          "background": "rgb(250, 82, 82)",
+          "disabled": true
+        }
+      ],
+      "activeNav": "Players",
+      "ariaCurrentNav": null,
+      "primaryStyle": null,
+      "errorScreen": false
+    },
+    {
+      "label": "practice",
+      "route": "/practice",
+      "status": 200,
+      "title": "Practice sessions",
+      "width": 390,
+      "height": 844,
+      "documentWidth": 390,
+      "documentHeight": 3399,
+      "pageWidth": 390,
+      "text": "West Green Darts\n\nPRACTICE ARENA\n\nPractice sessions\nPractice games\n\n121 Challenge\n\nProgress from checkout 121 → 170\n\nPlay →\n\nDoubles Switch\n\nTeam doubles drill — rotate then random\n\nPlay →\n\nRandom Checkout\n\nFinish a random 2–170 checkout\n\nPlay →\nStart a session\nPlayer A (WGD)\nSelect player\nAlex Carter\nAlexander Montgomery-Johnson the Third\nCasey Wilson\nCharlie Brown\nChris Taylor\nDrew Roberts\nFinley Brooks\nHarper Shaw\nJamie Ellis\nJordan Evans\nLee Jones\nMorgan Reed\nRiley Davies\nRobin Woods\nSam Patel\nPlayer B (WGD)\nSelect player\nAlex Carter\nAlexander Montgomery-Johnson the Third\nCasey Wilson\nCharlie Brown\nChris Taylor\nDrew Roberts\nFinley Brooks\nHarper Shaw\nJamie Ellis\nJordan Evans\nLee Jones\nMorgan Reed\nRiley Davies\nRobin Woods\nSam Patel\nStart score\n301\n501\n701\n\nLegs to play\n\n1\nsingle\n3\nbest of 3\n5\nbest of 5\n7\nbest of 7\nStart practice\nPlayer stats\n\nChris Taylor\n\n3DA\n107.4\nFirst 9\n126.7\nHigh finish: 40\n180s: 1\nWon 1\nPlayed 2\n0\n\nMorgan Reed\n\n3DA\n88.4\nFirst 9\n100.0\nHigh finish: 100\nWon 1\nPlayed 2\n0\n\nLee Jones\n\n3DA\n88.4\nFirst 9\n100.0\nHigh finish: 40\nWon 1\nPlayed 2\n0\n\nCharlie Brown\n\n3DA\n75.2\nFirst 9\n86.7\nHigh finish: 60\nWon 1\nPlayed 2\n0\n\nJamie Ellis\n\n3DA\n75.2\nFirst 9\n68.3\nHigh finish: 100\nWon 1\nPlayed 2\n0\n\nAlex Carter\n\n3DA\n75.2\nFirst 9\n86.7\nHigh finish: 60\nWon 1\nPlayed 1\n+1\n\nSam Patel\n\n3DA\n65.3\nFirst 9\n48.7\nHigh finish: 40\n26s: 1\nWon 1\nPlayed 2\n0\n\nCasey Wilson\n\n3DA\n-\nFirst 9\n-\nWon 0\nPlayed 1\n-1\n180s hit\nChris Taylor\n1 × 180\nRecent sessions\nAlex Carter vs Alexander Montgomery-Johnson the Third\n501 · 3 legs · in_progress\nOpen\nAlex Carter vs Jamie Ellis\n501 · 1 leg · completed\nOpen\nJamie Ellis vs Morgan Reed\n501 · 1 leg · completed\nOpen\nMorgan Reed vs Chris Taylor\n501 · 1 leg · completed\nOpen\nChris Taylor vs Sam Patel\n501 · 1 leg · completed\nOpen\nSam Patel vs Lee Jones\n501 · 1 leg · completed\nOpen\nLee Jones vs Charlie Brown\n501 · 1 leg · completed\nOpen\nCharlie Brown vs Casey Wilson\n501 · 1 leg · completed\nOpen\nDashboard\nFixtures\nPlayers\nPractice",
+      "headings": [
+        {
+          "text": "Practice sessions",
+          "y": 91
+        },
+        {
+          "text": "Practice games",
+          "y": 158
+        },
+        {
+          "text": "Start a session",
+          "y": 464
+        },
+        {
+          "text": "Player stats",
+          "y": 942
+        },
+        {
+          "text": "180s hit",
+          "y": 2564
+        },
+        {
+          "text": "Recent sessions",
+          "y": 2700
+        }
+      ],
+      "controls": [
+        {
+          "name": "121 ChallengeProgress from checkout 121 → 170Play →",
+          "tag": "A",
+          "x": 31,
+          "y": 190,
+          "width": 328,
+          "height": 68,
+          "color": "rgb(232, 238, 247)",
+          "background": "rgb(44, 30, 68)",
+          "disabled": false
+        },
+        {
+          "name": "Doubles SwitchTeam doubles drill — rotate then randomPlay →",
+          "tag": "A",
+          "x": 31,
+          "y": 266,
+          "width": 328,
+          "height": 68,
+          "color": "rgb(232, 238, 247)",
+          "background": "rgb(11, 46, 34)",
+          "disabled": false
+        },
+        {
+          "name": "Random CheckoutFinish a random 2–170 checkoutPlay →",
+          "tag": "A",
+          "x": 31,
+          "y": 342,
+          "width": 328,
+          "height": 68,
+          "color": "rgb(232, 238, 247)",
+          "background": "rgb(20, 42, 77)",
+          "disabled": false
+        },
+        {
+          "name": "Select playerAlex CarterAlexander Montgomery-Johnson the ThirdCasey WilsonCharlie BrownChr",
+          "tag": "SELECT",
+          "x": 31,
+          "y": 528,
+          "width": 328,
+          "height": 42,
+          "color": "rgb(232, 238, 247)",
+          "background": "rgb(14, 26, 46)",
+          "disabled": false
+        },
+        {
+          "name": "Select playerAlex CarterAlexander Montgomery-Johnson the ThirdCasey WilsonCharlie BrownChr",
+          "tag": "SELECT",
+          "x": 31,
+          "y": 606,
+          "width": 328,
+          "height": 42,
+          "color": "rgb(232, 238, 247)",
+          "background": "rgb(14, 26, 46)",
+          "disabled": false
+        },
+        {
+          "name": "301501701",
+          "tag": "SELECT",
+          "x": 31,
+          "y": 684,
+          "width": 328,
+          "height": 42,
+          "color": "rgb(232, 238, 247)",
+          "background": "rgb(14, 26, 46)",
+          "disabled": false
+        },
+        {
+          "name": "",
+          "tag": "INPUT",
+          "x": 30,
+          "y": 761,
+          "width": 1,
+          "height": 1,
+          "color": "rgb(232, 238, 247)",
+          "background": "rgb(14, 26, 46)",
+          "disabled": false
+        },
+        {
+          "name": "",
+          "tag": "INPUT",
+          "x": 114,
+          "y": 761,
+          "width": 1,
+          "height": 1,
+          "color": "rgb(232, 238, 247)",
+          "background": "rgb(14, 26, 46)",
+          "disabled": false
+        },
+        {
+          "name": "",
+          "tag": "INPUT",
+          "x": 198,
+          "y": 761,
+          "width": 1,
+          "height": 1,
+          "color": "rgb(232, 238, 247)",
+          "background": "rgb(14, 26, 46)",
+          "disabled": false
+        },
+        {
+          "name": "",
+          "tag": "INPUT",
+          "x": 282,
+          "y": 761,
+          "width": 1,
+          "height": 1,
+          "color": "rgb(232, 238, 247)",
+          "background": "rgb(14, 26, 46)",
+          "disabled": false
+        },
+        {
+          "name": "Start practice",
+          "tag": "BUTTON",
+          "x": 31,
+          "y": 840,
+          "width": 328,
+          "height": 48,
+          "color": "rgb(255, 255, 255)",
+          "background": "rgb(12, 166, 120)",
+          "disabled": false
+        },
+        {
+          "name": "Open",
+          "tag": "A",
+          "x": 277,
+          "y": 2762,
+          "width": 69,
+          "height": 36,
+          "color": "rgb(255, 255, 255)",
+          "background": "rgb(12, 166, 120)",
+          "disabled": false
+        },
+        {
+          "name": "Open",
+          "tag": "A",
+          "x": 277,
+          "y": 2840,
+          "width": 69,
+          "height": 36,
+          "color": "rgb(255, 255, 255)",
+          "background": "rgb(12, 166, 120)",
+          "disabled": false
+        },
+        {
+          "name": "Open",
+          "tag": "A",
+          "x": 277,
+          "y": 2908,
+          "width": 69,
+          "height": 36,
+          "color": "rgb(255, 255, 255)",
+          "background": "rgb(12, 166, 120)",
+          "disabled": false
+        },
+        {
+          "name": "Open",
+          "tag": "A",
+          "x": 277,
+          "y": 2976,
+          "width": 69,
+          "height": 36,
+          "color": "rgb(255, 255, 255)",
+          "background": "rgb(12, 166, 120)",
+          "disabled": false
+        },
+        {
+          "name": "Open",
+          "tag": "A",
+          "x": 277,
+          "y": 3044,
+          "width": 69,
+          "height": 36,
+          "color": "rgb(255, 255, 255)",
+          "background": "rgb(12, 166, 120)",
+          "disabled": false
+        },
+        {
+          "name": "Open",
+          "tag": "A",
+          "x": 277,
+          "y": 3112,
+          "width": 69,
+          "height": 36,
+          "color": "rgb(255, 255, 255)",
+          "background": "rgb(12, 166, 120)",
+          "disabled": false
+        },
+        {
+          "name": "Open",
+          "tag": "A",
+          "x": 277,
+          "y": 3180,
+          "width": 69,
+          "height": 36,
+          "color": "rgb(255, 255, 255)",
+          "background": "rgb(12, 166, 120)",
+          "disabled": false
+        },
+        {
+          "name": "Open",
+          "tag": "A",
+          "x": 277,
+          "y": 3248,
+          "width": 69,
+          "height": 36,
+          "color": "rgb(255, 255, 255)",
+          "background": "rgb(12, 166, 120)",
+          "disabled": false
+        }
+      ],
+      "activeNav": "Practice",
+      "ariaCurrentNav": null,
+      "primaryStyle": null,
+      "errorScreen": false
+    },
+    {
+      "label": "practice-x01-scoring",
+      "route": "/practice/scoring?session=d9d8b49e-941c-41b2-ae33-99081ce42be6&game=d193e514-7340-4f7d-b590-36ea550ace13",
+      "status": 200,
+      "width": 390,
+      "height": 844,
+      "documentWidth": 445,
+      "documentHeight": 844,
+      "pageWidth": 390,
+      "text": "← Dashboard\nSessions\nLeg 1 of 3\nAlex Carter\nAlexander Montgomery-Johnson the Third\n–\n\nALEX CARTER\n\n401\n\nALEXANDER MONTGOMERY-JOHNSON THE THIRD\n\n441\n\nSaved ✓\n\n1\n2\n3\n4\n5\n6\n7\n8\n9\n0\nEnter\nClear\nUndo\n\nAlex Carter\n\n3DA: 100.0\nF9: –\nDarts: 3\nHigh: –\n100+: 1\n\nAlexander Montgomery-Johnson the Third\n\n3DA: 60.0\nF9: –\nDarts: 3\nHigh: –\n60+: 1\nDelete session",
+      "headings": [],
+      "controls": [],
+      "activeNav": null,
+      "ariaCurrentNav": null,
+      "primaryStyle": null,
+      "errorScreen": false
+    },
+    {
+      "label": "practice-121",
+      "route": "/practice/121",
+      "status": 200,
+      "title": "121 Challenge",
+      "width": 390,
+      "height": 844,
+      "documentWidth": 390,
+      "documentHeight": 890,
+      "pageWidth": 390,
+      "text": "West Green Darts\n\nPRACTICE ARENA\n\n121 Challenge\n‹ Practice\n\nWork from 121 to 170, with checkout guidance and three visits per target.\n\nResume a saved game\nAlexander Montgomery-Johnson the Third\nTarget 121 · 121 left · Visit 1/3\nResume →\n\nYour five most recently started active games.\n\nStart a game\nPlayer\nChoose a player\nAlex Carter\nAlexander Montgomery-Johnson the Third\nCasey Wilson\nCharlie Brown\nChris Taylor\nDrew Roberts\nFinley Brooks\nHarper Shaw\nJamie Ellis\nJordan Evans\nLee Jones\nMorgan Reed\nRiley Davies\nRobin Woods\nSam Patel\nAdvance base on any finish\nLock each completed target, even when you finish in visit 2 or 3.\nStart 121\nHow to play\nPlayer records\nDashboard\nFixtures\nPlayers\nPractice",
+      "headings": [
+        {
+          "text": "121 Challenge",
+          "y": 100
+        },
+        {
+          "text": "Resume a saved game",
+          "y": 217
+        },
+        {
+          "text": "Start a game",
+          "y": 409
+        },
+        {
+          "text": "How to play",
+          "y": 709
+        },
+        {
+          "text": "Player records",
+          "y": 770
+        }
+      ],
+      "controls": [
+        {
+          "name": "‹ Practice",
+          "tag": "A",
+          "x": 287,
+          "y": 88,
+          "width": 91,
+          "height": 44,
+          "color": "rgb(220, 232, 248)",
+          "background": "rgb(27, 45, 73)",
+          "disabled": false
+        },
+        {
+          "name": "Alexander Montgomery-Johnson the ThirdTarget 121 · 121 left · Visit 1/3Resume →",
+          "tag": "A",
+          "x": 27,
+          "y": 251,
+          "width": 336,
+          "height": 90,
+          "color": "rgb(232, 238, 247)",
+          "background": "rgba(0, 0, 0, 0)",
+          "disabled": false
+        },
+        {
+          "name": "Choose a playerAlex CarterAlexander Montgomery-Johnson the ThirdCasey WilsonCharlie BrownC",
+          "tag": "SELECT",
+          "x": 27,
+          "y": 476,
+          "width": 336,
+          "height": 48,
+          "color": "rgb(232, 238, 247)",
+          "background": "rgb(14, 26, 46)",
+          "disabled": false
+        },
+        {
+          "name": "",
+          "tag": "INPUT",
+          "x": 40,
+          "y": 553,
+          "width": 13,
+          "height": 18,
+          "color": "rgb(232, 238, 247)",
+          "background": "rgb(14, 26, 46)",
+          "disabled": false
+        },
+        {
+          "name": "Start 121",
+          "tag": "BUTTON",
+          "x": 27,
+          "y": 625,
+          "width": 336,
+          "height": 44,
+          "color": "rgb(240, 255, 249)",
+          "background": "rgb(18, 101, 78)",
+          "disabled": false
+        }
+      ],
+      "activeNav": "Practice",
+      "ariaCurrentNav": null,
+      "primaryStyle": null,
+      "errorScreen": false
+    },
+    {
+      "label": "practice-121-scoring",
+      "route": "/practice/121/scoring?session=d86df136-51ad-49b0-ac3c-6f67d625193d",
+      "status": 200,
+      "width": 390,
+      "height": 844,
+      "documentWidth": 390,
+      "documentHeight": 844,
+      "pageWidth": 390,
+      "text": "‹ 121 Challenge\n\nAlexander Montgomery-Johnson the Third\n\nEnd game\nTarget 121 / 170\nLocked base 121\n\nREMAINING\n\n121\n\nVISIT\n\n1 / 3\n\n9 darts left in attempt\n\nSuggested checkout\n\nT20\n61 left\nT11\n28 left\nD14\nDouble out\n\nFinish on a double or Bull.\n\nVisit 1 score\n\nEnter the total for this visit.\n\n1\n2\n3\n4\n5\n6\n7\n8\n9\n⌫\n0\nClear\nMiss · 0\nBust\nEnter score\nCheckout help & game rules\nVisit history · 0",
+      "headings": [],
+      "controls": [
+        {
+          "name": "‹ 121 Challenge",
+          "tag": "A",
+          "x": 8,
+          "y": 8,
+          "width": 106,
+          "height": 19,
+          "color": "rgb(232, 238, 247)",
+          "background": "rgba(0, 0, 0, 0)",
+          "disabled": false
+        },
+        {
+          "name": "End game",
+          "tag": "BUTTON",
+          "x": 291,
+          "y": 8,
+          "width": 91,
+          "height": 36,
+          "color": "rgb(220, 232, 248)",
+          "background": "rgb(27, 45, 73)",
+          "disabled": false
+        },
+        {
+          "name": "Visit score",
+          "tag": "INPUT",
+          "x": 295,
+          "y": 329,
+          "width": 80,
+          "height": 38,
+          "color": "rgb(255, 255, 255)",
+          "background": "rgb(19, 34, 59)",
+          "disabled": false
+        },
+        {
+          "name": "1",
+          "tag": "BUTTON",
+          "x": 15,
+          "y": 372,
+          "width": 117,
+          "height": 83,
+          "color": "rgb(255, 255, 255)",
+          "background": "rgb(27, 45, 73)",
+          "disabled": false
+        },
+        {
+          "name": "2",
+          "tag": "BUTTON",
+          "x": 136,
+          "y": 372,
+          "width": 117,
+          "height": 83,
+          "color": "rgb(255, 255, 255)",
+          "background": "rgb(27, 45, 73)",
+          "disabled": false
+        },
+        {
+          "name": "3",
+          "tag": "BUTTON",
+          "x": 258,
+          "y": 372,
+          "width": 117,
+          "height": 83,
+          "color": "rgb(255, 255, 255)",
+          "background": "rgb(27, 45, 73)",
+          "disabled": false
+        },
+        {
+          "name": "4",
+          "tag": "BUTTON",
+          "x": 15,
+          "y": 460,
+          "width": 117,
+          "height": 83,
+          "color": "rgb(255, 255, 255)",
+          "background": "rgb(27, 45, 73)",
+          "disabled": false
+        },
+        {
+          "name": "5",
+          "tag": "BUTTON",
+          "x": 136,
+          "y": 460,
+          "width": 117,
+          "height": 83,
+          "color": "rgb(255, 255, 255)",
+          "background": "rgb(27, 45, 73)",
+          "disabled": false
+        },
+        {
+          "name": "6",
+          "tag": "BUTTON",
+          "x": 258,
+          "y": 460,
+          "width": 117,
+          "height": 83,
+          "color": "rgb(255, 255, 255)",
+          "background": "rgb(27, 45, 73)",
+          "disabled": false
+        },
+        {
+          "name": "7",
+          "tag": "BUTTON",
+          "x": 15,
+          "y": 547,
+          "width": 117,
+          "height": 83,
+          "color": "rgb(255, 255, 255)",
+          "background": "rgb(27, 45, 73)",
+          "disabled": false
+        },
+        {
+          "name": "8",
+          "tag": "BUTTON",
+          "x": 136,
+          "y": 547,
+          "width": 117,
+          "height": 83,
+          "color": "rgb(255, 255, 255)",
+          "background": "rgb(27, 45, 73)",
+          "disabled": false
+        },
+        {
+          "name": "9",
+          "tag": "BUTTON",
+          "x": 258,
+          "y": 547,
+          "width": 117,
+          "height": 83,
+          "color": "rgb(255, 255, 255)",
+          "background": "rgb(27, 45, 73)",
+          "disabled": false
+        },
+        {
+          "name": "Delete last digit",
+          "tag": "BUTTON",
+          "x": 15,
+          "y": 634,
+          "width": 117,
+          "height": 83,
+          "color": "rgb(255, 255, 255)",
+          "background": "rgb(27, 45, 73)",
+          "disabled": true
+        },
+        {
+          "name": "0",
+          "tag": "BUTTON",
+          "x": 136,
+          "y": 634,
+          "width": 117,
+          "height": 83,
+          "color": "rgb(255, 255, 255)",
+          "background": "rgb(27, 45, 73)",
+          "disabled": false
+        },
+        {
+          "name": "Clear",
+          "tag": "BUTTON",
+          "x": 258,
+          "y": 634,
+          "width": 117,
+          "height": 83,
+          "color": "rgb(255, 255, 255)",
+          "background": "rgb(27, 45, 73)",
+          "disabled": true
+        },
+        {
+          "name": "Miss · 0",
+          "tag": "BUTTON",
+          "x": 15,
+          "y": 721,
+          "width": 107,
+          "height": 44,
+          "color": "rgb(220, 232, 248)",
+          "background": "rgb(27, 45, 73)",
+          "disabled": false
+        },
+        {
+          "name": "Bust",
+          "tag": "BUTTON",
+          "x": 126,
+          "y": 721,
+          "width": 85,
+          "height": 44,
+          "color": "rgb(220, 232, 248)",
+          "background": "rgb(27, 45, 73)",
+          "disabled": false
+        },
+        {
+          "name": "Enter score",
+          "tag": "BUTTON",
+          "x": 215,
+          "y": 721,
+          "width": 160,
+          "height": 44,
+          "color": "rgb(240, 255, 249)",
+          "background": "rgb(18, 101, 78)",
+          "disabled": true
+        },
+        {
+          "name": "Checkout help & game rules",
+          "tag": "BUTTON",
+          "x": 8,
+          "y": 798,
+          "width": 215,
+          "height": 40,
+          "color": "rgb(220, 232, 248)",
+          "background": "rgb(27, 45, 73)",
+          "disabled": false
+        },
+        {
+          "name": "Visit history · 0",
+          "tag": "BUTTON",
+          "x": 229,
+          "y": 798,
+          "width": 153,
+          "height": 40,
+          "color": "rgb(220, 232, 248)",
+          "background": "rgb(27, 45, 73)",
+          "disabled": false
+        }
+      ],
+      "activeNav": null,
+      "ariaCurrentNav": null,
+      "primaryStyle": null,
+      "errorScreen": false
+    },
+    {
+      "label": "practice-doubles",
+      "route": "/practice/doubles",
+      "status": 200,
+      "title": "Doubles Switch",
+      "width": 390,
+      "height": 844,
+      "documentWidth": 461,
+      "documentHeight": 1367,
+      "pageWidth": 390,
+      "text": "West Green Darts\n\nPractice arena\n\n← Practice\nDoubles Switch\n\nRotate through the finishing doubles, then random ones — get used to switching.\n\nHow to play\n🎯 Each player throws at the running double: D10 → D20 → D12 → D18 → D9 → D8 → D4 → D2 → D1 → D16 → D6\n🎲 After the 11 in order, you get random doubles until you end\n🎯 Up to 3 darts per double — tap the dart that hits, or miss all 3\n🏆 Earlier hits score more: 1st = 3, 2nd = 2, 3rd = 1\n🔁 Players take turns in order; everyone advances independently\nStart a game\nAdd players (in throwing order)\n-- Select player --\nAlex Carter\nAlexander Montgomery-Johnson the Third\nCasey Wilson\nCharlie Brown\nChris Taylor\nDrew Roberts\nFinley Brooks\nHarper Shaw\nJamie Ellis\nJordan Evans\nLee Jones\nMorgan Reed\nRiley Davies\nRobin Woods\nSam Patel\nAdd\n\nAdd at least one player to start.\n\nStart Doubles Switch\nPlayer stats\n\nMorgan Reed\n\nDoubles: 75%\n1st dart: 25%\n🏆 1\n1 played\n\nLee Jones\n\nDoubles: 75%\n1st dart: 25%\n🏆 1\n1 played\n\nJamie Ellis\n\nDoubles: 75%\n1st dart: 25%\n🏆 1\n1 played\n\nChris Taylor\n\nDoubles: 75%\n1st dart: 25%\n🏆 1\n1 played\n\nSam Patel\n\nDoubles: 75%\n1st dart: 25%\n🏆 1\n1 played\n\nAlex Carter\n\nDoubles: 75%\n1st dart: 25%\n🏆 1\n1 played\nDashboard\nFixtures\nPlayers\nPractice",
+      "headings": [
+        {
+          "text": "Doubles Switch",
+          "y": 124
+        },
+        {
+          "text": "How to play",
+          "y": 254
+        },
+        {
+          "text": "Start a game",
+          "y": 576
+        },
+        {
+          "text": "Player stats",
+          "y": 824
+        }
+      ],
+      "controls": [
+        {
+          "name": "← Practice",
+          "tag": "A",
+          "x": 278,
+          "y": 94,
+          "width": 81,
+          "height": 26,
+          "color": "rgb(169, 186, 214)",
+          "background": "rgba(0, 0, 0, 0)",
+          "disabled": false
+        },
+        {
+          "name": "-- Select player --Alex CarterAlexander Montgomery-Johnson the ThirdCasey WilsonCharlie Br",
+          "tag": "SELECT",
+          "x": 31,
+          "y": 640,
+          "width": 363,
+          "height": 42,
+          "color": "rgb(232, 238, 247)",
+          "background": "rgb(14, 26, 46)",
+          "disabled": false
+        },
+        {
+          "name": "Add",
+          "tag": "BUTTON",
+          "x": 402,
+          "y": 640,
+          "width": 59,
+          "height": 42,
+          "color": "rgb(255, 255, 255)",
+          "background": "rgb(226, 234, 246)",
+          "disabled": true
+        },
+        {
+          "name": "Start Doubles Switch",
+          "tag": "BUTTON",
+          "x": 31,
+          "y": 722,
+          "width": 328,
+          "height": 48,
+          "color": "rgb(255, 255, 255)",
+          "background": "rgb(12, 166, 120)",
+          "disabled": true
+        }
+      ],
+      "activeNav": "Practice",
+      "ariaCurrentNav": null,
+      "primaryStyle": null,
+      "errorScreen": false
+    },
+    {
+      "label": "practice-doubles-scoring",
+      "route": "/practice/doubles/scoring?session=64619d15-4c03-4bab-8468-217998f9b306",
+      "status": 200,
+      "width": 390,
+      "height": 844,
+      "documentWidth": 390,
+      "documentHeight": 844,
+      "pageWidth": 390,
+      "text": "Doubles Switch\n\n4 players\n\nEnd game\n\nALEX CARTER'S THROW\n\nD10\n\nIn order · 1/11\n\nTap the dart that hits, or Miss\n\nDart 1\nthrowing\nDart 2\n—\nDart 3\n—\nHit ✓\nMiss\n\nScoreboard\n\nAlex Carter ● to throw\nD10\n0%\n0\nJamie Ellis\nD10\n0%\n0\nMorgan Reed\nD10\n0%\n0\nAlexander Montgomery-Johnson the Third\nD10\n0%\n0",
+      "headings": [],
+      "controls": [],
+      "activeNav": null,
+      "ariaCurrentNav": null,
+      "primaryStyle": null,
+      "errorScreen": false
+    },
+    {
+      "label": "practice-checkout",
+      "route": "/practice/checkout",
+      "status": 200,
+      "title": "Random Checkout",
+      "width": 390,
+      "height": 844,
+      "documentWidth": 390,
+      "documentHeight": 1235,
+      "pageWidth": 390,
+      "text": "West Green Darts\n\nPractice arena\n\n← Practice\nRandom Checkout\n\nA random finish 2–170 each time — work out the route and take it down in 3 darts.\n\nHow to play\n🎯 You get a random checkout and a suggested route\n🎯 Throw up to 3 darts to finish it\n✅ Tap how many darts it took — or didn't finish\n🔁 A new checkout is served each time, until you end\nStart a game\nSelect player\n-- Select player --\nAlex Carter\nAlexander Montgomery-Johnson the Third\nCasey Wilson\nCharlie Brown\nChris Taylor\nDrew Roberts\nFinley Brooks\nHarper Shaw\nJamie Ellis\nJordan Evans\nLee Jones\nMorgan Reed\nRiley Davies\nRobin Woods\nSam Patel\nStart Random Checkout\nPlayer stats\n\nAlex Carter\n\nAvg darts: 3\n5/8 finished\n63%\n\nJamie Ellis\n\nAvg darts: 3\n5/8 finished\n63%\n\nMorgan Reed\n\nAvg darts: 3\n5/8 finished\n63%\n\nChris Taylor\n\nAvg darts: 3\n5/8 finished\n63%\n\nSam Patel\n\nAvg darts: 3\n5/8 finished\n63%\n\nLee Jones\n\nAvg darts: 3\n5/8 finished\n63%\nDashboard\nFixtures\nPlayers\nPractice",
+      "headings": [
+        {
+          "text": "Random Checkout",
+          "y": 124
+        },
+        {
+          "text": "How to play",
+          "y": 254
+        },
+        {
+          "text": "Start a game",
+          "y": 472
+        },
+        {
+          "text": "Player stats",
+          "y": 692
+        }
+      ],
+      "controls": [
+        {
+          "name": "← Practice",
+          "tag": "A",
+          "x": 278,
+          "y": 94,
+          "width": 81,
+          "height": 26,
+          "color": "rgb(169, 186, 214)",
+          "background": "rgba(0, 0, 0, 0)",
+          "disabled": false
+        },
+        {
+          "name": "-- Select player --Alex CarterAlexander Montgomery-Johnson the ThirdCasey WilsonCharlie Br",
+          "tag": "SELECT",
+          "x": 31,
+          "y": 536,
+          "width": 328,
+          "height": 42,
+          "color": "rgb(232, 238, 247)",
+          "background": "rgb(14, 26, 46)",
+          "disabled": false
+        },
+        {
+          "name": "Start Random Checkout",
+          "tag": "BUTTON",
+          "x": 31,
+          "y": 590,
+          "width": 328,
+          "height": 48,
+          "color": "rgb(255, 255, 255)",
+          "background": "rgb(122, 167, 248)",
+          "disabled": false
+        }
+      ],
+      "activeNav": "Practice",
+      "ariaCurrentNav": null,
+      "primaryStyle": null,
+      "errorScreen": false
+    },
+    {
+      "label": "practice-checkout-scoring",
+      "route": "/practice/checkout/scoring?session=eca19666-5af0-462a-aa93-f54166c5bdc0",
+      "status": 200,
+      "width": 390,
+      "height": 844,
+      "documentWidth": 390,
+      "documentHeight": 844,
+      "pageWidth": 390,
+      "text": "Random Checkout\n\nAlexander Montgomery-Johnson the Third\n\nEnd game\n\nCHECKOUT\n\n100\n\nT20 D20\n\nFinished: 0/0\n\nFinished in…\n\n1 dart\n2 darts\n3 darts\nDidn't finish",
+      "headings": [],
+      "controls": [],
+      "activeNav": null,
+      "ariaCurrentNav": null,
+      "primaryStyle": null,
+      "errorScreen": false
+    },
+    {
+      "label": "killer",
+      "route": "/pub-games/killer",
+      "status": 200,
+      "title": "Killer",
+      "width": 390,
+      "height": 844,
+      "documentWidth": 390,
+      "documentHeight": 844,
+      "pageWidth": 390,
+      "text": "West Green Darts\n\nPub Games\n\nKiller\n← Dashboard\nPlayers\n\nNo players yet — add at least 2\n\nAdd\nStart Game\nDashboard\nFixtures\nPlayers\nPractice",
+      "headings": [
+        {
+          "text": "Killer",
+          "y": 114
+        },
+        {
+          "text": "Players",
+          "y": 200
+        }
+      ],
+      "controls": [
+        {
+          "name": "← Dashboard",
+          "tag": "A",
+          "x": 264,
+          "y": 107,
+          "width": 95,
+          "height": 26,
+          "color": "rgb(147, 165, 196)",
+          "background": "rgba(0, 0, 0, 0)",
+          "disabled": false
+        },
+        {
+          "name": "",
+          "tag": "INPUT",
+          "x": 31,
+          "y": 308,
+          "width": 257,
+          "height": 46,
+          "color": "rgb(232, 238, 247)",
+          "background": "rgb(14, 26, 46)",
+          "disabled": false
+        },
+        {
+          "name": "Add",
+          "tag": "BUTTON",
+          "x": 296,
+          "y": 308,
+          "width": 63,
+          "height": 46,
+          "color": "rgb(226, 234, 246)",
+          "background": "rgb(36, 55, 86)",
+          "disabled": true
+        },
+        {
+          "name": "Start Game",
+          "tag": "BUTTON",
+          "x": 12,
+          "y": 389,
+          "width": 366,
+          "height": 68,
+          "color": "rgb(255, 255, 255)",
+          "background": "rgb(12, 166, 120)",
+          "disabled": true
+        }
+      ],
+      "activeNav": null,
+      "ariaCurrentNav": null,
+      "primaryStyle": null,
+      "errorScreen": false
+    },
+    {
+      "label": "settings",
+      "route": "/settings",
+      "status": 200,
+      "title": "Settings",
+      "width": 390,
+      "height": 844,
+      "documentWidth": 390,
+      "documentHeight": 844,
+      "pageWidth": 390,
+      "text": "West Green Darts\n\nAPP\n\nSettings\nActive season\n\nThe active season filters the dashboard stats and is the default selection across the app.\n\n26/27\n\nActive\n\nActive\n\n25/26\n\nSet active\nManage seasons (add / remove) →\nDashboard\nFixtures\nPlayers\nPractice",
+      "headings": [
+        {
+          "text": "Settings",
+          "y": 91
+        },
+        {
+          "text": "Active season",
+          "y": 158
+        }
+      ],
+      "controls": [
+        {
+          "name": "Set active",
+          "tag": "BUTTON",
+          "x": 248,
+          "y": 337,
+          "width": 94,
+          "height": 34,
+          "color": "rgb(198, 211, 232)",
+          "background": "rgba(0, 0, 0, 0)",
+          "disabled": false
+        },
+        {
+          "name": "Manage seasons (add / remove) →",
+          "tag": "A",
+          "x": 31,
+          "y": 412,
+          "width": 238,
+          "height": 19,
+          "color": "rgb(18, 184, 134)",
+          "background": "rgba(0, 0, 0, 0)",
+          "disabled": false
+        }
+      ],
+      "activeNav": null,
+      "ariaCurrentNav": null,
+      "primaryStyle": null,
+      "errorScreen": false
+    },
+    {
+      "label": "seasons",
+      "route": "/seasons",
+      "status": 200,
+      "title": "Manage Seasons",
+      "width": 390,
+      "height": 844,
+      "documentWidth": 390,
+      "documentHeight": 844,
+      "pageWidth": 390,
+      "text": "West Green Darts\n\nSEASONS\n\nManage Seasons\nAdd season\nSeason name (YY/YY)\nSet as current\nSave season\n\n26/27\n\nCurrent\n\n25/26\n\nSet current\nDashboard\nFixtures\nPlayers\nPractice",
+      "headings": [
+        {
+          "text": "Manage Seasons",
+          "y": 91
+        },
+        {
+          "text": "Add season",
+          "y": 158
+        }
+      ],
+      "controls": [
+        {
+          "name": "name",
+          "tag": "INPUT",
+          "x": 31,
+          "y": 222,
+          "width": 328,
+          "height": 42,
+          "color": "rgb(232, 238, 247)",
+          "background": "rgb(14, 26, 46)",
+          "disabled": false
+        },
+        {
+          "name": "",
+          "tag": "INPUT",
+          "x": 31,
+          "y": 278,
+          "width": 16,
+          "height": 16,
+          "color": "rgb(232, 238, 247)",
+          "background": "rgb(14, 26, 46)",
+          "disabled": false
+        },
+        {
+          "name": "Save season",
+          "tag": "BUTTON",
+          "x": 31,
+          "y": 308,
+          "width": 129,
+          "height": 40,
+          "color": "rgb(255, 255, 255)",
+          "background": "rgb(12, 166, 120)",
+          "disabled": false
+        },
+        {
+          "name": "Set current",
+          "tag": "BUTTON",
+          "x": 242,
+          "y": 481,
+          "width": 104,
+          "height": 30,
+          "color": "rgb(232, 238, 247)",
+          "background": "rgba(0, 0, 0, 0)",
+          "disabled": false
+        }
+      ],
+      "activeNav": null,
+      "ariaCurrentNav": null,
+      "primaryStyle": null,
+      "errorScreen": false
+    },
+    {
+      "label": "league-insights",
+      "route": "/league-insights",
+      "status": 200,
+      "title": "League insights",
+      "width": 390,
+      "height": 844,
+      "documentWidth": 390,
+      "documentHeight": 5419,
+      "pageWidth": 390,
+      "text": "West Green Darts\n← Dashboard\nLeague insights\n\nWest Green against the rest of the league\n\nBarnsley Townend Monday Night League 2\n\nSource checked 08/10/2026, 19:13:18\n\nRefresh\n\nAuto-refresh every 5 minutes from Monday 8pm to Tuesday 11:59pm (UK time). Manual refresh is always available.\n\nLeague match scores. Form uses league week order; tournament games and byes are excluded. Other teams’ dart averages and checkouts are not supplied by this source.\n\nLeague position\n\n5 · 32 points\n\nMatch record\n\n4W · 0D · 3L\n\nLegs won\n\n50.8%\n\nLast 5 matches\n\n48.9%\n\nAt home\n\n66.7% · 3 played\n\nAway\n\n38.9% · 4 played\n\nEnd-of-season projection\n\nProjected finish by expected points\n\n5th\n\nProjected final points\n\n64.9\n\nWest Green: 7 games left · about 32.9 more legs won expected, on top of 32 current points.\n\nConditional projection: the supplied fixtures do not form a complete home-and-away schedule. Missing or additional fixtures could change the final position.\n\nProjects all 42 unplayed league games, including postponed or undated fixtures. Existing deductions and official tie-breaks are retained. Fractional points show expected values.\n\nProjected final league table\nHow the season range is calculated\nHow we compare\n\nLeg share accounts for games played. Adjusted strength estimates performance against an average opponent on neutral ground; positive is above average. It accounts for opponents and home advantage, with small samples pulled towards average.\n\nWest Green adjusted strength: +1.2pp. Opposition faced: +0.5pp relative to average.\n\nAll league teams, in official table order\nPos / Team\tP\tPoints\tLeg %\tStrength\tLast 5\n1. Riverside Tavern\t7\t35\t55.6%\t+3.0pp\tL W W L W\n2. The Kingfisher\t7\t34\t54.0%\t+3.1pp\tW L W L W\n3. The Railway\t7\t33\t52.4%\t+1.5pp\tL W W L W\n4. Townend Club\t7\t33\t52.4%\t+3.1pp\tW W L W L\n5. West Green\t7\t32\t50.8%\t+1.2pp\tL W L W L\n6. Southbank Club\t7\t32\t50.8%\t-1.2pp\tL W L W W\n7. Oakfield Arms\t7\t31\t49.2%\t-1.3pp\tL W L L W\n8. Crown & Anchor\t7\t31\t49.2%\t-0.9pp\tW L L W W\n9. Central Club\t7\t30\t47.6%\t-1.1pp\tW L L W L\n10. The Red Lion\t7\t29\t46.0%\t-2.8pp\tW L W L L\n11. Northside Social\t7\t29\t46.0%\t-2.5pp\tL L W L L\n12. Oldfield Club\t7\t29\t46.0%\t-1.9pp\tW L W W L\n\nForm reads oldest → newest. Points retain official deductions; performance metrics use completed, valid score records.\n\nHead-to-head & common opponents\nCompare West Green with\nRiverside Tavern\nThe Kingfisher\nThe Railway\nTownend Club\nSouthbank Club\nOakfield Arms\nCrown & Anchor\nCentral Club\nThe Red Lion\nNorthside Social\nOldfield Club\nMeetings this season\n\nNo completed league meetings in the source.\n\nAgainst the same opponents\n\nLegs won %, with games played. Venue, timing and line-ups can differ.\n\nNo shared opponents with completed results yet.\n\nRemaining fixture legs analysis\n\nEstimates from completed league scores, allowing for opponent strength and venue. Each forecast shows West Green’s expected legs for and against, allowing you to see where the remaining points may come from. They are estimates rather than exact scores. At least five completed games per team are required.\n\nWeek 8 · The Red Lion · Home\n\nWest Green 5.3 – 3.7 The Red Lion expected legs\n\nBased on 7 West Green games and 7 opponent games.\n\nWeek 9 · The Kingfisher · Away\n\nWest Green 3.9 – 5.1 The Kingfisher expected legs\n\nBased on 7 West Green games and 7 opponent games.\n\nWeek 10 · The Red Lion · Home\n\nWest Green 5.3 – 3.7 The Red Lion expected legs\n\nBased on 7 West Green games and 7 opponent games.\n\nWeek 11 · The Kingfisher · Away\n\nWest Green 3.9 – 5.1 The Kingfisher expected legs\n\nBased on 7 West Green games and 7 opponent games.\n\nWeek 12 · The Red Lion · Home\n\nWest Green 5.3 – 3.7 The Red Lion expected legs\n\nBased on 7 West Green games and 7 opponent games.\n\nWeek 13 · The Kingfisher · Away\n\nWest Green 3.9 – 5.1 The Kingfisher expected legs\n\nBased on 7 West Green games and 7 opponent games.\n\nWeek 14 · The Red Lion · Home\n\nWest Green 5.3 – 3.7 The Red Lion expected legs\n\nBased on 7 West Green games and 7 opponent games.\n\nHow reliable is the estimate?\n\nTested on 18 past league matches, using only earlier weeks. Average score error: 1.29 legs; a simple league home-average estimate: 1.18 legs.\n\nThe strength model has not beaten the simple baseline in this test. Treat the estimates cautiously.\n\nMethod and data coverage\nRecent league results\nWeek 7 · Southbank Club 5–4 Oldfield Club\nWeek 7 · The Railway 6–3 Townend Club\nWeek 7 · The Kingfisher 7–2 West Green\nWeek 7 · The Red Lion 3–6 Oakfield Arms\nWeek 7 · Central Club 4–5 Riverside Tavern\nWeek 7 · Crown & Anchor 5–4 Northside Social\nWeek 6 · Northside Social 4–5 Southbank Club\nWeek 6 · Oldfield Club 5–4 The Railway\nWeek 6 · Townend Club 6–3 The Kingfisher\nWeek 6 · West Green 7–2 The Red Lion\nWeek 6 · Oakfield Arms 3–6 Central Club\nWeek 6 · Riverside Tavern 4–5 Crown & Anchor\nWeek 5 · Crown & Anchor 3–6 Northside Social\nWeek 5 · Southbank Club 4–5 Oldfield Club\nWeek 5 · The Railway 5–4 Townend Club\nWeek 5 · The Kingfisher 6–3 West Green\nWeek 5 · The Red Lion 7–2 Oakfield Arms\nWeek 5 · Central Club 3–6 Riverside Tavern\nWeek 4 · Riverside Tavern 7–2 Crown & Anchor\nWeek 4 · Northside Social 3–6 Southbank Club\nOpen league source ↗\nDashboard\nFixtures\nPlayers\nPractice",
+      "headings": [
+        {
+          "text": "League insights",
+          "y": 111
+        },
+        {
+          "text": "End-of-season projection",
+          "y": 810
+        },
+        {
+          "text": "Projected final league table",
+          "y": 1174
+        },
+        {
+          "text": "How the season range is calculated",
+          "y": 1206
+        },
+        {
+          "text": "How we compare",
+          "y": 1280
+        },
+        {
+          "text": "Head-to-head & common opponents",
+          "y": 2446
+        },
+        {
+          "text": "Meetings this season",
+          "y": 2580
+        },
+        {
+          "text": "Against the same opponents",
+          "y": 2648
+        },
+        {
+          "text": "Remaining fixture legs analysis",
+          "y": 2790
+        },
+        {
+          "text": "How reliable is the estimate?",
+          "y": 4102
+        },
+        {
+          "text": "Method and data coverage",
+          "y": 4274
+        },
+        {
+          "text": "Recent league results",
+          "y": 4348
+        }
+      ],
+      "controls": [
+        {
+          "name": "← Dashboard",
+          "tag": "A",
+          "x": 12,
+          "y": 78,
+          "width": 90,
+          "height": 19,
+          "color": "rgb(99, 230, 190)",
+          "background": "rgba(0, 0, 0, 0)",
+          "disabled": false
+        },
+        {
+          "name": "Refresh",
+          "tag": "BUTTON",
+          "x": 272,
+          "y": 202,
+          "width": 87,
+          "height": 42,
+          "color": "rgb(226, 234, 246)",
+          "background": "rgb(26, 42, 68)",
+          "disabled": false
+        },
+        {
+          "name": "Riverside TavernThe KingfisherThe RailwayTownend ClubSouthbank ClubOakfield ArmsCrown & An",
+          "tag": "SELECT",
+          "x": 31,
+          "y": 2514,
+          "width": 328,
+          "height": 50,
+          "color": "rgb(226, 234, 246)",
+          "background": "rgb(19, 31, 51)",
+          "disabled": false
+        },
+        {
+          "name": "Open league source ↗",
+          "tag": "A",
+          "x": 31,
+          "y": 5295,
+          "width": 144,
+          "height": 20,
+          "color": "rgb(99, 230, 190)",
+          "background": "rgba(0, 0, 0, 0)",
+          "disabled": false
+        }
+      ],
+      "activeNav": "Dashboard",
+      "ariaCurrentNav": null,
+      "primaryStyle": null,
+      "errorScreen": false
+    },
+    {
+      "label": "league-scoring",
+      "route": "/scoring?game=e3fb4ba7-7b02-41a4-a68d-3adfb055edb9&fixture=44466c5a-8361-40e9-ba41-96e98bdfff73&home=1",
+      "status": 200,
+      "title": "501 Double-Out",
+      "width": 390,
+      "height": 844,
+      "documentWidth": 390,
+      "documentHeight": 1089,
+      "pageWidth": 390,
+      "text": "501 Double-Out\n\nBest of 2 legs\n\nLive\n\nAlex Carter\n\n141\n\n● THROWING\n\nTaylor Guest\n\n40\n\n● THROWING\n\n🎯\n141 out: T20 T19 D12\nTAYLOR GUEST SCORED\n0\n26\n45\n60\n85\n100\n140\n1\n2\n3\n4\n5\n6\n7\n8\n9\n⌫\n0\n✓\n↩ Undo last score\nVisits (West)\n#1\n180\n3 darts\nRem: 321\n#2\n180\n6 darts\nRem: 141\n#3\n0\n9 darts\nRem: 141\n#4\n0\n12 darts\nRem: 141",
+      "headings": [
+        {
+          "text": "501 Double-Out",
+          "y": 13
+        },
+        {
+          "text": "Visits (West)",
+          "y": 834
+        }
+      ],
+      "controls": [
+        {
+          "name": "Back to fixture",
+          "tag": "A",
+          "x": 12,
+          "y": 12,
+          "width": 40,
+          "height": 40,
+          "color": "rgb(198, 211, 232)",
+          "background": "rgb(26, 42, 68)",
+          "disabled": false
+        },
+        {
+          "name": "Alex Carter141● Throwing",
+          "tag": "BUTTON",
+          "x": 12,
+          "y": 64,
+          "width": 179,
+          "height": 151,
+          "color": "rgb(232, 238, 247)",
+          "background": "rgb(14, 26, 46)",
+          "disabled": false
+        },
+        {
+          "name": "Taylor Guest40● Throwing",
+          "tag": "BUTTON",
+          "x": 199,
+          "y": 64,
+          "width": 179,
+          "height": 151,
+          "color": "rgb(232, 238, 247)",
+          "background": "rgba(0, 0, 0, 0)",
+          "disabled": false
+        },
+        {
+          "name": "26",
+          "tag": "BUTTON",
+          "x": 25,
+          "y": 390,
+          "width": 46,
+          "height": 34,
+          "color": "rgb(198, 211, 232)",
+          "background": "rgb(26, 42, 68)",
+          "disabled": false
+        },
+        {
+          "name": "45",
+          "tag": "BUTTON",
+          "x": 77,
+          "y": 390,
+          "width": 46,
+          "height": 34,
+          "color": "rgb(198, 211, 232)",
+          "background": "rgb(26, 42, 68)",
+          "disabled": false
+        },
+        {
+          "name": "60",
+          "tag": "BUTTON",
+          "x": 129,
+          "y": 390,
+          "width": 46,
+          "height": 34,
+          "color": "rgb(198, 211, 232)",
+          "background": "rgb(26, 42, 68)",
+          "disabled": false
+        },
+        {
+          "name": "85",
+          "tag": "BUTTON",
+          "x": 181,
+          "y": 390,
+          "width": 46,
+          "height": 34,
+          "color": "rgb(198, 211, 232)",
+          "background": "rgb(26, 42, 68)",
+          "disabled": false
+        },
+        {
+          "name": "100",
+          "tag": "BUTTON",
+          "x": 233,
+          "y": 390,
+          "width": 54,
+          "height": 34,
+          "color": "rgb(198, 211, 232)",
+          "background": "rgb(26, 42, 68)",
+          "disabled": false
+        },
+        {
+          "name": "140",
+          "tag": "BUTTON",
+          "x": 293,
+          "y": 390,
+          "width": 54,
+          "height": 34,
+          "color": "rgb(198, 211, 232)",
+          "background": "rgb(26, 42, 68)",
+          "disabled": false
+        },
+        {
+          "name": "1",
+          "tag": "BUTTON",
+          "x": 25,
+          "y": 436,
+          "width": 108,
+          "height": 69,
+          "color": "rgb(232, 238, 247)",
+          "background": "rgb(19, 34, 59)",
+          "disabled": false
+        },
+        {
+          "name": "2",
+          "tag": "BUTTON",
+          "x": 141,
+          "y": 436,
+          "width": 108,
+          "height": 69,
+          "color": "rgb(232, 238, 247)",
+          "background": "rgb(19, 34, 59)",
+          "disabled": false
+        },
+        {
+          "name": "3",
+          "tag": "BUTTON",
+          "x": 257,
+          "y": 436,
+          "width": 108,
+          "height": 69,
+          "color": "rgb(232, 238, 247)",
+          "background": "rgb(19, 34, 59)",
+          "disabled": false
+        },
+        {
+          "name": "4",
+          "tag": "BUTTON",
+          "x": 25,
+          "y": 513,
+          "width": 108,
+          "height": 69,
+          "color": "rgb(232, 238, 247)",
+          "background": "rgb(19, 34, 59)",
+          "disabled": false
+        },
+        {
+          "name": "5",
+          "tag": "BUTTON",
+          "x": 141,
+          "y": 513,
+          "width": 108,
+          "height": 69,
+          "color": "rgb(232, 238, 247)",
+          "background": "rgb(19, 34, 59)",
+          "disabled": false
+        },
+        {
+          "name": "6",
+          "tag": "BUTTON",
+          "x": 257,
+          "y": 513,
+          "width": 108,
+          "height": 69,
+          "color": "rgb(232, 238, 247)",
+          "background": "rgb(19, 34, 59)",
+          "disabled": false
+        },
+        {
+          "name": "7",
+          "tag": "BUTTON",
+          "x": 25,
+          "y": 590,
+          "width": 108,
+          "height": 69,
+          "color": "rgb(232, 238, 247)",
+          "background": "rgb(19, 34, 59)",
+          "disabled": false
+        },
+        {
+          "name": "8",
+          "tag": "BUTTON",
+          "x": 141,
+          "y": 590,
+          "width": 108,
+          "height": 69,
+          "color": "rgb(232, 238, 247)",
+          "background": "rgb(19, 34, 59)",
+          "disabled": false
+        },
+        {
+          "name": "9",
+          "tag": "BUTTON",
+          "x": 257,
+          "y": 590,
+          "width": 108,
+          "height": 69,
+          "color": "rgb(232, 238, 247)",
+          "background": "rgb(19, 34, 59)",
+          "disabled": false
+        },
+        {
+          "name": "Delete digit",
+          "tag": "BUTTON",
+          "x": 25,
+          "y": 667,
+          "width": 108,
+          "height": 69,
+          "color": "rgb(232, 238, 247)",
+          "background": "rgb(19, 34, 59)",
+          "disabled": false
+        },
+        {
+          "name": "0",
+          "tag": "BUTTON",
+          "x": 141,
+          "y": 667,
+          "width": 108,
+          "height": 69,
+          "color": "rgb(232, 238, 247)",
+          "background": "rgb(19, 34, 59)",
+          "disabled": false
+        },
+        {
+          "name": "Enter score",
+          "tag": "BUTTON",
+          "x": 257,
+          "y": 667,
+          "width": 108,
+          "height": 69,
+          "color": "rgb(232, 238, 247)",
+          "background": "rgb(19, 34, 59)",
+          "disabled": false
+        },
+        {
+          "name": "↩ Undo last score",
+          "tag": "BUTTON",
+          "x": 25,
+          "y": 748,
+          "width": 340,
+          "height": 42,
+          "color": "rgb(226, 234, 246)",
+          "background": "rgb(26, 42, 68)",
+          "disabled": false
+        }
+      ],
+      "activeNav": null,
+      "ariaCurrentNav": null,
+      "primaryStyle": null,
+      "errorScreen": false
+    },
+    {
+      "label": "players-small",
+      "route": "/players",
+      "status": 200,
+      "title": "Players",
+      "width": 320,
+      "height": 568,
+      "documentWidth": 368,
+      "documentHeight": 1554,
+      "pageWidth": 320,
+      "text": "West Green Darts\n\nTEAM ROSTER\n\nPlayers\nAdd player\nName\nActive\nSave player\nActive players\nAC\n\nAlex Carter\n\nEdit\nDeactivate\nAM\n\nAlexander Montgomery-Johnson the Third\n\nEdit\nDeactivate\nCW\n\nCasey Wilson\n\nEdit\nDeactivate\nCB\n\nCharlie Brown\n\nEdit\nDeactivate\nCT\n\nChris Taylor\n\nEdit\nDeactivate\nDR\n\nDrew Roberts\n\nEdit\nDeactivate\nHS\n\nHarper Shaw\n\nEdit\nDeactivate\nJE\n\nJamie Ellis\n\nEdit\nDeactivate\nJE\n\nJordan Evans\n\nEdit\nDeactivate\nLJ\n\nLee Jones\n\nEdit\nDeactivate\nMR\n\nMorgan Reed\n\nEdit\nDeactivate\nRD\n\nRiley Davies\n\nEdit\nDeactivate\nRW\n\nRobin Woods\n\nEdit\nDeactivate\nSP\n\nSam Patel\n\nEdit\nDeactivate\nInactive players\nDashboard\nFixtures\nPlayers\nPractice",
+      "headings": [
+        {
+          "text": "Players",
+          "y": 91
+        },
+        {
+          "text": "Add player",
+          "y": 158
+        },
+        {
+          "text": "Active players",
+          "y": 403
+        },
+        {
+          "text": "Inactive players",
+          "y": 1414
+        }
+      ],
+      "controls": [
+        {
+          "name": "name",
+          "tag": "INPUT",
+          "x": 31,
+          "y": 222,
+          "width": 258,
+          "height": 42,
+          "color": "rgb(232, 238, 247)",
+          "background": "rgb(14, 26, 46)",
+          "disabled": false
+        },
+        {
+          "name": "",
+          "tag": "INPUT",
+          "x": 31,
+          "y": 278,
+          "width": 16,
+          "height": 16,
+          "color": "rgb(232, 238, 247)",
+          "background": "rgb(14, 26, 46)",
+          "disabled": false
+        },
+        {
+          "name": "Save player",
+          "tag": "BUTTON",
+          "x": 31,
+          "y": 308,
+          "width": 124,
+          "height": 40,
+          "color": "rgb(255, 255, 255)",
+          "background": "rgb(12, 166, 120)",
+          "disabled": false
+        },
+        {
+          "name": "Edit Alex Carter",
+          "tag": "A",
+          "x": 147,
+          "y": 456,
+          "width": 53,
+          "height": 30,
+          "color": "rgb(232, 238, 247)",
+          "background": "rgba(0, 0, 0, 0)",
+          "disabled": false
+        },
+        {
+          "name": "Deactivate",
+          "tag": "BUTTON",
+          "x": 208,
+          "y": 456,
+          "width": 101,
+          "height": 30,
+          "color": "rgb(232, 238, 247)",
+          "background": "rgba(0, 0, 0, 0)",
+          "disabled": false
+        },
+        {
+          "name": "Edit Alexander Montgomery-Johnson the Third",
+          "tag": "A",
+          "x": 205,
+          "y": 545,
+          "width": 53,
+          "height": 30,
+          "color": "rgb(232, 238, 247)",
+          "background": "rgba(0, 0, 0, 0)",
+          "disabled": false
+        },
+        {
+          "name": "Deactivate",
+          "tag": "BUTTON",
+          "x": 266,
+          "y": 545,
+          "width": 101,
+          "height": 30,
+          "color": "rgb(232, 238, 247)",
+          "background": "rgba(0, 0, 0, 0)",
+          "disabled": false
+        },
+        {
+          "name": "Edit Casey Wilson",
+          "tag": "A",
+          "x": 150,
+          "y": 634,
+          "width": 53,
+          "height": 30,
+          "color": "rgb(232, 238, 247)",
+          "background": "rgba(0, 0, 0, 0)",
+          "disabled": false
+        },
+        {
+          "name": "Deactivate",
+          "tag": "BUTTON",
+          "x": 211,
+          "y": 634,
+          "width": 101,
+          "height": 30,
+          "color": "rgb(232, 238, 247)",
+          "background": "rgba(0, 0, 0, 0)",
+          "disabled": false
+        },
+        {
+          "name": "Edit Charlie Brown",
+          "tag": "A",
+          "x": 153,
+          "y": 699,
+          "width": 53,
+          "height": 30,
+          "color": "rgb(232, 238, 247)",
+          "background": "rgba(0, 0, 0, 0)",
+          "disabled": false
+        },
+        {
+          "name": "Deactivate",
+          "tag": "BUTTON",
+          "x": 214,
+          "y": 699,
+          "width": 101,
+          "height": 30,
+          "color": "rgb(232, 238, 247)",
+          "background": "rgba(0, 0, 0, 0)",
+          "disabled": false
+        },
+        {
+          "name": "Edit Chris Taylor",
+          "tag": "A",
+          "x": 145,
+          "y": 764,
+          "width": 53,
+          "height": 30,
+          "color": "rgb(232, 238, 247)",
+          "background": "rgba(0, 0, 0, 0)",
+          "disabled": false
+        },
+        {
+          "name": "Deactivate",
+          "tag": "BUTTON",
+          "x": 206,
+          "y": 764,
+          "width": 101,
+          "height": 30,
+          "color": "rgb(232, 238, 247)",
+          "background": "rgba(0, 0, 0, 0)",
+          "disabled": false
+        },
+        {
+          "name": "Edit Drew Roberts",
+          "tag": "A",
+          "x": 158,
+          "y": 829,
+          "width": 53,
+          "height": 30,
+          "color": "rgb(232, 238, 247)",
+          "background": "rgba(0, 0, 0, 0)",
+          "disabled": false
+        },
+        {
+          "name": "Deactivate",
+          "tag": "BUTTON",
+          "x": 219,
+          "y": 829,
+          "width": 101,
+          "height": 30,
+          "color": "rgb(232, 238, 247)",
+          "background": "rgba(0, 0, 0, 0)",
+          "disabled": false
+        },
+        {
+          "name": "Edit Harper Shaw",
+          "tag": "A",
+          "x": 152,
+          "y": 894,
+          "width": 53,
+          "height": 30,
+          "color": "rgb(232, 238, 247)",
+          "background": "rgba(0, 0, 0, 0)",
+          "disabled": false
+        },
+        {
+          "name": "Deactivate",
+          "tag": "BUTTON",
+          "x": 213,
+          "y": 894,
+          "width": 101,
+          "height": 30,
+          "color": "rgb(232, 238, 247)",
+          "background": "rgba(0, 0, 0, 0)",
+          "disabled": false
+        },
+        {
+          "name": "Edit Jamie Ellis",
+          "tag": "A",
+          "x": 141,
+          "y": 959,
+          "width": 53,
+          "height": 30,
+          "color": "rgb(232, 238, 247)",
+          "background": "rgba(0, 0, 0, 0)",
+          "disabled": false
+        },
+        {
+          "name": "Deactivate",
+          "tag": "BUTTON",
+          "x": 202,
+          "y": 959,
+          "width": 101,
+          "height": 30,
+          "color": "rgb(232, 238, 247)",
+          "background": "rgba(0, 0, 0, 0)",
+          "disabled": false
+        },
+        {
+          "name": "Edit Jordan Evans",
+          "tag": "A",
+          "x": 148,
+          "y": 1024,
+          "width": 53,
+          "height": 30,
+          "color": "rgb(232, 238, 247)",
+          "background": "rgba(0, 0, 0, 0)",
+          "disabled": false
+        },
+        {
+          "name": "Deactivate",
+          "tag": "BUTTON",
+          "x": 210,
+          "y": 1024,
+          "width": 101,
+          "height": 30,
+          "color": "rgb(232, 238, 247)",
+          "background": "rgba(0, 0, 0, 0)",
+          "disabled": false
+        },
+        {
+          "name": "Edit Lee Jones",
+          "tag": "A",
+          "x": 139,
+          "y": 1089,
+          "width": 53,
+          "height": 30,
+          "color": "rgb(232, 238, 247)",
+          "background": "rgba(0, 0, 0, 0)",
+          "disabled": false
+        },
+        {
+          "name": "Deactivate",
+          "tag": "BUTTON",
+          "x": 200,
+          "y": 1089,
+          "width": 101,
+          "height": 30,
+          "color": "rgb(232, 238, 247)",
+          "background": "rgba(0, 0, 0, 0)",
+          "disabled": false
+        },
+        {
+          "name": "Edit Morgan Reed",
+          "tag": "A",
+          "x": 158,
+          "y": 1154,
+          "width": 53,
+          "height": 30,
+          "color": "rgb(232, 238, 247)",
+          "background": "rgba(0, 0, 0, 0)",
+          "disabled": false
+        },
+        {
+          "name": "Deactivate",
+          "tag": "BUTTON",
+          "x": 219,
+          "y": 1154,
+          "width": 101,
+          "height": 30,
+          "color": "rgb(232, 238, 247)",
+          "background": "rgba(0, 0, 0, 0)",
+          "disabled": false
+        },
+        {
+          "name": "Edit Riley Davies",
+          "tag": "A",
+          "x": 149,
+          "y": 1219,
+          "width": 53,
+          "height": 30,
+          "color": "rgb(232, 238, 247)",
+          "background": "rgba(0, 0, 0, 0)",
+          "disabled": false
+        },
+        {
+          "name": "Deactivate",
+          "tag": "BUTTON",
+          "x": 210,
+          "y": 1219,
+          "width": 101,
+          "height": 30,
+          "color": "rgb(232, 238, 247)",
+          "background": "rgba(0, 0, 0, 0)",
+          "disabled": false
+        },
+        {
+          "name": "Edit Robin Woods",
+          "tag": "A",
+          "x": 149,
+          "y": 1284,
+          "width": 53,
+          "height": 30,
+          "color": "rgb(232, 238, 247)",
+          "background": "rgba(0, 0, 0, 0)",
+          "disabled": false
+        },
+        {
+          "name": "Deactivate",
+          "tag": "BUTTON",
+          "x": 210,
+          "y": 1284,
+          "width": 101,
+          "height": 30,
+          "color": "rgb(232, 238, 247)",
+          "background": "rgba(0, 0, 0, 0)",
+          "disabled": false
+        },
+        {
+          "name": "Edit Sam Patel",
+          "tag": "A",
+          "x": 137,
+          "y": 1349,
+          "width": 53,
+          "height": 30,
+          "color": "rgb(232, 238, 247)",
+          "background": "rgba(0, 0, 0, 0)",
+          "disabled": false
+        },
+        {
+          "name": "Deactivate",
+          "tag": "BUTTON",
+          "x": 198,
+          "y": 1349,
+          "width": 101,
+          "height": 30,
+          "color": "rgb(232, 238, 247)",
+          "background": "rgba(0, 0, 0, 0)",
+          "disabled": false
+        },
+        {
+          "name": "Edit Finley Brooks",
+          "tag": "A",
+          "x": 151,
+          "y": 1467,
+          "width": 53,
+          "height": 30,
+          "color": "rgb(232, 238, 247)",
+          "background": "rgba(0, 0, 0, 0)",
+          "disabled": false
+        },
+        {
+          "name": "Activate",
+          "tag": "BUTTON",
+          "x": 212,
+          "y": 1467,
+          "width": 84,
+          "height": 30,
+          "color": "rgb(232, 238, 247)",
+          "background": "rgba(0, 0, 0, 0)",
+          "disabled": false
+        }
+      ],
+      "activeNav": "Players",
+      "ariaCurrentNav": null,
+      "primaryStyle": null,
+      "errorScreen": false
+    },
+    {
+      "label": "fixtures-small",
+      "route": "/fixtures",
+      "status": 200,
+      "title": "Fixtures",
+      "width": 320,
+      "height": 568,
+      "documentWidth": 320,
+      "documentHeight": 2166,
+      "pageWidth": 320,
+      "text": "West Green Darts\n\nMATCH CALENDAR\n\nFixtures\n\n14 fixtures\n\nManage seasons\nSeason\nAll seasons\n26/27\n25/26\n\nFIXTURE WINS\n\n12\n\nFIXTURE DRAWS\n\n0\n\nFIXTURE LOSSES\n\n0\n\n+/− LEGS\n\n+68\n\n106 for / 38 against\n\nGAME IN PROGRESS\n\nHome vs The Red Lion\n\n1 game added · Mon 5 Oct, 19:00\n\nOpen\n\nNEXT MATCH · IN 4 DAYS\n\nAway @ Southbank Darts & Social Club\n\nMon 12 Oct, 19:00\n\nVisitors Social Club\n\nOpen\nSuggested team\n\nvs Southbank Darts & Social Club · win your last match, or draw just 1 of your last 2, and you keep your spot. Half tags show where a player's record is strongest (games 1–3 vs 4–6).\n\nJust a suggestion\n✓\nJordan Evans\n1st half\nW\nW\n✓\nRiley Davies\n2nd half\nW\nW\n✓\nRobin Woods\n1st half\nW\nW\n✓\nAlex Carter\n2nd half\nW\nW\n✓\nCasey Wilson\n1st half\nW\nW\n✓\nSam Patel\n2nd half\nW\nW\n+\nAdd fixture\ntap to expand\nUpcoming & in progress\n2\n26/27\nAway\nUpcoming\nAway @ Southbank Darts & Social Club\nMon 12 Oct, 19:00\n\nVisitors Social Club\n\nArrive at 7:30pm. Bring team shirts.\n\n26/27\nHome\nIn progress\nHome vs The Red Lion\nMon 5 Oct, 19:00\n\nWest Green Club\n\nSynthetic active fixture for the audit.\n\nCompleted\n12\nDashboard\nFixtures\nPlayers\nPractice",
+      "headings": [
+        {
+          "text": "Fixtures",
+          "y": 126
+        },
+        {
+          "text": "Home vs The Red Lion",
+          "y": 491
+        },
+        {
+          "text": "Away @ Southbank Darts & Social Club",
+          "y": 651
+        },
+        {
+          "text": "Suggested team",
+          "y": 809
+        },
+        {
+          "text": "+Add fixturetap to expand",
+          "y": 1439
+        },
+        {
+          "text": "Upcoming & in progress2",
+          "y": 1525
+        },
+        {
+          "text": "Away @ Southbank Darts & Social Club",
+          "y": 1608
+        },
+        {
+          "text": "Home vs The Red Lion",
+          "y": 1854
+        },
+        {
+          "text": "Completed12",
+          "y": 2035
+        },
+        {
+          "text": "Away @ The Kingfisher",
+          "y": 2124
+        },
+        {
+          "text": "Home vs Northside Social",
+          "y": 2276
+        },
+        {
+          "text": "Away @ Crown & Anchor",
+          "y": 2446
+        },
+        {
+          "text": "Home vs Riverside Tavern",
+          "y": 2616
+        },
+        {
+          "text": "Away @ Central Club",
+          "y": 2786
+        },
+        {
+          "text": "Home vs Oakfield Arms",
+          "y": 2956
+        },
+        {
+          "text": "Away @ The Kingfisher",
+          "y": 3132
+        },
+        {
+          "text": "Home vs Northside Social",
+          "y": 3284
+        },
+        {
+          "text": "Away @ Crown & Anchor",
+          "y": 3454
+        },
+        {
+          "text": "Home vs Riverside Tavern",
+          "y": 3624
+        },
+        {
+          "text": "Away @ Central Club",
+          "y": 3794
+        },
+        {
+          "text": "Home vs Oakfield Arms",
+          "y": 3940
+        }
+      ],
+      "controls": [
+        {
+          "name": "Manage seasons",
+          "tag": "A",
+          "x": 171,
+          "y": 94,
+          "width": 118,
+          "height": 42,
+          "color": "rgb(198, 211, 232)",
+          "background": "rgb(19, 31, 51)",
+          "disabled": false
+        },
+        {
+          "name": "All seasons26/2725/26",
+          "tag": "SELECT",
+          "x": 86,
+          "y": 194,
+          "width": 203,
+          "height": 39,
+          "color": "rgb(244, 247, 252)",
+          "background": "rgb(19, 31, 51)",
+          "disabled": false
+        },
+        {
+          "name": "Open",
+          "tag": "A",
+          "x": 220,
+          "y": 506,
+          "width": 69,
+          "height": 40,
+          "color": "rgb(255, 255, 255)",
+          "background": "rgb(12, 166, 120)",
+          "disabled": false
+        },
+        {
+          "name": "Open",
+          "tag": "A",
+          "x": 220,
+          "y": 615,
+          "width": 69,
+          "height": 40,
+          "color": "rgb(255, 255, 255)",
+          "background": "rgb(12, 166, 120)",
+          "disabled": false
+        },
+        {
+          "name": "Select season26/27 (current)25/26",
+          "tag": "SELECT",
+          "x": 31,
+          "y": 1507,
+          "width": 258,
+          "height": 42,
+          "color": "rgb(232, 238, 247)",
+          "background": "rgb(14, 26, 46)",
+          "disabled": false
+        },
+        {
+          "name": "startsAt",
+          "tag": "INPUT",
+          "x": 31,
+          "y": 1585,
+          "width": 258,
+          "height": 44,
+          "color": "rgb(232, 238, 247)",
+          "background": "rgb(14, 26, 46)",
+          "disabled": false
+        },
+        {
+          "name": "",
+          "tag": "INPUT",
+          "x": 31,
+          "y": 1643,
+          "width": 16,
+          "height": 16,
+          "color": "rgb(232, 238, 247)",
+          "background": "rgb(14, 26, 46)",
+          "disabled": false
+        },
+        {
+          "name": "opponent",
+          "tag": "INPUT",
+          "x": 31,
+          "y": 1697,
+          "width": 258,
+          "height": 42,
+          "color": "rgb(232, 238, 247)",
+          "background": "rgb(14, 26, 46)",
+          "disabled": false
+        },
+        {
+          "name": "venue",
+          "tag": "INPUT",
+          "x": 31,
+          "y": 1775,
+          "width": 258,
+          "height": 42,
+          "color": "rgb(232, 238, 247)",
+          "background": "rgb(14, 26, 46)",
+          "disabled": false
+        },
+        {
+          "name": "Save fixture",
+          "tag": "BUTTON",
+          "x": 31,
+          "y": 1931,
+          "width": 258,
+          "height": 40,
+          "color": "rgb(255, 255, 255)",
+          "background": "rgb(12, 166, 120)",
+          "disabled": false
+        },
+        {
+          "name": "Open fixture",
+          "tag": "A",
+          "x": 233,
+          "y": 1584,
+          "width": 36,
+          "height": 36,
+          "color": "rgb(18, 184, 134)",
+          "background": "rgb(11, 46, 34)",
+          "disabled": false
+        },
+        {
+          "name": "Delete fixture",
+          "tag": "BUTTON",
+          "x": 277,
+          "y": 1584,
+          "width": 36,
+          "height": 36,
+          "color": "rgb(147, 165, 196)",
+          "background": "rgba(0, 0, 0, 0)",
+          "disabled": false
+        },
+        {
+          "name": "Open fixture",
+          "tag": "A",
+          "x": 240,
+          "y": 1814,
+          "width": 36,
+          "height": 36,
+          "color": "rgb(18, 184, 134)",
+          "background": "rgb(11, 46, 34)",
+          "disabled": false
+        },
+        {
+          "name": "Open fixture",
+          "tag": "A",
+          "x": 234,
+          "y": 2094,
+          "width": 36,
+          "height": 36,
+          "color": "rgb(18, 184, 134)",
+          "background": "rgb(11, 46, 34)",
+          "disabled": false
+        },
+        {
+          "name": "Open fixture",
+          "tag": "A",
+          "x": 234,
+          "y": 2252,
+          "width": 36,
+          "height": 36,
+          "color": "rgb(18, 184, 134)",
+          "background": "rgb(11, 46, 34)",
+          "disabled": false
+        },
+        {
+          "name": "Open fixture",
+          "tag": "A",
+          "x": 234,
+          "y": 2422,
+          "width": 36,
+          "height": 36,
+          "color": "rgb(18, 184, 134)",
+          "background": "rgb(11, 46, 34)",
+          "disabled": false
+        },
+        {
+          "name": "Open fixture",
+          "tag": "A",
+          "x": 234,
+          "y": 2592,
+          "width": 36,
+          "height": 36,
+          "color": "rgb(18, 184, 134)",
+          "background": "rgb(11, 46, 34)",
+          "disabled": false
+        },
+        {
+          "name": "Open fixture",
+          "tag": "A",
+          "x": 234,
+          "y": 2762,
+          "width": 36,
+          "height": 36,
+          "color": "rgb(18, 184, 134)",
+          "background": "rgb(11, 46, 34)",
+          "disabled": false
+        },
+        {
+          "name": "Open fixture",
+          "tag": "A",
+          "x": 234,
+          "y": 2932,
+          "width": 36,
+          "height": 36,
+          "color": "rgb(18, 184, 134)",
+          "background": "rgb(11, 46, 34)",
+          "disabled": false
+        },
+        {
+          "name": "Open fixture",
+          "tag": "A",
+          "x": 234,
+          "y": 3102,
+          "width": 36,
+          "height": 36,
+          "color": "rgb(18, 184, 134)",
+          "background": "rgb(11, 46, 34)",
+          "disabled": false
+        },
+        {
+          "name": "Open fixture",
+          "tag": "A",
+          "x": 234,
+          "y": 3260,
+          "width": 36,
+          "height": 36,
+          "color": "rgb(18, 184, 134)",
+          "background": "rgb(11, 46, 34)",
+          "disabled": false
+        },
+        {
+          "name": "Open fixture",
+          "tag": "A",
+          "x": 234,
+          "y": 3430,
+          "width": 36,
+          "height": 36,
+          "color": "rgb(18, 184, 134)",
+          "background": "rgb(11, 46, 34)",
+          "disabled": false
+        },
+        {
+          "name": "Open fixture",
+          "tag": "A",
+          "x": 234,
+          "y": 3600,
+          "width": 36,
+          "height": 36,
+          "color": "rgb(18, 184, 134)",
+          "background": "rgb(11, 46, 34)",
+          "disabled": false
+        },
+        {
+          "name": "Open fixture",
+          "tag": "A",
+          "x": 234,
+          "y": 3770,
+          "width": 36,
+          "height": 36,
+          "color": "rgb(18, 184, 134)",
+          "background": "rgb(11, 46, 34)",
+          "disabled": false
+        },
+        {
+          "name": "Open fixture",
+          "tag": "A",
+          "x": 234,
+          "y": 3916,
+          "width": 36,
+          "height": 36,
+          "color": "rgb(18, 184, 134)",
+          "background": "rgb(11, 46, 34)",
+          "disabled": false
+        }
+      ],
+      "activeNav": "Fixtures",
+      "ariaCurrentNav": null,
+      "primaryStyle": {
+        "color": "rgb(255, 255, 255)",
+        "background": "rgb(12, 166, 120)",
+        "fontSize": "14px"
+      },
+      "errorScreen": false
+    },
+    {
+      "label": "practice-x01-small",
+      "route": "/practice/scoring?session=d9d8b49e-941c-41b2-ae33-99081ce42be6&game=d193e514-7340-4f7d-b590-36ea550ace13",
+      "status": 200,
+      "width": 320,
+      "height": 568,
+      "documentWidth": 445,
+      "documentHeight": 807,
+      "pageWidth": 320,
+      "text": "← Dashboard\nSessions\nLeg 1 of 3\nAlex Carter\nAlexander Montgomery-Johnson the Third\n–\n\nALEX CARTER\n\n401\n\nALEXANDER MONTGOMERY-JOHNSON THE THIRD\n\n441\n\nSaved ✓\n\n1\n2\n3\n4\n5\n6\n7\n8\n9\n0\nEnter\nClear\nUndo\n\nAlex Carter\n\n3DA: 100.0\nF9: –\nDarts: 3\nHigh: –\n100+: 1\n\nAlexander Montgomery-Johnson the Third\n\n3DA: 60.0\nF9: –\nDarts: 3\nHigh: –\n60+: 1\nDelete session",
+      "headings": [],
+      "controls": [],
+      "activeNav": null,
+      "ariaCurrentNav": null,
+      "primaryStyle": null,
+      "errorScreen": false
+    },
+    {
+      "label": "league-scoring-landscape",
+      "route": "/scoring?game=e3fb4ba7-7b02-41a4-a68d-3adfb055edb9&fixture=44466c5a-8361-40e9-ba41-96e98bdfff73&home=1",
+      "status": 200,
+      "title": "501 Double-Out",
+      "width": 844,
+      "height": 390,
+      "documentWidth": 844,
+      "documentHeight": 1099,
+      "pageWidth": 720,
+      "text": "501 Double-Out\n\nBest of 2 legs\n\nLive\n\nAlex Carter\n\n141\n\n● THROWING\n\nTaylor Guest\n\n40\n\n● THROWING\n\n🎯\n141 out: T20 T19 D12\nTAYLOR GUEST SCORED\n0\n26\n45\n60\n85\n100\n140\n1\n2\n3\n4\n5\n6\n7\n8\n9\n⌫\n0\n✓\n↩ Undo last score\nVisits (West)\n#1\n180\n3 darts\nRem: 321\n#2\n180\n6 darts\nRem: 141\n#3\n0\n9 darts\nRem: 141\n#4\n0\n12 darts\nRem: 141",
+      "headings": [
+        {
+          "text": "501 Double-Out",
+          "y": 17
+        },
+        {
+          "text": "Visits (West)",
+          "y": 844
+        }
+      ],
+      "controls": [
+        {
+          "name": "Back to fixture",
+          "tag": "A",
+          "x": 82,
+          "y": 16,
+          "width": 40,
+          "height": 40,
+          "color": "rgb(198, 211, 232)",
+          "background": "rgb(26, 42, 68)",
+          "disabled": false
+        },
+        {
+          "name": "Alex Carter141● Throwing",
+          "tag": "BUTTON",
+          "x": 82,
+          "y": 68,
+          "width": 336,
+          "height": 151,
+          "color": "rgb(232, 238, 247)",
+          "background": "rgb(14, 26, 46)",
+          "disabled": false
+        },
+        {
+          "name": "Taylor Guest40● Throwing",
+          "tag": "BUTTON",
+          "x": 426,
+          "y": 68,
+          "width": 336,
+          "height": 151,
+          "color": "rgb(232, 238, 247)",
+          "background": "rgba(0, 0, 0, 0)",
+          "disabled": false
+        },
+        {
+          "name": "26",
+          "tag": "BUTTON",
+          "x": 95,
+          "y": 400,
+          "width": 46,
+          "height": 34,
+          "color": "rgb(198, 211, 232)",
+          "background": "rgb(26, 42, 68)",
+          "disabled": false
+        },
+        {
+          "name": "45",
+          "tag": "BUTTON",
+          "x": 147,
+          "y": 400,
+          "width": 46,
+          "height": 34,
+          "color": "rgb(198, 211, 232)",
+          "background": "rgb(26, 42, 68)",
+          "disabled": false
+        },
+        {
+          "name": "60",
+          "tag": "BUTTON",
+          "x": 199,
+          "y": 400,
+          "width": 46,
+          "height": 34,
+          "color": "rgb(198, 211, 232)",
+          "background": "rgb(26, 42, 68)",
+          "disabled": false
+        },
+        {
+          "name": "85",
+          "tag": "BUTTON",
+          "x": 251,
+          "y": 400,
+          "width": 46,
+          "height": 34,
+          "color": "rgb(198, 211, 232)",
+          "background": "rgb(26, 42, 68)",
+          "disabled": false
+        },
+        {
+          "name": "100",
+          "tag": "BUTTON",
+          "x": 303,
+          "y": 400,
+          "width": 54,
+          "height": 34,
+          "color": "rgb(198, 211, 232)",
+          "background": "rgb(26, 42, 68)",
+          "disabled": false
+        },
+        {
+          "name": "140",
+          "tag": "BUTTON",
+          "x": 363,
+          "y": 400,
+          "width": 54,
+          "height": 34,
+          "color": "rgb(198, 211, 232)",
+          "background": "rgb(26, 42, 68)",
+          "disabled": false
+        },
+        {
+          "name": "1",
+          "tag": "BUTTON",
+          "x": 95,
+          "y": 446,
+          "width": 213,
+          "height": 69,
+          "color": "rgb(232, 238, 247)",
+          "background": "rgb(19, 34, 59)",
+          "disabled": false
+        },
+        {
+          "name": "2",
+          "tag": "BUTTON",
+          "x": 316,
+          "y": 446,
+          "width": 213,
+          "height": 69,
+          "color": "rgb(232, 238, 247)",
+          "background": "rgb(19, 34, 59)",
+          "disabled": false
+        },
+        {
+          "name": "3",
+          "tag": "BUTTON",
+          "x": 536,
+          "y": 446,
+          "width": 213,
+          "height": 69,
+          "color": "rgb(232, 238, 247)",
+          "background": "rgb(19, 34, 59)",
+          "disabled": false
+        },
+        {
+          "name": "4",
+          "tag": "BUTTON",
+          "x": 95,
+          "y": 523,
+          "width": 213,
+          "height": 69,
+          "color": "rgb(232, 238, 247)",
+          "background": "rgb(19, 34, 59)",
+          "disabled": false
+        },
+        {
+          "name": "5",
+          "tag": "BUTTON",
+          "x": 316,
+          "y": 523,
+          "width": 213,
+          "height": 69,
+          "color": "rgb(232, 238, 247)",
+          "background": "rgb(19, 34, 59)",
+          "disabled": false
+        },
+        {
+          "name": "6",
+          "tag": "BUTTON",
+          "x": 536,
+          "y": 523,
+          "width": 213,
+          "height": 69,
+          "color": "rgb(232, 238, 247)",
+          "background": "rgb(19, 34, 59)",
+          "disabled": false
+        },
+        {
+          "name": "7",
+          "tag": "BUTTON",
+          "x": 95,
+          "y": 600,
+          "width": 213,
+          "height": 69,
+          "color": "rgb(232, 238, 247)",
+          "background": "rgb(19, 34, 59)",
+          "disabled": false
+        },
+        {
+          "name": "8",
+          "tag": "BUTTON",
+          "x": 316,
+          "y": 600,
+          "width": 213,
+          "height": 69,
+          "color": "rgb(232, 238, 247)",
+          "background": "rgb(19, 34, 59)",
+          "disabled": false
+        },
+        {
+          "name": "9",
+          "tag": "BUTTON",
+          "x": 536,
+          "y": 600,
+          "width": 213,
+          "height": 69,
+          "color": "rgb(232, 238, 247)",
+          "background": "rgb(19, 34, 59)",
+          "disabled": false
+        },
+        {
+          "name": "Delete digit",
+          "tag": "BUTTON",
+          "x": 95,
+          "y": 677,
+          "width": 213,
+          "height": 69,
+          "color": "rgb(232, 238, 247)",
+          "background": "rgb(19, 34, 59)",
+          "disabled": false
+        },
+        {
+          "name": "0",
+          "tag": "BUTTON",
+          "x": 316,
+          "y": 677,
+          "width": 213,
+          "height": 69,
+          "color": "rgb(232, 238, 247)",
+          "background": "rgb(19, 34, 59)",
+          "disabled": false
+        },
+        {
+          "name": "Enter score",
+          "tag": "BUTTON",
+          "x": 536,
+          "y": 677,
+          "width": 213,
+          "height": 69,
+          "color": "rgb(232, 238, 247)",
+          "background": "rgb(19, 34, 59)",
+          "disabled": false
+        },
+        {
+          "name": "↩ Undo last score",
+          "tag": "BUTTON",
+          "x": 95,
+          "y": 758,
+          "width": 654,
+          "height": 42,
+          "color": "rgb(226, 234, 246)",
+          "background": "rgb(26, 42, 68)",
+          "disabled": false
+        }
+      ],
+      "activeNav": null,
+      "ariaCurrentNav": null,
+      "primaryStyle": null,
+      "errorScreen": false
+    },
+    {
+      "label": "121-landscape",
+      "route": "/practice/121/scoring?session=d86df136-51ad-49b0-ac3c-6f67d625193d",
+      "status": 200,
+      "width": 844,
+      "height": 390,
+      "documentWidth": 844,
+      "documentHeight": 390,
+      "pageWidth": 720,
+      "text": "‹ 121 Challenge\n\nAlexander Montgomery-Johnson the Third\n\nEnd game\nTarget 121 / 170\nLocked base 121\n\nREMAINING\n\n121\n\nVISIT\n\n1 / 3\n\nSuggested checkout\n\nT20\nT11\nD14\nVisit 1 score\n\nEnter the total for this visit.\n\n1\n2\n3\n4\n5\n6\n7\n8\n9\n⌫\n0\nClear\nMiss · 0\nBust\nEnter score\nCheckout help & game rules\nVisit history · 0",
+      "headings": [],
+      "controls": [
+        {
+          "name": "‹ 121 Challenge",
+          "tag": "A",
+          "x": 62,
+          "y": 5,
+          "width": 106,
+          "height": 19,
+          "color": "rgb(232, 238, 247)",
+          "background": "rgba(0, 0, 0, 0)",
+          "disabled": false
+        },
+        {
+          "name": "End game",
+          "tag": "BUTTON",
+          "x": 691,
+          "y": 5,
+          "width": 91,
+          "height": 36,
+          "color": "rgb(220, 232, 248)",
+          "background": "rgb(27, 45, 73)",
+          "disabled": false
+        },
+        {
+          "name": "Visit score",
+          "tag": "INPUT",
+          "x": 711,
+          "y": 50,
+          "width": 66,
+          "height": 32,
+          "color": "rgb(255, 255, 255)",
+          "background": "rgb(19, 34, 59)",
+          "disabled": false
+        },
+        {
+          "name": "1",
+          "tag": "BUTTON",
+          "x": 394,
+          "y": 86,
+          "width": 60,
+          "height": 96,
+          "color": "rgb(255, 255, 255)",
+          "background": "rgb(27, 45, 73)",
+          "disabled": false
+        },
+        {
+          "name": "2",
+          "tag": "BUTTON",
+          "x": 459,
+          "y": 86,
+          "width": 60,
+          "height": 96,
+          "color": "rgb(255, 255, 255)",
+          "background": "rgb(27, 45, 73)",
+          "disabled": false
+        },
+        {
+          "name": "3",
+          "tag": "BUTTON",
+          "x": 523,
+          "y": 86,
+          "width": 60,
+          "height": 96,
+          "color": "rgb(255, 255, 255)",
+          "background": "rgb(27, 45, 73)",
+          "disabled": false
+        },
+        {
+          "name": "4",
+          "tag": "BUTTON",
+          "x": 588,
+          "y": 86,
+          "width": 60,
+          "height": 96,
+          "color": "rgb(255, 255, 255)",
+          "background": "rgb(27, 45, 73)",
+          "disabled": false
+        },
+        {
+          "name": "5",
+          "tag": "BUTTON",
+          "x": 652,
+          "y": 86,
+          "width": 60,
+          "height": 96,
+          "color": "rgb(255, 255, 255)",
+          "background": "rgb(27, 45, 73)",
+          "disabled": false
+        },
+        {
+          "name": "6",
+          "tag": "BUTTON",
+          "x": 717,
+          "y": 86,
+          "width": 60,
+          "height": 96,
+          "color": "rgb(255, 255, 255)",
+          "background": "rgb(27, 45, 73)",
+          "disabled": false
+        },
+        {
+          "name": "7",
+          "tag": "BUTTON",
+          "x": 394,
+          "y": 186,
+          "width": 60,
+          "height": 96,
+          "color": "rgb(255, 255, 255)",
+          "background": "rgb(27, 45, 73)",
+          "disabled": false
+        },
+        {
+          "name": "8",
+          "tag": "BUTTON",
+          "x": 459,
+          "y": 186,
+          "width": 60,
+          "height": 96,
+          "color": "rgb(255, 255, 255)",
+          "background": "rgb(27, 45, 73)",
+          "disabled": false
+        },
+        {
+          "name": "9",
+          "tag": "BUTTON",
+          "x": 523,
+          "y": 186,
+          "width": 60,
+          "height": 96,
+          "color": "rgb(255, 255, 255)",
+          "background": "rgb(27, 45, 73)",
+          "disabled": false
+        },
+        {
+          "name": "Delete last digit",
+          "tag": "BUTTON",
+          "x": 588,
+          "y": 186,
+          "width": 60,
+          "height": 96,
+          "color": "rgb(255, 255, 255)",
+          "background": "rgb(27, 45, 73)",
+          "disabled": true
+        },
+        {
+          "name": "0",
+          "tag": "BUTTON",
+          "x": 652,
+          "y": 186,
+          "width": 60,
+          "height": 96,
+          "color": "rgb(255, 255, 255)",
+          "background": "rgb(27, 45, 73)",
+          "disabled": false
+        },
+        {
+          "name": "Clear",
+          "tag": "BUTTON",
+          "x": 717,
+          "y": 186,
+          "width": 60,
+          "height": 96,
+          "color": "rgb(255, 255, 255)",
+          "background": "rgb(27, 45, 73)",
+          "disabled": true
+        },
+        {
+          "name": "Miss · 0",
+          "tag": "BUTTON",
+          "x": 394,
+          "y": 284,
+          "width": 114,
+          "height": 40,
+          "color": "rgb(220, 232, 248)",
+          "background": "rgb(27, 45, 73)",
+          "disabled": false
+        },
+        {
+          "name": "Bust",
+          "tag": "BUTTON",
+          "x": 512,
+          "y": 284,
+          "width": 91,
+          "height": 40,
+          "color": "rgb(220, 232, 248)",
+          "background": "rgb(27, 45, 73)",
+          "disabled": false
+        },
+        {
+          "name": "Enter score",
+          "tag": "BUTTON",
+          "x": 607,
+          "y": 284,
+          "width": 170,
+          "height": 40,
+          "color": "rgb(240, 255, 249)",
+          "background": "rgb(18, 101, 78)",
+          "disabled": true
+        },
+        {
+          "name": "Checkout help & game rules",
+          "tag": "BUTTON",
+          "x": 62,
+          "y": 350,
+          "width": 417,
+          "height": 34,
+          "color": "rgb(220, 232, 248)",
+          "background": "rgb(27, 45, 73)",
+          "disabled": false
+        },
+        {
+          "name": "Visit history · 0",
+          "tag": "BUTTON",
+          "x": 485,
+          "y": 350,
+          "width": 298,
+          "height": 34,
+          "color": "rgb(220, 232, 248)",
+          "background": "rgb(27, 45, 73)",
+          "disabled": false
+        }
+      ],
+      "activeNav": null,
+      "ariaCurrentNav": null,
+      "primaryStyle": null,
+      "errorScreen": false
+    },
+    {
+      "label": "dashboard-desktop",
+      "route": "/dashboard",
+      "status": 200,
+      "title": "Dashboard",
+      "width": 1440,
+      "height": 1000,
+      "documentWidth": 1440,
+      "documentHeight": 8114,
+      "pageWidth": 720,
+      "text": "West Green Darts\n\nTEAM HQ\n\nDashboard\nSeason 26/27\n\nMATCH IN PROGRESS\n\nAlex Carter vs Taylor Guest\n\nThe Red Lion · 5 Oct\n\nResume scoring\nView fixture\nTeam snapshot\n\nLEGS W/L\n\n106/38\n\nWIN RATE\n\n74%\n\n3DA\n\n80.6\n\nCHECKOUT\n\n46%\n\nDARTS/LEG\n\n20.0\n\nHIGH FINISH\n\n100\n\n📅 Fixtures\n→\n🎯 Practice\n→\n👥 Players\n→\n💀 Killer\n→\n\nLeague insights\n\nTeam form, head-to-head results and upcoming fixture estimates\n\n→\nLeague snapshot\nRefresh\n\nBarnsley Townend Monday Night League 2\n\nWest Green · 5th · 32 points\n\nWest Green and up to three teams above and below\nPos\tTeam\tPoints\n2\tThe Kingfisher\t34\n3\tThe Railway\t33\n4\tTownend Club\t33\n5\tWest Green\t32\n6\tSouthbank Club\t32\n7\tOakfield Arms\t31\n8\tCrown & Anchor\t31\n\nSource checked 08/10/2026, 19:13:18\n\nAuto-refresh every 5 minutes from Monday 8pm to Tuesday 11:59pm (UK time). Manual refresh is always available.\n\nLeague insights →View full league table ↗\n✨ AI season summary\n\n🔥 ON FIRE\n\nRiley Davies\n\n4 wins in their last 5 matches · on a 4-match streak\n\nL\nW\nW\nW\nW\nHonours board\n\nSeason 26/27 · Rate awards need at least six completed legs. Matches and legs played are shown so each result has context. Equal results share the honour.\n\n🏆 Winning impact\n\n80.0%\n\nAlexander Montgomery-Johnson the Third\n\n8 wins from 10 legs\n\n5 matches with completed legs · 10 legs played\n\nCharlie Brown\n\n8 wins from 10 legs\n\n5 matches with completed legs · 10 legs played\n\nDrew Roberts\n\n8 wins from 10 legs\n\n5 matches with completed legs · 10 legs played\n\nHarper Shaw\n\n8 wins from 10 legs\n\n5 matches with completed legs · 10 legs played\n\nJordan Evans\n\n8 wins from 10 legs\n\n5 matches with completed legs · 10 legs played\n\nMorgan Reed\n\n8 wins from 10 legs\n\n5 matches with completed legs · 10 legs played\n\nRiley Davies\n\n8 wins from 10 legs\n\n5 matches with completed legs · 10 legs played\n\nRobin Woods\n\n8 wins from 10 legs\n\n5 matches with completed legs · 10 legs played\n\nSam Patel\n\n8 wins from 10 legs\n\n5 matches with completed legs · 10 legs played\n\nHighest leg win percentage · 6+ completed legs\n\n🎯 Best scorer\n\n83.1\n\nCharlie Brown\n\n3-dart average across 178 recorded darts\n\n5 matches with completed legs · 10 legs played\n\nMorgan Reed\n\n3-dart average across 178 recorded darts\n\n5 matches with completed legs · 10 legs played\n\nSam Patel\n\n3-dart average across 178 recorded darts\n\n5 matches with completed legs · 10 legs played\n\nHighest three-dart average · 6+ completed legs\n\n🚀 Strongest starter\n\n90.6\n\nCharlie Brown\n\nFirst-nine average across 10 legs\n\n5 matches with completed legs · 10 legs played\n\nMorgan Reed\n\nFirst-nine average across 10 legs\n\n5 matches with completed legs · 10 legs played\n\nSam Patel\n\nFirst-nine average across 10 legs\n\n5 matches with completed legs · 10 legs played\n\nHighest first-nine average · 6+ recorded opening nines\n\n🧊 Checkout efficiency\n\n50.0%\n\nAlexander Montgomery-Johnson the Third\n\n8 checkouts from 16 visits with a possible finish\n\n5 matches with completed legs · 10 legs played\n\nHarper Shaw\n\n8 checkouts from 16 visits with a possible finish\n\n5 matches with completed legs · 10 legs played\n\nRiley Davies\n\n8 checkouts from 16 visits with a possible finish\n\n5 matches with completed legs · 10 legs played\n\nHighest finishing-visit success rate · 6+ legs and 10+ finishing visits\n\n⚡ Fastest finisher\n\n20.0 darts\n\nAlex Carter\n\nAverage across 8 wins with recorded dart counts\n\n6 matches with completed legs · 12 legs played\n\nAlexander Montgomery-Johnson the Third\n\nAverage across 8 wins with recorded dart counts\n\n5 matches with completed legs · 10 legs played\n\nCasey Wilson\n\nAverage across 6 wins with recorded dart counts\n\n5 matches with completed legs · 10 legs played\n\nCharlie Brown\n\nAverage across 8 wins with recorded dart counts\n\n5 matches with completed legs · 10 legs played\n\nChris Taylor\n\nAverage across 6 wins with recorded dart counts\n\n5 matches with completed legs · 10 legs played\n\nDrew Roberts\n\nAverage across 8 wins with recorded dart counts\n\n5 matches with completed legs · 10 legs played\n\nHarper Shaw\n\nAverage across 8 wins with recorded dart counts\n\n5 matches with completed legs · 10 legs played\n\nJamie Ellis\n\nAverage across 8 wins with recorded dart counts\n\n6 matches with completed legs · 12 legs played\n\nJordan Evans\n\nAverage across 8 wins with recorded dart counts\n\n5 matches with completed legs · 10 legs played\n\nLee Jones\n\nAverage across 6 wins with recorded dart counts\n\n5 matches with completed legs · 10 legs played\n\nMorgan Reed\n\nAverage across 8 wins with recorded dart counts\n\n5 matches with completed legs · 10 legs played\n\nRiley Davies\n\nAverage across 8 wins with recorded dart counts\n\n5 matches with completed legs · 10 legs played\n\nRobin Woods\n\nAverage across 8 wins with recorded dart counts\n\n5 matches with completed legs · 10 legs played\n\nSam Patel\n\nAverage across 8 wins with recorded dart counts\n\n5 matches with completed legs · 10 legs played\n\nFewest average darts per leg won · 6+ legs and 3+ wins with dart counts\n\n💯 Ton frequency\n\n41.9%\n\nCharlie Brown\n\n26 visits of 100+ from 62 visits (includes 140+ and 180)\n\n5 matches with completed legs · 10 legs played\n\nMorgan Reed\n\n26 visits of 100+ from 62 visits (includes 140+ and 180)\n\n5 matches with completed legs · 10 legs played\n\nSam Patel\n\n26 visits of 100+ from 62 visits (includes 140+ and 180)\n\n5 matches with completed legs · 10 legs played\n\nMost 100+ visits per 100 visits · 6+ legs and 30+ recorded visits\n\n✨ Highest checkout\n\n100\n\nAlex Carter\n\nSingle-leg achievement\n\n6 matches with completed legs · 12 legs played\n\nAlexander Montgomery-Johnson the Third\n\nSingle-leg achievement\n\n5 matches with completed legs · 10 legs played\n\nCharlie Brown\n\nSingle-leg achievement\n\n5 matches with completed legs · 10 legs played\n\nDrew Roberts\n\nSingle-leg achievement\n\n5 matches with completed legs · 10 legs played\n\nHarper Shaw\n\nSingle-leg achievement\n\n5 matches with completed legs · 10 legs played\n\nJamie Ellis\n\nSingle-leg achievement\n\n6 matches with completed legs · 12 legs played\n\nJordan Evans\n\nSingle-leg achievement\n\n5 matches with completed legs · 10 legs played\n\nMorgan Reed\n\nSingle-leg achievement\n\n5 matches with completed legs · 10 legs played\n\nRiley Davies\n\nSingle-leg achievement\n\n5 matches with completed legs · 10 legs played\n\nRobin Woods\n\nSingle-leg achievement\n\n5 matches with completed legs · 10 legs played\n\nSam Patel\n\nSingle-leg achievement\n\n5 matches with completed legs · 10 legs played\n\nBest single checkout · no minimum appearances\n\nCheckout efficiency counts visits that start on a possible finish, including busts. It is a visit success rate; darts attempted at doubles are not recorded.\n\nScoring breakdown\nView for\nAll players\nSam Patel\nMorgan Reed\nCharlie Brown\nJordan Evans\nDrew Roberts\nRobin Woods\nAlex Carter\nJamie Ellis\nRiley Davies\nHarper Shaw\nAlexander Montgomery-Johnson the Third\nLee Jones\nChris Taylor\nCasey Wilson\n\n60+ VISITS\n\n772\n\n100+ TONS\n\n348\n\n140+ TONS\n\n44\n\n180S\n\n25\n\nLeaderboard season performance · tap a player for game-by-game\nRank players by\nOverall performance\nLeg win %\n\nResults, scoring and finishing, adjusted for sample size. Provisional players follow qualified players.\n\nHow the performance score is calculated\n\n1\nCharlie Brown\n▾\nW\nW\nW\nW\nL\n\n3DA\n83.1\nFirst 9\n90.6\nPerformance 77.0/100\nQualified\nWon 8\nPlayed 10\n+6\n80% win\n5 matches · 62 visits\nHigh finish 100\n53 × 60+ · 2 × 26\nCO 47%\n20.0 darts/leg\n26 × 100+\n4 × 140+\n2 × 180\nScore breakdown\n\n1\nMorgan Reed\n▾\nW\nL\nW\nW\nW\n\n3DA\n83.1\nFirst 9\n90.6\nPerformance 77.0/100\nQualified\nWon 8\nPlayed 10\n+6\n80% win\n5 matches · 62 visits\nHigh finish 100\n53 × 60+ · 2 × 26\nCO 47%\n20.0 darts/leg\n26 × 100+\n4 × 140+\n2 × 180\nScore breakdown\n\n1\nSam Patel\n▾\nL\nW\nW\nW\nW\n\n3DA\n83.1\nFirst 9\n90.6\nPerformance 77.0/100\nQualified\nWon 8\nPlayed 10\n+6\n80% win\n5 matches · 62 visits\nHigh finish 100\n53 × 60+ · 2 × 26\nCO 47%\n20.0 darts/leg\n26 × 100+\n4 × 140+\n2 × 180\nScore breakdown\n\n4\nDrew Roberts\n▾\nW\nW\nW\nL\nW\n\n3DA\n81.7\nFirst 9\n89.2\nPerformance 64.6/100\nQualified\nWon 8\nPlayed 10\n+6\n80% win\n5 matches · 63 visits\nHigh finish 100\n55 × 60+ · 2 × 26\nCO 47%\n20.0 darts/leg\n25 × 100+\n3 × 140+\n2 × 180\nScore breakdown\n\n4\nJordan Evans\n▾\nW\nW\nL\nW\nW\n\n3DA\n81.7\nFirst 9\n89.2\nPerformance 64.6/100\nQualified\nWon 8\nPlayed 10\n+6\n80% win\n5 matches · 63 visits\nHigh finish 100\n55 × 60+ · 2 × 26\nCO 47%\n20.0 darts/leg\n25 × 100+\n3 × 140+\n2 × 180\nScore breakdown\n\n4\nRobin Woods\n▾\nW\nL\nW\nW\nW\n\n3DA\n81.7\nFirst 9\n89.2\nPerformance 64.6/100\nQualified\nWon 8\nPlayed 10\n+6\n80% win\n5 matches · 63 visits\nHigh finish 100\n55 × 60+ · 2 × 26\nCO 47%\n20.0 darts/leg\n25 × 100+\n3 × 140+\n2 × 180\nScore breakdown\n\n7\nAlexander Montgomery-Johnson the Third\n▾\nW\nW\nW\nW\nL\n\n3DA\n77.8\nFirst 9\n83.4\nPerformance 42.5/100\nQualified\nWon 8\nPlayed 10\n+6\n80% win\n5 matches · 65 visits\nHigh finish 100\n55 × 60+ · 2 × 26\nCO 50%\n20.0 darts/leg\n23 × 100+\n2 × 140+\n1 × 180\nScore breakdown\n\n7\nHarper Shaw\n▾\nW\nL\nW\nW\nW\n\n3DA\n77.8\nFirst 9\n83.4\nPerformance 42.5/100\nQualified\nWon 8\nPlayed 10\n+6\n80% win\n5 matches · 65 visits\nHigh finish 100\n55 × 60+ · 2 × 26\nCO 50%\n20.0 darts/leg\n23 × 100+\n2 × 140+\n1 × 180\nScore breakdown\n\n7\nRiley Davies\n▾\nL\nW\nW\nW\nW\n\n3DA\n77.8\nFirst 9\n83.4\nPerformance 42.5/100\nQualified\nWon 8\nPlayed 10\n+6\n80% win\n5 matches · 65 visits\nHigh finish 100\n55 × 60+ · 2 × 26\nCO 50%\n20.0 darts/leg\n23 × 100+\n2 × 140+\n1 × 180\nScore breakdown\n\n10\nAlex Carter\n▾\nW\nL\nW\nW\nW\n\n3DA\n80.9\nFirst 9\n88.4\nPerformance 37.3/100\nQualified\nWon 8\nPlayed 12\n+4\n67% win\n6 matches · 74 visits\nHigh finish 100\n64 × 60+ · 2 × 26\nCO 44%\n20.0 darts/leg\n29 × 100+\n4 × 140+\n2 × 180\nScore breakdown\n\n11\nJamie Ellis\n▾\nW\nW\nL\nW\nL\n\n3DA\n80.1\nFirst 9\n88.4\nPerformance 34.8/100\nQualified\nWon 8\nPlayed 12\n+4\n67% win\n6 matches · 74 visits\nHigh finish 100\n63 × 60+ · 2 × 26\nCO 44%\n20.0 darts/leg\n28 × 100+\n4 × 140+\n2 × 180\nScore breakdown\n\n12\nCasey Wilson\n▾\nL\nW\nL\nW\nW\n\n3DA\n79.8\nFirst 9\n89.2\nPerformance 25.2/100\nQualified\nWon 6\nPlayed 10\n+2\n60% win\n5 matches · 61 visits\nHigh finish 60\n52 × 60+ · 2 × 26\nCO 40%\n20.0 darts/leg\n23 × 100+\n3 × 140+\n2 × 180\nScore breakdown\n\n12\nChris Taylor\n▾\nW\nW\nL\nW\nL\n\n3DA\n79.8\nFirst 9\n89.2\nPerformance 25.2/100\nQualified\nWon 6\nPlayed 10\n+2\n60% win\n5 matches · 61 visits\nHigh finish 60\n52 × 60+ · 2 × 26\nCO 40%\n20.0 darts/leg\n23 × 100+\n3 × 140+\n2 × 180\nScore breakdown\n\n12\nLee Jones\n▾\nW\nL\nW\nL\nW\n\n3DA\n79.8\nFirst 9\n89.2\nPerformance 25.2/100\nQualified\nWon 6\nPlayed 10\n+2\n60% win\n5 matches · 61 visits\nHigh finish 60\n52 × 60+ · 2 × 26\nCO 40%\n20.0 darts/leg\n23 × 100+\n3 × 140+\n2 × 180\nScore breakdown\n180s hit\nSam Patel\n2 × 180\nMorgan Reed\n2 × 180\nCharlie Brown\n2 × 180\nJordan Evans\n2 × 180\nDrew Roberts\n2 × 180\nRobin Woods\n2 × 180\nPerformance charts\nExports\nDashboard\nFixtures\nPlayers\nPractice",
+      "headings": [
+        {
+          "text": "Dashboard",
+          "y": 93
+        },
+        {
+          "text": "Alex Carter vs Taylor Guest",
+          "y": 180
+        },
+        {
+          "text": "Team snapshot",
+          "y": 344
+        },
+        {
+          "text": "League snapshot",
+          "y": 838
+        },
+        {
+          "text": "✨ AI season summary",
+          "y": 1451
+        },
+        {
+          "text": "Honours board",
+          "y": 1663
+        },
+        {
+          "text": "🏆 Winning impact",
+          "y": 1764
+        },
+        {
+          "text": "🎯 Best scorer",
+          "y": 1764
+        },
+        {
+          "text": "🚀 Strongest starter",
+          "y": 2851
+        },
+        {
+          "text": "🧊 Checkout efficiency",
+          "y": 2851
+        },
+        {
+          "text": "⚡ Fastest finisher",
+          "y": 3398
+        },
+        {
+          "text": "💯 Ton frequency",
+          "y": 3398
+        },
+        {
+          "text": "✨ Highest checkout",
+          "y": 5265
+        },
+        {
+          "text": "Scoring breakdown",
+          "y": 6629
+        },
+        {
+          "text": "Leaderboard season performance · tap a player for game-by-game",
+          "y": 6848
+        },
+        {
+          "text": "How the performance score is calculated",
+          "y": 7000
+        },
+        {
+          "text": "Score breakdown",
+          "y": 7232
+        },
+        {
+          "text": "Score breakdown",
+          "y": 7456
+        },
+        {
+          "text": "Score breakdown",
+          "y": 7680
+        },
+        {
+          "text": "Score breakdown",
+          "y": 7904
+        },
+        {
+          "text": "Score breakdown",
+          "y": 8128
+        },
+        {
+          "text": "Score breakdown",
+          "y": 8352
+        },
+        {
+          "text": "Score breakdown",
+          "y": 8616
+        },
+        {
+          "text": "Score breakdown",
+          "y": 8840
+        },
+        {
+          "text": "Score breakdown",
+          "y": 9064
+        },
+        {
+          "text": "Score breakdown",
+          "y": 9288
+        },
+        {
+          "text": "Score breakdown",
+          "y": 9512
+        },
+        {
+          "text": "Score breakdown",
+          "y": 9736
+        },
+        {
+          "text": "Score breakdown",
+          "y": 9960
+        },
+        {
+          "text": "Score breakdown",
+          "y": 10184
+        },
+        {
+          "text": "180s hit",
+          "y": 7699
+        },
+        {
+          "text": "Performance charts",
+          "y": 7889
+        },
+        {
+          "text": "Exports",
+          "y": 7971
+        }
+      ],
+      "controls": [
+        {
+          "name": "Resume scoring",
+          "tag": "A",
+          "x": 399,
+          "y": 244,
+          "width": 159,
+          "height": 46,
+          "color": "rgb(255, 255, 255)",
+          "background": "rgb(12, 166, 120)",
+          "disabled": false
+        },
+        {
+          "name": "View fixture",
+          "tag": "A",
+          "x": 566,
+          "y": 244,
+          "width": 130,
+          "height": 46,
+          "color": "rgb(226, 234, 246)",
+          "background": "rgb(26, 42, 68)",
+          "disabled": false
+        },
+        {
+          "name": "📅 Fixtures→",
+          "tag": "A",
+          "x": 380,
+          "y": 570,
+          "width": 336,
+          "height": 58,
+          "color": "rgb(232, 238, 247)",
+          "background": "rgba(0, 0, 0, 0)",
+          "disabled": false
+        },
+        {
+          "name": "🎯 Practice→",
+          "tag": "A",
+          "x": 724,
+          "y": 570,
+          "width": 336,
+          "height": 58,
+          "color": "rgb(232, 238, 247)",
+          "background": "rgba(0, 0, 0, 0)",
+          "disabled": false
+        },
+        {
+          "name": "👥 Players→",
+          "tag": "A",
+          "x": 380,
+          "y": 636,
+          "width": 336,
+          "height": 58,
+          "color": "rgb(232, 238, 247)",
+          "background": "rgba(0, 0, 0, 0)",
+          "disabled": false
+        },
+        {
+          "name": "💀 Killer→",
+          "tag": "A",
+          "x": 724,
+          "y": 636,
+          "width": 336,
+          "height": 58,
+          "color": "rgb(232, 238, 247)",
+          "background": "rgba(0, 0, 0, 0)",
+          "disabled": false
+        },
+        {
+          "name": "League insightsTeam form, head-to-head results and upcoming fixture estimates→",
+          "tag": "A",
+          "x": 380,
+          "y": 710,
+          "width": 680,
+          "height": 86,
+          "color": "rgb(232, 238, 247)",
+          "background": "rgba(0, 0, 0, 0)",
+          "disabled": false
+        },
+        {
+          "name": "Refresh",
+          "tag": "BUTTON",
+          "x": 954,
+          "y": 831,
+          "width": 87,
+          "height": 42,
+          "color": "rgb(226, 234, 246)",
+          "background": "rgb(26, 42, 68)",
+          "disabled": false
+        },
+        {
+          "name": "League insights →",
+          "tag": "A",
+          "x": 399,
+          "y": 1376,
+          "width": 128,
+          "height": 20,
+          "color": "rgb(99, 230, 190)",
+          "background": "rgba(0, 0, 0, 0)",
+          "disabled": false
+        },
+        {
+          "name": "View full league table ↗",
+          "tag": "A",
+          "x": 543,
+          "y": 1376,
+          "width": 152,
+          "height": 20,
+          "color": "rgb(99, 230, 190)",
+          "background": "rgba(0, 0, 0, 0)",
+          "disabled": false
+        },
+        {
+          "name": "All playersSam PatelMorgan ReedCharlie BrownJordan EvansDrew RobertsRobin WoodsAlex Carter",
+          "tag": "SELECT",
+          "x": 460,
+          "y": 6669,
+          "width": 323,
+          "height": 35,
+          "color": "rgb(232, 238, 247)",
+          "background": "rgb(14, 26, 46)",
+          "disabled": false
+        },
+        {
+          "name": "Overall performanceLeg win %",
+          "tag": "SELECT",
+          "x": 518,
+          "y": 6884,
+          "width": 182,
+          "height": 39,
+          "color": "rgb(232, 238, 247)",
+          "background": "rgb(19, 34, 59)",
+          "disabled": false
+        },
+        {
+          "name": "1Charlie Brown▾WWWWL3DA83.1First 990.6Performance 77.0/100QualifiedWon 8Played 10+680% win",
+          "tag": "BUTTON",
+          "x": 416,
+          "y": 7058,
+          "width": 604,
+          "height": 76,
+          "color": "rgb(232, 238, 247)",
+          "background": "rgba(0, 0, 0, 0)",
+          "disabled": false
+        },
+        {
+          "name": "1Morgan Reed▾WLWWW3DA83.1First 990.6Performance 77.0/100QualifiedWon 8Played 10+680% win",
+          "tag": "BUTTON",
+          "x": 416,
+          "y": 7282,
+          "width": 604,
+          "height": 76,
+          "color": "rgb(232, 238, 247)",
+          "background": "rgba(0, 0, 0, 0)",
+          "disabled": false
+        },
+        {
+          "name": "1Sam Patel▾LWWWW3DA83.1First 990.6Performance 77.0/100QualifiedWon 8Played 10+680% win",
+          "tag": "BUTTON",
+          "x": 416,
+          "y": 7506,
+          "width": 604,
+          "height": 76,
+          "color": "rgb(232, 238, 247)",
+          "background": "rgba(0, 0, 0, 0)",
+          "disabled": false
+        },
+        {
+          "name": "4Drew Roberts▾WWWLW3DA81.7First 989.2Performance 64.6/100QualifiedWon 8Played 10+680% win",
+          "tag": "BUTTON",
+          "x": 416,
+          "y": 7730,
+          "width": 604,
+          "height": 76,
+          "color": "rgb(232, 238, 247)",
+          "background": "rgba(0, 0, 0, 0)",
+          "disabled": false
+        },
+        {
+          "name": "4Jordan Evans▾WWLWW3DA81.7First 989.2Performance 64.6/100QualifiedWon 8Played 10+680% win",
+          "tag": "BUTTON",
+          "x": 416,
+          "y": 7954,
+          "width": 604,
+          "height": 76,
+          "color": "rgb(232, 238, 247)",
+          "background": "rgba(0, 0, 0, 0)",
+          "disabled": false
+        },
+        {
+          "name": "4Robin Woods▾WLWWW3DA81.7First 989.2Performance 64.6/100QualifiedWon 8Played 10+680% win",
+          "tag": "BUTTON",
+          "x": 416,
+          "y": 8178,
+          "width": 604,
+          "height": 76,
+          "color": "rgb(232, 238, 247)",
+          "background": "rgba(0, 0, 0, 0)",
+          "disabled": false
+        },
+        {
+          "name": "7Alexander Montgomery-Johnson the Third▾WWWWL3DA77.8First 983.4Performance 42.5/100Qualifi",
+          "tag": "BUTTON",
+          "x": 416,
+          "y": 8402,
+          "width": 604,
+          "height": 116,
+          "color": "rgb(232, 238, 247)",
+          "background": "rgba(0, 0, 0, 0)",
+          "disabled": false
+        },
+        {
+          "name": "7Harper Shaw▾WLWWW3DA77.8First 983.4Performance 42.5/100QualifiedWon 8Played 10+680% win",
+          "tag": "BUTTON",
+          "x": 416,
+          "y": 8666,
+          "width": 604,
+          "height": 76,
+          "color": "rgb(232, 238, 247)",
+          "background": "rgba(0, 0, 0, 0)",
+          "disabled": false
+        },
+        {
+          "name": "7Riley Davies▾LWWWW3DA77.8First 983.4Performance 42.5/100QualifiedWon 8Played 10+680% win",
+          "tag": "BUTTON",
+          "x": 416,
+          "y": 8890,
+          "width": 604,
+          "height": 76,
+          "color": "rgb(232, 238, 247)",
+          "background": "rgba(0, 0, 0, 0)",
+          "disabled": false
+        },
+        {
+          "name": "10Alex Carter▾WLWWW3DA80.9First 988.4Performance 37.3/100QualifiedWon 8Played 12+467% win",
+          "tag": "BUTTON",
+          "x": 416,
+          "y": 9114,
+          "width": 604,
+          "height": 76,
+          "color": "rgb(232, 238, 247)",
+          "background": "rgba(0, 0, 0, 0)",
+          "disabled": false
+        },
+        {
+          "name": "11Jamie Ellis▾WWLWL3DA80.1First 988.4Performance 34.8/100QualifiedWon 8Played 12+467% win",
+          "tag": "BUTTON",
+          "x": 416,
+          "y": 9338,
+          "width": 604,
+          "height": 76,
+          "color": "rgb(232, 238, 247)",
+          "background": "rgba(0, 0, 0, 0)",
+          "disabled": false
+        },
+        {
+          "name": "12Casey Wilson▾LWLWW3DA79.8First 989.2Performance 25.2/100QualifiedWon 6Played 10+260% win",
+          "tag": "BUTTON",
+          "x": 416,
+          "y": 9562,
+          "width": 604,
+          "height": 76,
+          "color": "rgb(232, 238, 247)",
+          "background": "rgba(0, 0, 0, 0)",
+          "disabled": false
+        },
+        {
+          "name": "12Chris Taylor▾WWLWL3DA79.8First 989.2Performance 25.2/100QualifiedWon 6Played 10+260% win",
+          "tag": "BUTTON",
+          "x": 416,
+          "y": 9786,
+          "width": 604,
+          "height": 76,
+          "color": "rgb(232, 238, 247)",
+          "background": "rgba(0, 0, 0, 0)",
+          "disabled": false
+        },
+        {
+          "name": "12Lee Jones▾WLWLW3DA79.8First 989.2Performance 25.2/100QualifiedWon 6Played 10+260% win",
+          "tag": "BUTTON",
+          "x": 416,
+          "y": 10010,
+          "width": 604,
+          "height": 76,
+          "color": "rgb(232, 238, 247)",
+          "background": "rgba(0, 0, 0, 0)",
+          "disabled": false
+        },
+        {
+          "name": "All seasons26/27 (current)25/26",
+          "tag": "SELECT",
+          "x": 399,
+          "y": 8023,
+          "width": 209,
+          "height": 31,
+          "color": "rgb(232, 238, 247)",
+          "background": "rgb(14, 26, 46)",
+          "disabled": false
+        },
+        {
+          "name": "All fixturesOldfield Club (25/26)Oakfield Arms (26/27)Central Club (26/27)Riverside Tavern",
+          "tag": "SELECT",
+          "x": 616,
+          "y": 8023,
+          "width": 209,
+          "height": 31,
+          "color": "rgb(232, 238, 247)",
+          "background": "rgb(14, 26, 46)",
+          "disabled": false
+        },
+        {
+          "name": "CSVJSON",
+          "tag": "SELECT",
+          "x": 832,
+          "y": 8023,
+          "width": 209,
+          "height": 31,
+          "color": "rgb(232, 238, 247)",
+          "background": "rgb(14, 26, 46)",
+          "disabled": false
+        },
+        {
+          "name": "Download scoring events",
+          "tag": "A",
+          "x": 399,
+          "y": 8066,
+          "width": 642,
+          "height": 20,
+          "color": "rgb(18, 184, 134)",
+          "background": "rgba(0, 0, 0, 0)",
+          "disabled": false
+        },
+        {
+          "name": "Download fixtures",
+          "tag": "A",
+          "x": 399,
+          "y": 8094,
+          "width": 642,
+          "height": 20,
+          "color": "rgb(18, 184, 134)",
+          "background": "rgba(0, 0, 0, 0)",
+          "disabled": false
+        },
+        {
+          "name": "Download player stats",
+          "tag": "A",
+          "x": 399,
+          "y": 8122,
+          "width": 642,
+          "height": 20,
+          "color": "rgb(18, 184, 134)",
+          "background": "rgba(0, 0, 0, 0)",
+          "disabled": false
+        }
+      ],
+      "activeNav": "Dashboard",
+      "ariaCurrentNav": null,
+      "primaryStyle": {
+        "color": "rgb(255, 255, 255)",
+        "background": "rgb(12, 166, 120)",
+        "fontSize": "16px"
+      },
+      "errorScreen": false
+    },
+    {
+      "label": "dashboard-expanded-charts",
+      "chartTicks": [
+        "Morgan Reed",
+        "Drew Roberts",
+        "Jamie Ellis",
+        "0",
+        "2",
+        "4",
+        "6",
+        "8",
+        "Riley Davies",
+        "Sam Patel",
+        "Drew Roberts",
+        "0",
+        "15",
+        "30",
+        "45",
+        "60",
+        "Sam Patel",
+        "Charlie Brown",
+        "Robin Woods",
+        "0",
+        "25",
+        "50",
+        "75",
+        "100",
+        "Sam Patel",
+        "Charlie Brown",
+        "Robin Woods",
+        "0",
+        "25",
+        "50",
+        "75",
+        "100",
+        "Sam Patel",
+        "Charlie Brown",
+        "Robin Woods",
+        "0",
+        "0.5",
+        "1",
+        "1.5",
+        "2"
+      ]
+    },
+    {
+      "label": "locked-scoring-link",
+      "destinationAfterRedirect": "http://localhost:3100/pin?redirect=%2Fscoring",
+      "text": "Enter team PIN\n\nOne PIN for all devices · stays unlocked for 30 days\n\n.\n\n1\n2\n3\n4\n5\n6\n7\n8\n9\n⌫\n0\n✓"
+    }
+  ],
+  "pageErrors": []
+}
