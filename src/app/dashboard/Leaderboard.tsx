@@ -5,6 +5,7 @@ import { StatBar } from "@/components/StatBar";
 import { FormPills } from "@/components/FormPills";
 import type { PlayerCard, PlayerGameStat } from "@/data/stats";
 import type { PerformanceLeaderboard, PlayerPerformance } from "@/lib/playerPerformance";
+import type { PlayerAura } from "@/lib/playerAura";
 import { compareLeaderboardPlayers } from "@/lib/leaderboard";
 import { LeaderboardExplanation } from "./LeaderboardExplanation";
 import { loadPlayerGameLogAction } from "./actions";
@@ -14,9 +15,10 @@ type Props = {
   formByPlayer: Record<string, ("W" | "D" | "L")[]>;
   seasonId: string;
   performance: PerformanceLeaderboard;
+  auras: Record<string, PlayerAura>;
 };
 
-export function Leaderboard({ players, formByPlayer, seasonId, performance }: Props) {
+export function Leaderboard({ players, formByPlayer, seasonId, performance, auras }: Props) {
   const [ranking, setRanking] = useState<"performance" | "wins">("performance");
   const ratingsById = new Map(performance.ratings.map(r => [r.playerId, r]));
   const playersById = new Map(players.map(p => [p.player_id, p]));
@@ -117,6 +119,7 @@ export function Leaderboard({ players, formByPlayer, seasonId, performance }: Pr
                 <span className="rounded-full border border-emerald-300 bg-emerald-50 text-emerald-900 px-3 py-1 text-xs font-semibold">
                   Performance {rating.score === null ? "–" : rating.score.toFixed(1) + "/100"}
                 </span>
+                <AuraBadge aura={auras[p.player_id]} />
                 <span className="rounded-full bg-slate-100 text-slate-800 px-3 py-1 text-xs font-semibold">{rating.qualified ? "Qualified" : "Provisional"}</span>
                 <span className="rounded-full bg-emerald-50 text-emerald-700 px-3 py-1 text-xs font-semibold">
                   Won {p.legs_won}
@@ -191,6 +194,27 @@ export function Leaderboard({ players, formByPlayer, seasonId, performance }: Pr
       })}
       </div>
     </div>
+  );
+}
+
+const AURA_STYLES: Record<string, string> = {
+  inferno: "border-orange-300 bg-orange-50 text-orange-900",
+  electric: "border-violet-300 bg-violet-50 text-violet-900",
+  sparkling: "border-sky-300 bg-sky-50 text-sky-900",
+  glimmer: "border-indigo-200 bg-indigo-50 text-indigo-800",
+  steady: "border-slate-200 bg-slate-50 text-slate-600",
+};
+
+function AuraBadge({ aura }: { aura?: PlayerAura }) {
+  if (!aura?.tier) return null;
+  const detail = aura.components.map(c => `${c.label}: ${c.percentile.toFixed(0)}th pct`).join(" · ");
+  return (
+    <span
+      title={`${aura.tier.blurb}. Flair ${aura.score!.toFixed(0)}/100${aura.provisional ? " (provisional)" : ""}. ${detail}`}
+      className={`rounded-full border px-3 py-1 text-xs font-semibold ${AURA_STYLES[aura.tier.id]}`}
+    >
+      {aura.tier.emoji} {aura.tier.name} aura{aura.trait ? ` · ${aura.trait}` : ""}{aura.provisional ? " (forming)" : ""}
+    </span>
   );
 }
 
