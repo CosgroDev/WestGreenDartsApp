@@ -7,6 +7,7 @@ import { Suspense } from "react";
 import { ResumeMatch } from "./ResumeMatch";
 import { PerformanceCharts } from "./PerformanceCharts";
 import { buildPerformanceLeaderboard } from "@/lib/playerPerformance";
+import { buildPlayerAuras } from "@/lib/playerAura";
 import { FormPills } from "@/components/FormPills";
 import { ExportLinks } from "./ExportLinks";
 import { ScoringBreakdown } from "./ScoringBreakdown";
@@ -28,6 +29,7 @@ export default async function DashboardPage() {
     getFixtures(undefined, false)
   ]);
   const performance = buildPerformanceLeaderboard(players);
+  const auras = Object.fromEntries(buildPlayerAuras(players));
   const playersByLegs = [...players].sort((a, b) => b.legs_won - a.legs_won);
   const formById = new Map(playerForm.map((f) => [f.player_id, f.matches.map((m) => m.result)]));
   const playersBy3da = [...players].sort((a, b) => (b.three_dart_avg ?? 0) - (a.three_dart_avg ?? 0));
@@ -252,6 +254,7 @@ export default async function DashboardPage() {
         <Leaderboard
           players={players}
           performance={performance}
+          auras={auras}
           formByPlayer={Object.fromEntries(formById)}
           seasonId={currentSeasonId}
         />
