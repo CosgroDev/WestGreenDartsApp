@@ -71,7 +71,7 @@ export const MATCH_SYSTEM_PROMPT = `You are an experienced darts coach writing a
 The match arrives as JSON:
 - "match": the result and match-level stats for the West Green player.
 - "derived": numbers worked out from every visit — scoring-phase average (visits started above 170), darts needed to reach a finish, darts spent on the finish in legs won, legs lost while on a finish, low-scoring visits, and a per-leg story.
-- "seasonBaseline": the player's own season so far (when available), with "vsSeason" giving tonight minus their norm. "recentForm" is the mean leg average of their last few legs before this match.
+- "seasonBaseline": the player's own season norm (when available), with "vsSeason" giving tonight minus their norm. "recentForm" is the mean leg average of their last few legs before this match.
 - "legs": every visit with the score left afterwards, so you can see exactly where a leg turned.
 
 ${DARTS_BENCHMARKS}
@@ -282,8 +282,16 @@ export function buildSeasonBaseline(
   recentLegs = 6
 ): SeasonBaseline | null {
   if (!card || card.legs_played === 0) return null;
-  // log is most recent first
-  const prior = log.filter((g) => !excludeGameIds.has(g.game_id) && g.three_dart_avg !== null);
+  // log is most recent first, so everything after this match's oldest leg was
+  // played before it. Reviews can be generated long after the match, so later
+  // legs must not leak into "form before this match".
+  let lastIdx = -1;
+  log.forEach((g, i) => {
+    if (excludeGameIds.has(g.game_id)) lastIdx = i;
+  });
+  const prior = log
+    .slice(lastIdx + 1)
+    .filter((g) => !excludeGameIds.has(g.game_id) && g.three_dart_avg !== null);
   const recent = prior.slice(0, recentLegs).map((g) => g.three_dart_avg as number);
   const best = prior.reduce<number | null>(
     (m, g) => (m === null ? (g.three_dart_avg as number) : Math.max(m, g.three_dart_avg as number)),

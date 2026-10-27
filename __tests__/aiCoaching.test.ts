@@ -146,6 +146,13 @@ describe("buildSeasonBaseline", () => {
     });
   });
 
+  it("ignores legs played after the reviewed match", () => {
+    // most recent first: "later" was thrown after tonight's legs g1/g2
+    const log = [logEntry("later", 80), logEntry("g1", 70), logEntry("g2", 68), logEntry("a", 40), logEntry("b", 42), logEntry("c", 44)];
+    const base = buildSeasonBaseline(card(), log, new Set(["g1", "g2"]));
+    expect(base).toMatchObject({ recentForm: 42, bestLegAvgBefore: 44 });
+  });
+
   it("returns null without a season card", () => {
     expect(buildSeasonBaseline(undefined, [], new Set())).toBeNull();
     expect(buildSeasonBaseline(card({ legs_played: 0 }), [], new Set())).toBeNull();
