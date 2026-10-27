@@ -181,7 +181,7 @@ export default async function DashboardPage() {
 
       <section className="card">
         <h2 className="text-lg font-semibold">Leaderboard</h2>
-        <p className="mb-3 text-xs text-slate-500">Season performance · tap a player for full stats</p>
+        <p className="mb-3 text-xs text-slate-500">Season performance · tap a player for full stats and ✨ AI insights</p>
         <Leaderboard
           players={players}
           performance={performance}

@@ -7,6 +7,7 @@ import type { PerformanceLeaderboard, PlayerPerformance } from "@/lib/playerPerf
 import type { PlayerAura } from "@/lib/playerAura";
 import { compareLeaderboardPlayers } from "@/lib/leaderboard";
 import { LeaderboardExplanation } from "./LeaderboardExplanation";
+import { PlayerAiInsight } from "./PlayerAiInsight";
 import { loadPlayerGameLogAction } from "./actions";
 
 type Props = {
@@ -103,6 +104,9 @@ export function Leaderboard({ players, formByPlayer, seasonId, performance, aura
                 </span>
                 <span className="ml-auto flex shrink-0 items-center gap-2">
                   <FormPills form={formByPlayer[p.player_id] ?? []} />
+                  <span className="rounded-full bg-amber-50 px-1.5 py-0.5 text-[10px] font-semibold text-amber-700 ring-1 ring-amber-200" title="AI player insights inside">
+                    ✨ AI
+                  </span>
                   <span className={`text-xs text-slate-400 transition-transform ${isOpen ? "rotate-180" : ""}`} aria-hidden>
                     ▾
                   </span>
@@ -122,6 +126,7 @@ export function Leaderboard({ players, formByPlayer, seasonId, performance, aura
             {isOpen && (
               <div className="flex flex-col gap-3 border-t border-slate-200 px-4 pb-4 pt-3">
                 <AuraBadge aura={aura} />
+                <PlayerAiInsight playerId={p.player_id} seasonId={seasonId} playerName={p.name} />
                 <dl className="grid grid-cols-2 gap-x-4 gap-y-2">
                   <DetailStat label="Won – lost" value={`${p.legs_won} – ${lost}`} />
                   <DetailStat label="Leg diff" value={diffLabel} />

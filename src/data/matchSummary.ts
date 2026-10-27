@@ -51,7 +51,7 @@ export type MatchSummary = {
   bands: LegSummary["bands"];
 };
 
-function summariseLeg(gameId: string, winner: LegSummary["winner"], visits: Visit[]): LegSummary {
+export function summariseLeg(gameId: string, winner: LegSummary["winner"], visits: Visit[]): LegSummary {
   const dartsTotal = visits.reduce((s, v) => s + v.darts, 0);
   const pointsTotal = visits.reduce((s, v) => s + (v.isBust ? 0 : v.score), 0);
   const firstThree = visits.slice(0, 3);
