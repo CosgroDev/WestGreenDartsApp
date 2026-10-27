@@ -4,21 +4,18 @@ import Anthropic from "@anthropic-ai/sdk";
 import { revalidatePath } from "next/cache";
 import { supabaseServer } from "@/lib/supabaseServer";
 import { getMatchSummary } from "@/data/matchSummary";
+import { getPlayerCards, getPlayerGameLog } from "@/data/stats";
+import {
+  MATCH_SYSTEM_PROMPT,
+  buildSeasonBaseline,
+  compareToBaseline,
+  deriveMatch,
+  round1
+} from "@/lib/aiCoaching";
 
 export type AiReviewResult =
   | { ok: true; review: string }
   | { ok: false; reason: "not_configured" | "no_data" | "error"; message?: string };
-
-const SYSTEM_PROMPT = `You are an experienced darts coach reviewing a pub-league 501 double-out match for the West Green Darts team. You understand the dynamics of darts deeply: heavy scoring around treble 20 decides how quickly a player reaches a finish; the first 9 darts set up a leg; checkout percentage and bust discipline decide tight legs; a 26 (20-5-1) signals darts drifting off the 20 bed; switching to 19s rescues a scrappy visit.
-
-You will receive the match data as JSON: per-leg visit scores for the West Green player (opponent visits are not tracked), plus aggregates. "remainingAfter" shows the score left after each visit.
-
-Write a performance review for the player, addressed to them by name, in a friendly but honest pub-team tone:
-1. One short paragraph on the overall story of the match — read the visit sequences, not just the averages (e.g. spot where a leg was lost on the doubles, or a burst of heavy scoring).
-2. One short paragraph on the biggest area to improve, grounded in the numbers.
-3. Finish with 1-2 specific practice recommendations. Prefer the games available in their app — "121 Challenge" (checkout practice from 121 to 170), "Practice 501" sessions (best of 1/3/5/7 legs from 301/501/701), and "Killer" (hitting specific numbers on demand) — and say exactly what to focus on in each.
-
-Keep it under 220 words. Plain text only, no headings or markdown.`;
 
 export async function generateAiReviewAction(gameId: string): Promise<AiReviewResult> {
   if (!process.env.ANTHROPIC_API_KEY) {
@@ -43,22 +40,43 @@ export async function generateAiReviewAction(gameId: string): Promise<AiReviewRe
   const summary = await getMatchSummary(gameId);
   if (!summary) return { ok: false, reason: "no_data" };
 
-  // Compact payload: per-leg visit list + aggregates
+  // The player's own season is the yardstick that makes the review personal —
+  // without it every match is judged in isolation and the feedback repeats.
+  let baseline = null;
+  if (summary.westPlayerId && summary.seasonId) {
+    const [cards, log] = await Promise.all([
+      getPlayerCards(summary.seasonId, true),
+      getPlayerGameLog(summary.westPlayerId, summary.seasonId)
+    ]);
+    baseline = buildSeasonBaseline(
+      cards.find((c) => c.player_id === summary.westPlayerId),
+      log,
+      new Set(summary.legs.map((l) => l.gameId))
+    );
+  }
+
   const payload = {
-    player: summary.westPlayerName,
-    opponent: summary.opponentPlayer,
-    result: summary.result,
-    legsScore: `${summary.westLegs}-${summary.oppLegs}`,
-    threeDartAvg: summary.threeDartAvg,
-    firstNineAvg: summary.firstNineAvg,
-    checkout: { hits: summary.checkoutHits, attempts: summary.checkoutAttempts },
-    highFinish: summary.highFinish,
-    busts: summary.busts,
-    bands: summary.bands,
-    legs: summary.legs.map((l) => ({
+    match: {
+      player: summary.westPlayerName,
+      opponent: summary.opponentPlayer,
+      result: summary.result,
+      legsScore: `${summary.westLegs}-${summary.oppLegs}`,
+      threeDartAvg: round1(summary.threeDartAvg),
+      firstNineAvg: round1(summary.firstNineAvg),
+      checkout: { hits: summary.checkoutHits, attempts: summary.checkoutAttempts, pct: round1(summary.checkoutPct) },
+      highFinish: summary.highFinish,
+      bestLegDarts: summary.bestLegDarts,
+      busts: summary.busts,
+      bands: summary.bands
+    },
+    derived: deriveMatch(summary.legs),
+    seasonBaseline: baseline
+      ? { ...baseline, vsSeason: compareToBaseline(summary, baseline) }
+      : null,
+    legs: summary.legs.map((l, i) => ({
+      leg: i + 1,
       winner: l.winner,
       darts: l.dartsTotal,
-      threeDartAvg: l.threeDartAvg,
       visits: l.visits.map((v) => ({
         score: v.score,
         remainingAfter: v.remainingAfter,
@@ -72,9 +90,9 @@ export async function generateAiReviewAction(gameId: string): Promise<AiReviewRe
     const client = new Anthropic();
     const response = await client.messages.create({
       model: "claude-opus-4-8",
-      max_tokens: 2048,
+      max_tokens: 4096,
       thinking: { type: "adaptive" },
-      system: SYSTEM_PROMPT,
+      system: MATCH_SYSTEM_PROMPT,
       messages: [{ role: "user", content: JSON.stringify(payload) }]
     });
 

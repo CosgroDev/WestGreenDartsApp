@@ -6,6 +6,7 @@ import { getPlayerGameLog, getPlayerCards, getTeamCard } from "@/data/stats";
 import { getSeasonToDate, getStoredSeasonSummary } from "@/data/seasonSummary";
 import { getSeasons } from "@/data/seasons";
 import { supabaseServer } from "@/lib/supabaseServer";
+import { SEASON_SYSTEM_PROMPT, playerForm, round1 } from "@/lib/aiCoaching";
 
 export async function loadPlayerGameLogAction(playerId: string, seasonId: string) {
   if (!playerId) return { ok: false as const, games: [] };
@@ -17,18 +18,6 @@ export type SeasonAiSummaryResult =
   | { ok: true; summary: string; fixtures: number; at: string | null }
   | { ok: false; reason: "not_configured" | "no_data" | "error"; message?: string };
 
-const SEASON_SYSTEM_PROMPT = `You are an experienced darts captain and coach writing the season-to-date review for the West Green Darts team. The team plays league nights (fixtures); each fixture is up to six singles matches (501 double-out), one West Green player against one opponent over a set of legs. You understand darts deeply: heavy scoring around treble 20 decides how quickly a player reaches a finish; the first 9 darts set up a leg; checkout percentage and bust discipline decide tight legs; a 26 (20-5-1) signals darts drifting off the 20 bed; switching to 19s rescues a scrappy visit.
-
-You will receive the season so far as JSON: the team's fixture-by-fixture results, team-wide aggregates across every completed leg, and a per-player breakdown. Only West Green visits are tracked — opponents' visits are not.
-
-Write a season-to-date review for the whole team, in a friendly but honest pub-team captain's tone:
-1. One short paragraph on the story of the season so far — how the team is tracking on results, who is carrying the form, and the overall trend across fixtures.
-2. One short paragraph on the biggest collective area to improve, grounded in the team-wide numbers (scoring power, leg starts, finishing, busts/26s).
-3. Finish with 1-2 specific things the squad should drill together. Prefer the games in their app — "121 Challenge" (checkout practice from 121 to 170), "Practice 501" sessions (best of 1/3/5/7 legs from 301/501/701), and "Killer" (hitting specific numbers on demand) — and say exactly what to focus on.
-
-Refer to players by name where it adds something, but keep the focus on the team and the season as a whole. Keep it under 280 words. Plain text only, no headings or markdown.`;
-
-const round1 = (n: number | null) => (n === null ? null : Math.round(n * 10) / 10);
 
 /**
  * Generate (or read back) the season-to-date AI summary for the dashboard.
@@ -55,17 +44,22 @@ export async function generateSeasonAiSummaryAction(seasonId: string): Promise<S
   }
 
   const [team, players] = await Promise.all([getTeamCard(id), getPlayerCards(id)]);
+  // Recent-vs-earlier form per player turns a snapshot into a trend.
+  const logs = await Promise.all(players.map((p) => getPlayerGameLog(p.player_id, id)));
 
   const payload = {
-    completedFixtures: season.completedFixtures,
-    fixtureRecord: `${season.fixtureWins}W-${season.fixtureDraws}D-${season.fixtureLosses}L`,
-    fixtures: season.fixtures.map((f) => ({
-      opponent: f.opponent,
-      venue: f.home ? "home" : "away",
-      result: f.result,
-      matchRecord: `${f.matchWins}W-${f.matchDraws}D-${f.matchLosses}L`,
-      legs: `${f.legsFor}-${f.legsAgainst}`
-    })),
+    season: {
+      completedFixtures: season.completedFixtures,
+      fixtureRecord: `${season.fixtureWins}W-${season.fixtureDraws}D-${season.fixtureLosses}L`,
+      fixtures: season.fixtures.map((f) => ({
+        date: f.startsAt.slice(0, 10),
+        opponent: f.opponent,
+        venue: f.home ? "home" : "away",
+        result: f.result,
+        matchRecord: `${f.matchWins}W-${f.matchDraws}D-${f.matchLosses}L`,
+        legs: `${f.legsFor}-${f.legsAgainst}`
+      }))
+    },
     team: {
       legs: `${team.legs_won}-${team.legs_played - team.legs_won}`,
       threeDartAvg: round1(team.three_dart_avg),
@@ -77,23 +71,32 @@ export async function generateSeasonAiSummaryAction(seasonId: string): Promise<S
       hundredFortyPlus: team.hundred_forty_plus,
       oneEighty: team.one_eighty_count
     },
-    players: players.map((p) => ({
-      name: p.name,
-      legs: `${p.legs_won}-${p.legs_played - p.legs_won}`,
-      threeDartAvg: round1(p.three_dart_avg),
-      firstNineAvg: round1(p.first_nine_avg),
-      checkoutPct: round1(p.checkout_pct),
-      highFinish: p.high_finish,
-      oneEighty: p.one_eighty,
-      twentySix: p.twenty_six
-    }))
+    players: players
+      .map((p, i) => ({
+        name: p.name,
+        matches: p.matches_played,
+        legs: `${p.legs_won}-${p.legs_played - p.legs_won}`,
+        threeDartAvg: round1(p.three_dart_avg),
+        firstNineAvg: round1(p.first_nine_avg),
+        checkoutPct: round1(p.checkout_pct),
+        checkoutAttempts: p.checkout_attempts,
+        dartsPerLegWon: round1(p.darts_per_leg_won),
+        highFinish: p.high_finish,
+        hundredPlus: p.hundred_plus,
+        hundredFortyPlus: p.hundred_forty_plus,
+        oneEighty: p.one_eighty,
+        twentySix: p.twenty_six,
+        form: playerForm(logs[i])
+      }))
+      .filter((p) => p.matches > 0),
+    previousSummary: stored.summary
   };
 
   try {
     const client = new Anthropic();
     const response = await client.messages.create({
       model: "claude-opus-4-8",
-      max_tokens: 2048,
+      max_tokens: 4096,
       thinking: { type: "adaptive" },
       system: SEASON_SYSTEM_PROMPT,
       messages: [{ role: "user", content: JSON.stringify(payload) }]
