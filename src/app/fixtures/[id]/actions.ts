@@ -6,23 +6,23 @@ import Anthropic from "@anthropic-ai/sdk";
 import { revalidatePath } from "next/cache";
 import { supabaseServer } from "@/lib/supabaseServer";
 import { getFixtureTeamSummary } from "@/data/matchSummary";
+import { getPlayerCards, getPlayerGameLog } from "@/data/stats";
+import {
+  FIXTURE_SYSTEM_PROMPT,
+  REVIEW_EFFORT,
+  REVIEW_FALLBACK_MODEL,
+  REVIEW_MODEL,
+  buildSeasonBaseline,
+  compareToBaseline,
+  deriveMatch,
+  round1
+} from "@/lib/aiCoaching";
 
 const TEAM_ID = process.env.TEAM_ID;
 
 export type TeamAiReviewResult =
   | { ok: true; review: string }
   | { ok: false; reason: "not_configured" | "no_data" | "error"; message?: string };
-
-const TEAM_SYSTEM_PROMPT = `You are an experienced darts captain and coach reviewing a completed pub-league night for the West Green Darts team. The team plays a fixture of singles matches (501 double-out); each West Green player plays one opponent over a set of legs. You understand darts deeply: heavy scoring around treble 20 decides how quickly a player reaches a finish; the first 9 darts set up a leg; checkout percentage and bust discipline decide tight legs; a 26 (20-5-1) signals darts drifting off the 20 bed; switching to 19s rescues a scrappy visit.
-
-You will receive the night's data as JSON: the overall fixture result and team-wide aggregates, plus a per-match breakdown (each West Green player, their opponent, leg score and key numbers). Only West Green visits are tracked — opponent visits are not.
-
-Write a team performance review for the whole night, in a friendly but honest pub-team captain's tone:
-1. One short paragraph on the overall story of the fixture — how the team performed as a unit, who carried the night, and where it was won or lost across the board.
-2. One short paragraph on the biggest collective area to improve, grounded in the team-wide numbers (scoring power, leg starts, finishing, busts/26s).
-3. Finish with 1-2 specific things the team should drill together this week. Prefer the games in their app — "121 Challenge" (checkout practice from 121 to 170), "Practice 501" sessions (best of 1/3/5/7 legs from 301/501/701), and "Killer" (hitting specific numbers on demand) — and say exactly what to focus on.
-
-Refer to players by name where it adds something, but keep the focus on the team. Keep it under 260 words. Plain text only, no headings or markdown.`;
 
 export async function generateTeamAiReviewAction(fixtureId: string): Promise<TeamAiReviewResult> {
   if (!process.env.ANTHROPIC_API_KEY) {
@@ -45,23 +45,56 @@ export async function generateTeamAiReviewAction(fixtureId: string): Promise<Tea
   const summary = await getFixtureTeamSummary(fixtureId);
   if (!summary) return { ok: false, reason: "no_data" };
 
-  const round1 = (n: number | null) => (n === null ? null : Math.round(n * 10) / 10);
+  // Each player's season norm, so the review can tell a good night for them
+  // from a good night in general.
+  const cards = summary.seasonId ? await getPlayerCards(summary.seasonId, true) : [];
+  const matches = await Promise.all(
+    summary.matches.map(async (m) => {
+      const log =
+        m.westPlayerId && summary.seasonId ? await getPlayerGameLog(m.westPlayerId, summary.seasonId) : [];
+      const baseline = buildSeasonBaseline(
+        cards.find((c) => c.player_id === m.westPlayerId),
+        log,
+        new Set(m.legs.map((l) => l.gameId))
+      );
+      return { m, derived: deriveMatch(m.legs), vsSeason: compareToBaseline(m, baseline), baseline };
+    })
+  );
+
+  const byVsSeason = matches
+    .filter((x) => x.vsSeason?.threeDartAvg !== null && x.vsSeason?.threeDartAvg !== undefined)
+    .map((x) => ({ player: x.m.westPlayerName, vsSeasonAvg: x.vsSeason!.threeDartAvg as number }))
+    .sort((p, q) => q.vsSeasonAvg - p.vsSeasonAvg);
 
   const payload = {
-    fixture: summary.fixtureLabel,
-    opponent: summary.opponent,
-    teamResult: summary.teamResult,
-    matchesPlayed: summary.matchesPlayed,
-    matchRecord: `${summary.matchWins}W-${summary.matchDraws}D-${summary.matchLosses}L`,
-    legs: `${summary.legsFor}-${summary.legsAgainst}`,
-    teamThreeDartAvg: round1(summary.threeDartAvg),
-    teamFirstNineAvg: round1(summary.firstNineAvg),
-    teamCheckout: { hits: summary.checkoutHits, attempts: summary.checkoutAttempts },
-    teamHighFinish: summary.highFinish,
-    teamBestLegDarts: summary.bestLegDarts,
-    teamBusts: summary.busts,
-    teamBands: summary.bands,
-    matches: summary.matches.map((m) => ({
+    fixture: {
+      label: summary.fixtureLabel,
+      opponent: summary.opponent,
+      teamResult: summary.teamResult,
+      matchesPlayed: summary.matchesPlayed,
+      matchRecord: `${summary.matchWins}W-${summary.matchDraws}D-${summary.matchLosses}L`,
+      legs: `${summary.legsFor}-${summary.legsAgainst}`,
+      teamThreeDartAvg: round1(summary.threeDartAvg),
+      teamFirstNineAvg: round1(summary.firstNineAvg),
+      teamCheckout: {
+        hits: summary.checkoutHits,
+        attempts: summary.checkoutAttempts,
+        pct: round1(summary.checkoutPct)
+      },
+      teamHighFinish: summary.highFinish,
+      teamBestLegDarts: summary.bestLegDarts,
+      teamBusts: summary.busts,
+      teamBands: summary.bands
+    },
+    teamDerived: {
+      legsLostWithFinishChances: matches.reduce((s, x) => s + x.derived.legsLostWithFinishChances, 0),
+      legsLostNeverOnFinish: matches.reduce((s, x) => s + x.derived.legsLostNeverOnFinish, 0),
+      lowVisits: matches.reduce((s, x) => s + x.derived.lowVisits, 0),
+      scoringPhaseVisits: matches.reduce((s, x) => s + x.derived.scoringPhaseVisits, 0),
+      aboveSeasonNorm: byVsSeason.filter((p) => p.vsSeasonAvg >= 3),
+      belowSeasonNorm: byVsSeason.filter((p) => p.vsSeasonAvg <= -3).reverse()
+    },
+    matches: matches.map(({ m, derived, vsSeason, baseline }) => ({
       player: m.westPlayerName,
       opponent: m.opponentPlayer,
       result: m.result,
@@ -72,17 +105,30 @@ export async function generateTeamAiReviewAction(fixtureId: string): Promise<Tea
       highFinish: m.highFinish,
       bestLegDarts: m.bestLegDarts,
       busts: m.busts,
-      bands: m.bands
+      bands: m.bands,
+      derived: {
+        scoringPhaseAvg: derived.scoringPhaseAvg,
+        avgDartsToReachFinish: derived.avgDartsToReachFinish,
+        legsLostWithFinishChances: derived.legsLostWithFinishChances,
+        legsLostNeverOnFinish: derived.legsLostNeverOnFinish,
+        lowVisits: derived.lowVisits,
+        bestVisit: derived.bestVisit
+      },
+      seasonAvg: baseline?.threeDartAvg ?? null,
+      vsSeason
     }))
   };
 
   try {
     const client = new Anthropic();
-    const response = await client.messages.create({
-      model: "claude-opus-4-8",
-      max_tokens: 2048,
+    const response = await client.beta.messages.create({
+      model: REVIEW_MODEL,
+      max_tokens: 16000,
       thinking: { type: "adaptive" },
-      system: TEAM_SYSTEM_PROMPT,
+      output_config: { effort: REVIEW_EFFORT },
+      betas: ["server-side-fallback-2026-06-01"],
+      fallbacks: [{ model: REVIEW_FALLBACK_MODEL }],
+      system: FIXTURE_SYSTEM_PROMPT,
       messages: [{ role: "user", content: JSON.stringify(payload) }]
     });
 
@@ -90,7 +136,7 @@ export async function generateTeamAiReviewAction(fixtureId: string): Promise<Tea
       return { ok: false, reason: "error", message: "The AI declined to review this fixture." };
     }
     const text = response.content
-      .filter((b): b is Anthropic.TextBlock => b.type === "text")
+      .filter((b): b is Anthropic.Beta.BetaTextBlock => b.type === "text")
       .map((b) => b.text)
       .join("")
       .trim();

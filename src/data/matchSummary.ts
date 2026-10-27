@@ -28,6 +28,9 @@ export type LegSummary = {
 export type MatchSummary = {
   fixtureId: string;
   fixtureLabel: string;
+  /** Season the fixture belongs to — used to pull the player's season baseline. */
+  seasonId?: string | null;
+  westPlayerId?: string | null;
   westPlayerName: string;
   opponentPlayer: string;
   westLegs: number;
@@ -107,7 +110,7 @@ export async function getMatchSummary(gameId: string): Promise<MatchSummary | nu
   if (gameErr || !game) return null;
 
   const [{ data: fixture }, { data: siblings, error: sibErr }] = await Promise.all([
-    supabase.from("fixtures").select("id, opponent, home").eq("id", game.fixture_id).single(),
+    supabase.from("fixtures").select("id, opponent, home, season_id").eq("id", game.fixture_id).single(),
     supabase
       .from("games")
       .select("id, match_id, opponent_player, west_green_player_id, winner, status, created_at")
@@ -189,6 +192,8 @@ export async function getMatchSummary(gameId: string): Promise<MatchSummary | nu
   return {
     fixtureId: game.fixture_id,
     fixtureLabel: fixture ? `${fixture.home ? "Home vs" : "Away @"} ${fixture.opponent}` : "Fixture",
+    seasonId: (fixture as any)?.season_id ?? null,
+    westPlayerId: game.west_green_player_id ?? null,
     westPlayerName: (game as any).players?.name ?? "West Green",
     opponentPlayer: game.opponent_player || "Opponent",
     westLegs: isDraw && westLegs === 0 && oppLegs === 0 ? 1 : westLegs,
@@ -233,6 +238,7 @@ export async function getMatchAiReview(
 }
 
 export type TeamMatchSummary = {
+  westPlayerId: string | null;
   westPlayerName: string;
   opponentPlayer: string;
   result: "win" | "loss" | "draw";
@@ -247,11 +253,13 @@ export type TeamMatchSummary = {
   bestLegDarts: number | null;
   busts: number;
   bands: LegSummary["bands"];
+  legs: LegSummary[];
 };
 
 export type FixtureTeamSummary = {
   fixtureId: string;
   fixtureLabel: string;
+  seasonId: string | null;
   opponent: string;
   matchesPlayed: number;
   teamResult: "win" | "loss" | "draw";
@@ -284,7 +292,7 @@ export async function getFixtureTeamSummary(fixtureId: string): Promise<FixtureT
   if (!supabase) return null;
 
   const [{ data: fixture }, { data: games, error }] = await Promise.all([
-    supabase.from("fixtures").select("id, opponent, home").eq("id", fixtureId).single(),
+    supabase.from("fixtures").select("id, opponent, home, season_id").eq("id", fixtureId).single(),
     supabase
       .from("games")
       .select("id, match_id, opponent_player, west_green_player_id, status, created_at")
@@ -317,6 +325,7 @@ export async function getFixtureTeamSummary(fixtureId: string): Promise<FixtureT
   if (!summaries.length) return null;
 
   const matches: TeamMatchSummary[] = summaries.map((m) => ({
+    westPlayerId: m.westPlayerId ?? null,
     westPlayerName: m.westPlayerName,
     opponentPlayer: m.opponentPlayer,
     result: m.result,
@@ -330,7 +339,8 @@ export async function getFixtureTeamSummary(fixtureId: string): Promise<FixtureT
     highFinish: m.highFinish,
     bestLegDarts: m.bestLegDarts,
     busts: m.busts,
-    bands: m.bands
+    bands: m.bands,
+    legs: m.legs
   }));
 
   const matchWins = summaries.filter((m) => m.result === "win").length;
@@ -369,6 +379,7 @@ export async function getFixtureTeamSummary(fixtureId: string): Promise<FixtureT
   return {
     fixtureId,
     fixtureLabel: fixture ? `${fixture.home ? "Home vs" : "Away @"} ${fixture.opponent}` : "Fixture",
+    seasonId: (fixture as any)?.season_id ?? null,
     opponent: fixture?.opponent ?? "Opponent",
     matchesPlayed: summaries.length,
     teamResult,
