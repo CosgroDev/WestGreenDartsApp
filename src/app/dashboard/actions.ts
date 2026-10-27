@@ -6,7 +6,14 @@ import { getPlayerGameLog, getPlayerCards, getTeamCard } from "@/data/stats";
 import { getSeasonToDate, getStoredSeasonSummary } from "@/data/seasonSummary";
 import { getSeasons } from "@/data/seasons";
 import { supabaseServer } from "@/lib/supabaseServer";
-import { SEASON_SYSTEM_PROMPT, playerForm, round1 } from "@/lib/aiCoaching";
+import {
+  REVIEW_EFFORT,
+  REVIEW_FALLBACK_MODEL,
+  REVIEW_MODEL,
+  SEASON_SYSTEM_PROMPT,
+  playerForm,
+  round1
+} from "@/lib/aiCoaching";
 
 export async function loadPlayerGameLogAction(playerId: string, seasonId: string) {
   if (!playerId) return { ok: false as const, games: [] };
@@ -94,10 +101,13 @@ export async function generateSeasonAiSummaryAction(seasonId: string): Promise<S
 
   try {
     const client = new Anthropic();
-    const response = await client.messages.create({
-      model: "claude-opus-4-8",
-      max_tokens: 4096,
+    const response = await client.beta.messages.create({
+      model: REVIEW_MODEL,
+      max_tokens: 16000,
       thinking: { type: "adaptive" },
+      output_config: { effort: REVIEW_EFFORT },
+      betas: ["server-side-fallback-2026-06-01"],
+      fallbacks: [{ model: REVIEW_FALLBACK_MODEL }],
       system: SEASON_SYSTEM_PROMPT,
       messages: [{ role: "user", content: JSON.stringify(payload) }]
     });
@@ -106,7 +116,7 @@ export async function generateSeasonAiSummaryAction(seasonId: string): Promise<S
       return { ok: false, reason: "error", message: "The AI declined to review this season." };
     }
     const text = response.content
-      .filter((b): b is Anthropic.TextBlock => b.type === "text")
+      .filter((b): b is Anthropic.Beta.BetaTextBlock => b.type === "text")
       .map((b) => b.text)
       .join("")
       .trim();

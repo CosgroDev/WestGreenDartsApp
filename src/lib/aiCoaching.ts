@@ -23,6 +23,20 @@ const delta = (now: number | null | undefined, base: number | null | undefined) 
   now === null || now === undefined || base === null || base === undefined ? null : round1(now - base);
 
 // ---------------------------------------------------------------------------
+// Model
+// ---------------------------------------------------------------------------
+
+/**
+ * Reviews are short (~200-280 words) but need careful reading of the numbers.
+ * Opus 5.5 at medium effort gets that right for less than Opus 4.8 cost, and
+ * each review is generated once and cached, so per-call cost stays small.
+ */
+export const REVIEW_MODEL = "claude-opus-5-5";
+export const REVIEW_EFFORT = "medium" as const;
+/** If a request is declined by a safety classifier, the API reruns it here. */
+export const REVIEW_FALLBACK_MODEL = "claude-opus-4-8";
+
+// ---------------------------------------------------------------------------
 // Prompt text
 // ---------------------------------------------------------------------------
 

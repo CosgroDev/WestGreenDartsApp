@@ -7,6 +7,9 @@ import { getMatchSummary } from "@/data/matchSummary";
 import { getPlayerCards, getPlayerGameLog } from "@/data/stats";
 import {
   MATCH_SYSTEM_PROMPT,
+  REVIEW_EFFORT,
+  REVIEW_FALLBACK_MODEL,
+  REVIEW_MODEL,
   buildSeasonBaseline,
   compareToBaseline,
   deriveMatch,
@@ -88,10 +91,13 @@ export async function generateAiReviewAction(gameId: string): Promise<AiReviewRe
 
   try {
     const client = new Anthropic();
-    const response = await client.messages.create({
-      model: "claude-opus-4-8",
-      max_tokens: 4096,
+    const response = await client.beta.messages.create({
+      model: REVIEW_MODEL,
+      max_tokens: 16000,
       thinking: { type: "adaptive" },
+      output_config: { effort: REVIEW_EFFORT },
+      betas: ["server-side-fallback-2026-06-01"],
+      fallbacks: [{ model: REVIEW_FALLBACK_MODEL }],
       system: MATCH_SYSTEM_PROMPT,
       messages: [{ role: "user", content: JSON.stringify(payload) }]
     });
@@ -100,7 +106,7 @@ export async function generateAiReviewAction(gameId: string): Promise<AiReviewRe
       return { ok: false, reason: "error", message: "The AI declined to review this match." };
     }
     const text = response.content
-      .filter((b): b is Anthropic.TextBlock => b.type === "text")
+      .filter((b): b is Anthropic.Beta.BetaTextBlock => b.type === "text")
       .map((b) => b.text)
       .join("")
       .trim();
