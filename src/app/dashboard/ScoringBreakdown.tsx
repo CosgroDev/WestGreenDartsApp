@@ -41,9 +41,13 @@ export function ScoringBreakdown({ team, players }: Props) {
         one_eighty: team.one_eighty_count,
       };
 
+  const maximums = players
+    .filter((p) => p.one_eighty > 0)
+    .sort((a, b) => b.one_eighty - a.one_eighty);
+
   return (
     <div className="flex flex-col gap-3">
-      <div className="flex items-center gap-2">
+      <div className="flex items-center justify-between gap-2">
         <label htmlFor="scoring-player" className="text-sm text-slate-600 shrink-0">
           View for
         </label>
@@ -80,6 +84,19 @@ export function ScoringBreakdown({ team, players }: Props) {
           <p className="text-2xl font-bold text-amber-800">{bands.one_eighty}</p>
         </div>
       </div>
+
+      {!player && maximums.length > 0 && (
+        <div>
+          <p className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-slate-500">180s hit</p>
+          <div className="flex flex-wrap gap-2">
+            {maximums.map((p) => (
+              <span key={p.player_id} className="rounded-full bg-amber-50 px-3 py-1 text-sm text-amber-700">
+                <span className="font-semibold">{p.name}</span> × {p.one_eighty}
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

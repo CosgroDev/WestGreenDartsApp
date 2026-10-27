@@ -3,7 +3,7 @@ export const revalidate = 0;
 
 import Link from "next/link";
 import { getDashboardStatistics } from "@/data/dashboard";
-import { Suspense } from "react";
+import { Suspense, type ReactNode } from "react";
 import { ResumeMatch } from "./ResumeMatch";
 import { PerformanceCharts } from "./PerformanceCharts";
 import { buildPerformanceLeaderboard } from "@/lib/playerPerformance";
@@ -35,9 +35,6 @@ export default async function DashboardPage() {
   const playersBy3da = [...players].sort((a, b) => (b.three_dart_avg ?? 0) - (a.three_dart_avg ?? 0));
   const playersByFirst9 = [...players].sort((a, b) => (b.first_nine_avg ?? 0) - (a.first_nine_avg ?? 0));
   const playersBy26 = [...players].sort((a, b) => (b.twenty_six ?? 0) - (a.twenty_six ?? 0));
-  const playersBy180 = [...players]
-    .filter((p) => (p.one_eighty ?? 0) > 0)
-    .sort((a, b) => (b.one_eighty ?? 0) - (a.one_eighty ?? 0));
   const chartData = playersBy3da
     .slice(0, 6)
     .map((p) => ({ label: p.name || "—", value: Math.round((p.three_dart_avg ?? 0) * 10) / 10 }));
@@ -91,42 +88,42 @@ export default async function DashboardPage() {
 
       <Suspense fallback={<div className="card text-sm text-slate-600" role="status">Checking for a live match…</div>}><ResumeMatch /></Suspense>
 
+      {seasonToDate && seasonToDate.anomalies.length > 0 && (
+        <section className="card !border-red-200 !bg-red-50">
+          <h2 className="text-sm font-semibold text-red-800">⚠️ Fixture data needs a look</h2>
+          <p className="mt-1 text-sm text-red-700">
+            {seasonToDate.anomalies.length === 1 ? "This fixture has" : "These fixtures have"} every match settled
+            but not 6 results — a match was likely deleted and never re-entered, so it's left out of the season
+            record and AI summary until it's fixed:
+          </p>
+          <ul className="mt-2 space-y-1 text-sm text-red-700">
+            {seasonToDate.anomalies.map((a) => (
+              <li key={a.fixtureId}>
+                <Link href={`/fixtures/${a.fixtureId}`} className="underline">
+                  {new Date(a.startsAt).toLocaleDateString("en-GB", { day: "numeric", month: "short" })} vs{" "}
+                  {a.opponent}
+                </Link>{" "}
+                — {a.matchesFound} of 6 matches found
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+
       <section className="grid grid-cols-1 gap-3">
         <div className="card">
           <h2 className="text-lg font-semibold mb-3">Team snapshot</h2>
-          <div className="grid grid-cols-3 gap-2">
-            <div className="rounded-xl bg-slate-50 px-3 py-3">
-              <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">Legs W/L</p>
-              <p className="mt-1 text-xl font-bold">
-                {team.legs_won ?? 0}<span className="text-slate-500">/</span>{team.legs_played ? team.legs_played - (team.legs_won ?? 0) : 0}
-              </p>
-            </div>
-            <div className="rounded-xl bg-slate-50 px-3 py-3">
-              <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">Win rate</p>
-              <p className={`mt-1 text-xl font-bold ${winRate !== null && winRate >= 50 ? "text-emerald-700" : winRate !== null ? "text-red-600" : ""}`}>
-                {winRate !== null ? winRate.toFixed(0) + "%" : "–"}
-              </p>
-            </div>
-            <div className="rounded-xl bg-slate-50 px-3 py-3">
-              <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">3DA</p>
-              <p className="mt-1 text-xl font-bold">{team.three_dart_avg ? team.three_dart_avg.toFixed(1) : "–"}</p>
-            </div>
-            <div className="rounded-xl bg-slate-50 px-3 py-3">
-              <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">Checkout</p>
-              <p className="mt-1 text-xl font-bold">
-                {team.checkout_pct !== null ? team.checkout_pct.toFixed(0) + "%" : "–"}
-              </p>
-            </div>
-            <div className="rounded-xl bg-slate-50 px-3 py-3">
-              <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">Darts/leg</p>
-              <p className="mt-1 text-xl font-bold">
-                {team.darts_per_leg_won !== null ? team.darts_per_leg_won.toFixed(1) : "–"}
-              </p>
-            </div>
-            <div className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-3">
-              <p className="text-[11px] font-semibold uppercase tracking-wide text-amber-700">High finish</p>
-              <p className="mt-1 text-xl font-bold text-amber-700">{team.high_finish ?? "–"}</p>
-            </div>
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+            <SnapshotStat label="Won · Lost" value={<>{team.legs_won ?? 0}<span className="text-slate-500"> · </span>{team.legs_played ? team.legs_played - (team.legs_won ?? 0) : 0}</>} />
+            <SnapshotStat
+              label="Win rate"
+              value={winRate !== null ? winRate.toFixed(0) + "%" : "–"}
+              tone={winRate !== null && winRate >= 50 ? "text-emerald-700" : winRate !== null ? "text-red-600" : undefined}
+            />
+            <SnapshotStat label="3-dart avg" value={team.three_dart_avg ? team.three_dart_avg.toFixed(1) : "–"} />
+            <SnapshotStat label="Checkout" value={team.checkout_pct !== null ? team.checkout_pct.toFixed(0) + "%" : "–"} />
+            <SnapshotStat label="Darts per leg won" value={team.darts_per_leg_won !== null ? team.darts_per_leg_won.toFixed(1) : "–"} />
+            <SnapshotStat label="High finish" value={team.high_finish ?? "–"} highlight />
           </div>
         </div>
 
@@ -162,48 +159,6 @@ export default async function DashboardPage() {
         </div>
       </section>
 
-      <Link href="/league-insights" className="card flex items-center justify-between gap-3">
-        <div><p className="font-semibold">League insights</p><p className="mt-1 text-sm text-slate-600">Team form, head-to-head results and upcoming fixture estimates</p></div>
-        <span className="text-emerald-800">→</span>
-      </Link>
-      <LeagueSnapshot />
-
-      {seasonToDate && seasonToDate.anomalies.length > 0 && (
-        <section className="card !border-red-200 !bg-red-50">
-          <h2 className="text-sm font-semibold text-red-800">⚠️ Fixture data needs a look</h2>
-          <p className="mt-1 text-sm text-red-700">
-            {seasonToDate.anomalies.length === 1 ? "This fixture has" : "These fixtures have"} every match settled
-            but not 6 results — a match was likely deleted and never re-entered, so it's left out of the season
-            record and AI summary until it's fixed:
-          </p>
-          <ul className="mt-2 space-y-1 text-sm text-red-700">
-            {seasonToDate.anomalies.map((a) => (
-              <li key={a.fixtureId}>
-                <Link href={`/fixtures/${a.fixtureId}`} className="underline">
-                  {new Date(a.startsAt).toLocaleDateString("en-GB", { day: "numeric", month: "short" })} vs{" "}
-                  {a.opponent}
-                </Link>{" "}
-                — {a.matchesFound} of 6 matches found
-              </li>
-            ))}
-          </ul>
-        </section>
-      )}
-
-      {currentSeasonId && (
-        <details className="card !border-amber-200" style={{ boxShadow: "0 0 24px rgba(255, 212, 59, 0.08)" }}>
-          <summary className="cursor-pointer text-lg font-semibold mb-2">✨ AI season summary</summary>
-          <SeasonAiSummary
-            seasonId={currentSeasonId}
-            configured={Boolean(process.env.ANTHROPIC_API_KEY)}
-            completedFixtures={seasonToDate?.completedFixtures ?? 0}
-            initialSummary={storedSeasonSummary.summary}
-            initialAt={storedSeasonSummary.at}
-            initialFixtures={storedSeasonSummary.fixtures}
-          />
-        </details>
-      )}
-
       {hotPlayer && hotPlayer.wins > 0 && (
         <section
           className="card !border-amber-200"
@@ -223,6 +178,18 @@ export default async function DashboardPage() {
           </div>
         </section>
       )}
+
+      <section className="card">
+        <h2 className="text-lg font-semibold">Leaderboard</h2>
+        <p className="mb-3 text-xs text-slate-500">Season performance · tap a player for full stats</p>
+        <Leaderboard
+          players={players}
+          performance={performance}
+          auras={auras}
+          formByPlayer={Object.fromEntries(formById)}
+          seasonId={currentSeasonId}
+        />
+      </section>
 
       <HonoursBoard players={players} seasonName={currentSeason?.name} />
 
@@ -247,36 +214,20 @@ export default async function DashboardPage() {
         />
       </section>
 
-      <section className="card">
-        <h2 className="text-lg font-semibold mb-2">
-          Leaderboard <span className="text-xs font-normal text-slate-500">season performance · tap a player for game-by-game</span>
-        </h2>
-        <Leaderboard
-          players={players}
-          performance={performance}
-          auras={auras}
-          formByPlayer={Object.fromEntries(formById)}
-          seasonId={currentSeasonId}
-        />
-      </section>
+      <LeagueSnapshot />
 
-      {!!playersBy180.length && (
-        <section className="card">
-          <h2 className="text-lg font-semibold mb-2">180s hit</h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
-            {playersBy180.slice(0, 6).map((p) => (
-              <div
-                key={p.player_id}
-                className="flex items-center justify-between rounded-md border border-slate-200 px-3 py-2 text-sm"
-              >
-                <span className="font-semibold">{p.name}</span>
-                <span className="rounded-full bg-purple-50 text-purple-700 px-3 py-1 text-sm font-semibold">
-                  {p.one_eighty} × 180
-                </span>
-              </div>
-            ))}
-          </div>
-        </section>
+      {currentSeasonId && (
+        <details className="card !border-amber-200" style={{ boxShadow: "0 0 24px rgba(255, 212, 59, 0.08)" }}>
+          <summary className="cursor-pointer text-lg font-semibold mb-2">✨ AI season summary</summary>
+          <SeasonAiSummary
+            seasonId={currentSeasonId}
+            configured={Boolean(process.env.ANTHROPIC_API_KEY)}
+            completedFixtures={seasonToDate?.completedFixtures ?? 0}
+            initialSummary={storedSeasonSummary.summary}
+            initialAt={storedSeasonSummary.at}
+            initialFixtures={storedSeasonSummary.fixtures}
+          />
+        </details>
       )}
 
       <PerformanceCharts charts={[
@@ -292,5 +243,24 @@ export default async function DashboardPage() {
         <ExportLinks seasons={seasons} fixtures={fixtures} currentSeasonId={currentSeasonId} />
       </details>
     </main>
+  );
+}
+
+function SnapshotStat({
+  label,
+  value,
+  tone,
+  highlight,
+}: {
+  label: string;
+  value: ReactNode;
+  tone?: string;
+  highlight?: boolean;
+}) {
+  return (
+    <div className={`rounded-xl px-3 py-3 ${highlight ? "border border-amber-200 bg-amber-50" : "bg-slate-50"}`}>
+      <p className={`text-2xl font-bold tabular-nums ${tone ?? (highlight ? "text-amber-700" : "")}`}>{value}</p>
+      <p className={`mt-0.5 text-xs ${highlight ? "text-amber-700" : "text-slate-500"}`}>{label}</p>
+    </div>
   );
 }
