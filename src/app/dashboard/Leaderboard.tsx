@@ -123,12 +123,14 @@ export function Leaderboard({ players, formByPlayer, seasonId, performance, aura
               <div className="flex flex-col gap-3 border-t border-slate-200 px-4 pb-4 pt-3">
                 <AuraBadge aura={aura} />
                 <dl className="grid grid-cols-2 gap-x-4 gap-y-2">
-                  <DetailStat label="Legs won – lost" value={`${p.legs_won} – ${lost} (${diffLabel})`} />
+                  <DetailStat label="Won – lost" value={`${p.legs_won} – ${lost}`} />
+                  <DetailStat label="Leg diff" value={diffLabel} />
                   <DetailStat label="First 9" value={p.first_nine_avg !== null ? p.first_nine_avg.toFixed(1) : "–"} />
                   <DetailStat label="Checkout" value={p.checkout_pct !== null ? p.checkout_pct.toFixed(0) + "%" : "–"} />
-                  <DetailStat label="Darts / leg won" value={p.darts_per_leg_won !== null ? p.darts_per_leg_won.toFixed(1) : "–"} />
+                  <DetailStat label="Darts/leg won" value={p.darts_per_leg_won !== null ? p.darts_per_leg_won.toFixed(1) : "–"} />
                   <DetailStat label="High finish" value={p.high_finish !== null ? String(p.high_finish) : "–"} />
-                  <DetailStat label="Matches · visits" value={`${p.matches_played} · ${p.scoring_visits}`} />
+                  <DetailStat label="Matches" value={String(p.matches_played)} />
+                  <DetailStat label="Visits" value={String(p.scoring_visits)} />
                   <DetailStat label="60+" value={String(p.sixty_plus)} />
                   <DetailStat label="100+" value={String(p.hundred_plus)} />
                   <DetailStat label="140+" value={String(p.hundred_forty_plus)} />
@@ -176,8 +178,8 @@ function HeadlineStat({ label, value, tone }: { label: string; value: string; to
 function DetailStat({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex items-baseline justify-between gap-2 border-b border-slate-100 pb-1">
-      <dt className="text-xs text-slate-500">{label}</dt>
-      <dd className="font-semibold tabular-nums text-slate-800">{value}</dd>
+      <dt className="truncate text-xs text-slate-500">{label}</dt>
+      <dd className="shrink-0 font-semibold tabular-nums text-slate-800">{value}</dd>
     </div>
   );
 }
