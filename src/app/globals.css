@@ -287,6 +287,122 @@ textarea {
   box-shadow: 0 0 8px rgba(18, 184, 134, 0.7);
 }
 
+/* ---------- Oche view (big scoreboard for tablets) ---------- */
+
+.page:has(.oche-view) {
+  max-width: 1280px;
+}
+
+.oche-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 12px;
+}
+
+.oche-board,
+.oche-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+}
+
+.oche-panels {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.oche-panel {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  border-radius: 24px;
+  padding: 18px 10px;
+  min-height: 34vh;
+}
+
+.oche-name {
+  max-width: 100%;
+  font-size: clamp(1.1rem, 3.6vw, 2.25rem);
+  font-weight: 800;
+}
+
+.oche-remaining {
+  font-size: clamp(4.5rem, min(19vw, 22vh), 12rem);
+}
+
+.oche-throwing {
+  font-size: clamp(0.75rem, 1.8vw, 1.1rem);
+}
+
+.oche-dots .leg-dot {
+  width: 18px;
+  height: 18px;
+  border-width: 2px;
+}
+
+.oche-finish {
+  justify-content: center;
+  font-size: clamp(1.25rem, 4vw, 2.5rem);
+  font-weight: 800;
+  padding: 14px 18px;
+}
+
+.oche-entry {
+  font-size: 2.75rem;
+}
+
+.oche-quick {
+  flex: 1 1 30%;
+  justify-content: center;
+  font-size: 1.05rem;
+  padding-top: 10px;
+  padding-bottom: 10px;
+}
+
+.oche-key {
+  font-size: 30px;
+  padding: 18px 0;
+}
+
+/* Landscape tablet: scoreboard on the left, keypad on the right. */
+@media (min-width: 700px) and (orientation: landscape) {
+  .oche-layout {
+    grid-template-columns: minmax(0, 1fr) minmax(300px, 36%);
+    align-items: stretch;
+  }
+
+  .oche-board {
+    min-height: calc(100dvh - 100px);
+  }
+
+  .oche-panels {
+    flex: 1;
+  }
+
+  .oche-panel {
+    min-height: 0;
+  }
+
+  .oche-remaining {
+    font-size: clamp(4.5rem, min(13vw, 34vh), 13rem);
+  }
+
+  .oche-name {
+    font-size: clamp(1.1rem, 2.4vw, 2.25rem);
+  }
+
+  .oche-finish {
+    font-size: clamp(1.25rem, 2.6vw, 2.5rem);
+  }
+
+  .oche-key {
+    padding: clamp(10px, 2.2vh, 20px) 0;
+  }
+}
+
 /* ---------- Animations ---------- */
 
 .fade-up {
