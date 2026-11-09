@@ -30,6 +30,7 @@ type Visit = {
 };
 
 const START_SCORE = 501;
+const SCORING_VIEW_KEY = "wgd-scoring-view";
 
 const isValidCheckoutLocal = (remaining: number, score: number) =>
   remaining - score === 0 && canFinishFrom(remaining);
@@ -123,6 +124,23 @@ export default function ScoringPage() {
     return () => { cancelled = true; };
   }, [gameId]);
 
+  // "oche" is the big-score layout for a tablet propped up at the oche;
+  // "standard" is the original phone layout. Remembered per device.
+  const [viewMode, setViewMode] = useState<"standard" | "oche">("standard");
+  const ocheView = viewMode === "oche";
+  useEffect(() => {
+    try {
+      if (window.localStorage.getItem(SCORING_VIEW_KEY) === "oche") setViewMode("oche");
+    } catch {}
+  }, []);
+  const toggleView = () => {
+    setViewMode((current) => {
+      const next = current === "oche" ? "standard" : "oche";
+      try { window.localStorage.setItem(SCORING_VIEW_KEY, next); } catch {}
+      return next;
+    });
+  };
+
   const finishHint = useMemo(() => {
     if (remaining <= 1 || remaining > 170) return null;
     return finishRoutes[remaining];
@@ -190,79 +208,52 @@ export default function ScoringPage() {
   };
 
   const legDots = (won: number) => (
-    <span className="flex items-center justify-center gap-1.5" aria-label={`${won} legs won`}>
+    <span className={`flex items-center justify-center ${ocheView ? "oche-dots gap-2.5" : "gap-1.5"}`} aria-label={`${won} legs won`}>
       {[0, 1].map((i) => (
         <span key={i} className={`leg-dot ${i < won ? "won" : ""}`} />
       ))}
     </span>
   );
 
-  return (
-    <main className="flex flex-col gap-3 fade-up">
-      {celebration?.kind === "peas" && <PeaCelebration key={celebration.sequence} />}
-      {celebration?.kind === "log" && <LogCelebration key={celebration.sequence} />}
-      <header className="flex items-center justify-between gap-2">
-        <a
-          className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-slate-100 text-slate-700 hover:bg-slate-200"
-          href={fixtureId ? `/fixtures/${fixtureId}` : "/fixtures"}
-          aria-label="Back to fixture"
-        >
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-            <path d="M15 18l-6-6 6-6" />
-          </svg>
-        </a>
-        <div className="text-center">
-          <h1 className="text-lg font-bold leading-tight">501 Double-Out</h1>
-          <p className="text-xs text-slate-500">Best of 2 legs</p>
-        </div>
-        <span
-          className={`chip ${isCompleted ? "bg-emerald-100 text-emerald-800" : "bg-slate-100 text-slate-700"}`}
-        >
-          {isCompleted ? "Done" : "Live"}
-        </span>
-      </header>
+  const keyClass = ocheView ? "oche-key" : "";
 
-      <section className="grid grid-cols-2 gap-2">
-        <button
-          type="button"
-          className={`score-panel ${activeSide === "west" && !isCompleted ? "active" : ""}`}
-          onClick={() => setActiveSide("west")}
-          disabled={inputLocked || finishPrompt !== null || isCompleted}
+  const scorePanel = (side: "west" | "opponent") => {
+    const isWest = side === "west";
+    const value = isWest ? displayRemaining : displayOppRemaining;
+    const throwing = activeSide === side && !isCompleted;
+    return (
+      <button
+        type="button"
+        className={`score-panel ${ocheView ? "oche-panel" : ""} ${throwing ? "active" : ""}`}
+        onClick={() => setActiveSide(side)}
+        disabled={inputLocked || finishPrompt !== null || isCompleted}
+      >
+        <p className={`truncate font-semibold text-slate-700 ${ocheView ? "oche-name" : "text-sm"}`}>{isWest ? wgdName : oppName}</p>
+        <p
+          key={`${isWest ? "w" : "o"}-${value}`}
+          className={`score-remaining score-pop mt-1 ${ocheView ? "oche-remaining" : "text-6xl"} ${isWest ? "text-emerald-700" : "text-slate-800"}`}
         >
-          <p className="truncate text-sm font-semibold text-slate-700">{wgdName}</p>
-          <p key={`w-${displayRemaining}`} className="score-remaining score-pop mt-1 text-6xl text-emerald-700">
-            {displayRemaining}
-          </p>
-          <div className="mt-2">{legDots(displayLegs.wgd)}</div>
-          <p className={`mt-1 text-[10px] font-bold uppercase tracking-widest ${activeSide === "west" && !isCompleted ? "text-emerald-700" : "text-transparent"}`}>
-            ● Throwing
-          </p>
-        </button>
-        <button
-          type="button"
-          className={`score-panel ${activeSide === "opponent" && !isCompleted ? "active" : ""}`}
-          onClick={() => setActiveSide("opponent")}
-          disabled={inputLocked || finishPrompt !== null || isCompleted}
-        >
-          <p className="truncate text-sm font-semibold text-slate-700">{oppName}</p>
-          <p key={`o-${displayOppRemaining}`} className="score-remaining score-pop mt-1 text-6xl text-slate-800">
-            {displayOppRemaining}
-          </p>
-          <div className="mt-2">{legDots(displayLegs.opp)}</div>
-          <p className={`mt-1 text-[10px] font-bold uppercase tracking-widest ${activeSide === "opponent" && !isCompleted ? "text-emerald-700" : "text-transparent"}`}>
-            ● Throwing
-          </p>
-        </button>
-      </section>
+          {value}
+        </p>
+        <div className="mt-2">{legDots(isWest ? displayLegs.wgd : displayLegs.opp)}</div>
+        <p className={`mt-1 font-bold uppercase tracking-widest ${ocheView ? "oche-throwing" : "text-[10px]"} ${throwing ? "text-emerald-700" : "text-transparent"}`}>
+          ● Throwing
+        </p>
+      </button>
+    );
+  };
 
-      {finishHint && !isCompleted && (
-        <div className="finish-banner">
-          <span aria-hidden="true">🎯</span>
-          <span>
-            {remaining} out: <span className="tracking-wide">{finishHint}</span>
-          </span>
-        </div>
-      )}
+  const finishBanner = finishHint && !isCompleted && (
+    <div className={`finish-banner ${ocheView ? "oche-finish" : ""}`}>
+      <span aria-hidden="true">🎯</span>
+      <span>
+        {remaining} out: <span className="tracking-wide">{finishHint}</span>
+      </span>
+    </div>
+  );
+
+  const statusBlock = (
+    <>
       {alert && <div role="alert" className="text-sm text-red-800"><p>{alert}</p><button className="btn-secondary mt-2" disabled={pending} onClick={reloadLatest}>Reload latest score</button></div>}
       <ScoreSaveStatus pending={saving} saved={saved} error={saveError} retry={retrySave} reload={reloadLatest} />
       {isCompleted && (
@@ -280,7 +271,10 @@ export default function ScoringPage() {
         </div>
       )}
 
-      {!isCompleted && (
+    </>
+  );
+
+  const inputSection = !isCompleted && (
       <section className="card flex flex-col gap-3 !p-3" id="summary">
         {!finishPrompt && (
           <>
@@ -288,7 +282,7 @@ export default function ScoringPage() {
               <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">
                 {activeSide === "west" ? wgdName : oppName} scored
               </span>
-              <span className="score-remaining text-4xl text-slate-900">{inputScore || "0"}</span>
+              <span className={`score-remaining text-slate-900 ${ocheView ? "oche-entry" : "text-4xl"}`}>{inputScore || "0"}</span>
             </div>
 
             <div className="flex flex-wrap gap-1.5">
@@ -296,7 +290,7 @@ export default function ScoringPage() {
                 <button
                   key={q}
                   type="button"
-                  className="chip border border-slate-300 bg-slate-100 px-3.5 py-1.5 text-sm text-slate-700 transition hover:border-emerald-300 active:scale-95"
+                  className={`chip border border-slate-300 bg-slate-100 px-3.5 py-1.5 text-slate-700 ${ocheView ? "oche-quick" : "text-sm"} transition hover:border-emerald-300 active:scale-95`}
                   onClick={() => addScore(q)}
                   disabled={inputLocked}
                 >
@@ -307,25 +301,25 @@ export default function ScoringPage() {
 
             <div className="grid grid-cols-3 gap-2">
               {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((n) => (
-                <button key={n} type="button" className="keypad-key" disabled={inputLocked} onClick={() => appendDigit(n)}>
+                <button key={n} type="button" className={`keypad-key ${keyClass}`} disabled={inputLocked} onClick={() => appendDigit(n)}>
                   {n}
                 </button>
               ))}
               <button
                 type="button"
-                className="keypad-key text-xl text-slate-500"
+                className={`keypad-key ${keyClass} text-xl text-slate-500`}
                 onClick={() => setInputScore((s) => s.slice(0, -1))}
                 disabled={inputLocked}
                 aria-label="Delete digit"
               >
                 ⌫
               </button>
-              <button type="button" className="keypad-key" disabled={inputLocked} onClick={() => appendDigit(0)}>
+              <button type="button" className={`keypad-key ${keyClass}`} disabled={inputLocked} onClick={() => appendDigit(0)}>
                 0
               </button>
               <button
                 type="button"
-                className="keypad-key bg-emerald-600 text-xl text-white"
+                className={`keypad-key ${keyClass} bg-emerald-600 text-xl text-white`}
                 style={{ borderColor: "rgba(18,184,134,0.6)" }}
                 onClick={() => addScore(parseInt(inputScore || "0", 10))}
                 disabled={inputLocked}
@@ -355,7 +349,7 @@ export default function ScoringPage() {
                 <button
                   key={d}
                   type="button"
-                  className="keypad-key !text-lg"
+                  className={`keypad-key ${keyClass} !text-lg`}
                   disabled={inputLocked || !canFinishFrom(finishPrompt.score, d)}
                   onClick={() => { const requestId = crypto.randomUUID(); startTransition(() => submitVisit(finishPrompt.score, finishPrompt.side, d, requestId)); }}
                 >
@@ -375,6 +369,69 @@ export default function ScoringPage() {
         )}
 
       </section>
+      
+  );
+
+  return (
+    <main className={`flex flex-col gap-3 fade-up ${ocheView ? "oche-view" : ""}`}>
+      {celebration?.kind === "peas" && <PeaCelebration key={celebration.sequence} />}
+      {celebration?.kind === "log" && <LogCelebration key={celebration.sequence} />}
+      <header className="flex items-center justify-between gap-2">
+        <a
+          className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-slate-100 text-slate-700 hover:bg-slate-200"
+          href={fixtureId ? `/fixtures/${fixtureId}` : "/fixtures"}
+          aria-label="Back to fixture"
+        >
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <path d="M15 18l-6-6 6-6" />
+          </svg>
+        </a>
+        <div className="text-center">
+          <h1 className="text-lg font-bold leading-tight">501 Double-Out</h1>
+          <p className="text-xs text-slate-500">Best of 2 legs</p>
+        </div>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            className="chip border border-slate-300 bg-slate-100 text-slate-700 hover:border-emerald-300"
+            onClick={toggleView}
+            aria-pressed={ocheView}
+            title={ocheView ? "Switch back to the standard scoring view" : "Switch to the big-score oche view for tablets"}
+          >
+            {ocheView ? "Standard view" : "Oche view"}
+          </button>
+          <span
+            className={`chip ${isCompleted ? "bg-emerald-100 text-emerald-800" : "bg-slate-100 text-slate-700"}`}
+          >
+            {isCompleted ? "Done" : "Live"}
+          </span>
+        </div>
+      </header>
+
+      {ocheView ? (
+        <div className="oche-layout">
+          <div className="oche-board">
+            <section className="oche-panels">
+              {scorePanel("west")}
+              {scorePanel("opponent")}
+            </section>
+            {finishBanner}
+          </div>
+          <div className="oche-controls">
+            {statusBlock}
+            {inputSection}
+          </div>
+        </div>
+      ) : (
+        <>
+          <section className="grid grid-cols-2 gap-2">
+            {scorePanel("west")}
+            {scorePanel("opponent")}
+          </section>
+          {finishBanner}
+          {statusBlock}
+          {inputSection}
+        </>
       )}
 
       <section className="card">
