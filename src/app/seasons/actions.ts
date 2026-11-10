@@ -2,9 +2,11 @@
 
 import { revalidatePath } from "next/cache";
 import { backWithError, must, teamDb } from "@/lib/actionResult";
+import { invalidateSeasonStats } from "@/lib/seasonCache";
 import { isSeasonName, isUuid, textField } from "@/lib/validation";
 
 const revalidateSeasons = () => {
+  invalidateSeasonStats();
   revalidatePath("/seasons");
   revalidatePath("/settings");
   revalidatePath("/dashboard");

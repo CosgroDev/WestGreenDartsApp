@@ -4,6 +4,7 @@ import { stableRead } from "@/lib/stableRead";
 
 import { revalidatePath } from "next/cache";
 import { scoringCommand } from "@/lib/scoringCommand";
+import { invalidateSeasonStats } from "@/lib/seasonCache";
 import { supabaseServer } from "@/lib/supabaseServer";
 import { finishRoutes } from "@/lib/finishRoutes";
 
@@ -118,13 +119,22 @@ export async function getLegSummariesAction(gameId: string) {
 
   if (legsErr || !legs) return { ok: false, summaries: [] as LegSummaryWire[] };
 
-  const summaries: LegSummaryWire[] = [];
-  for (const leg of legs) {
-    const visits = await fetchVisits(leg.id);
-    const summary = buildLegSummary(leg.winner === "west_green" ? "west" : "opponent", visits);
-    summary.gameId = leg.id;
-    summaries.push(summary);
-  }
+  // One query for every leg's visits rather than one per leg.
+  const { data: events, error: eventsErr } = legs.length
+    ? await supabase
+        .from("scoring_events")
+        .select("id, game_id, score, darts, remaining_after, is_bust, is_checkout")
+        .in("game_id", legs.map((leg) => leg.id))
+        .eq("thrower", "west_green")
+        .eq("is_deleted", false)
+        .order("throw_index", { ascending: true })
+    : { data: [], error: null };
+  if (eventsErr) return { ok: false, summaries: [] as LegSummaryWire[] };
+
+  const summaries = legs.map((leg) => {
+    const visits = (events ?? []).filter((e) => e.game_id === leg.id) as Visit[];
+    return { ...buildLegSummary(leg.winner === "west_green" ? "west" : "opponent", visits), gameId: leg.id };
+  });
   return { ok: true, summaries };
 }
 
@@ -205,6 +215,8 @@ export async function recordVisitAction(gameId: string, score: number, dartsOver
   if (!result.ok) return result;
   revalidateAllDashboards();
   const state = result.state ? withSummaries(leagueScoreSnapshot(result.state)) : await loadGameStateAction(gameId);
+  // Season statistics only count completed legs, so a mid-leg visit leaves them valid.
+  if (state.meta?.status === "completed") invalidateSeasonStats();
   if (state.meta?.fixture_id) revalidatePath(`/fixtures/${state.meta.fixture_id}`);
   return state;
 }
@@ -212,12 +224,15 @@ export async function recordVisitAction(gameId: string, score: number, dartsOver
 export async function newLegAction(gameId: string): Promise<any> {
   const result = await scoringCommand(gameId, false, "new_leg");
   if (!result.ok) return result;
+  invalidateSeasonStats();
   return { ok: true, gameId: result.next_game_id };
 }
 
 export async function undoLastVisitAction(gameId: string, revision?: number, requestId?: string): Promise<any> {
   const result = await scoringCommand(gameId, false, "undo", { revision, requestId, returnState: true });
   if (!result.ok) return result;
+  // Undo can reopen a completed leg.
+  invalidateSeasonStats();
   revalidateAllDashboards();
   const state = await loadGameStateAction(gameId);
   if (state.meta?.fixture_id) revalidatePath(`/fixtures/${state.meta.fixture_id}`);

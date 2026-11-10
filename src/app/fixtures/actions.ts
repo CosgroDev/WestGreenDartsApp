@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { backWithError, must, teamDb } from "@/lib/actionResult";
+import { invalidateSeasonStats } from "@/lib/seasonCache";
 import { supabaseServer } from "@/lib/supabaseServer";
 import { dateField, textField, uuidField } from "@/lib/validation";
 
@@ -36,6 +37,7 @@ export async function createFixtureAction(_prevState: FixtureFormState, formData
 
   if (error) return { ok: false, message: error.message };
 
+  invalidateSeasonStats();
   revalidatePath("/fixtures");
   return { ok: true };
 }
@@ -51,6 +53,7 @@ export async function deleteFixtureAction(formData: FormData): Promise<void> {
   if (outcome === "has_games") backWithError("/fixtures", "fixture_has_games");
   if (outcome === "not_found") backWithError("/fixtures", "not_found");
 
+  invalidateSeasonStats();
   revalidatePath("/fixtures");
   revalidatePath("/dashboard");
 }

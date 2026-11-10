@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { backWithError, must, teamDb } from "@/lib/actionResult";
+import { invalidateSeasonStats } from "@/lib/seasonCache";
 import { textField, uuidField } from "@/lib/validation";
 
 export async function createPlayerAction(formData: FormData): Promise<void> {
@@ -21,7 +22,9 @@ export async function createPlayerAction(formData: FormData): Promise<void> {
   if (error?.code === "23505") backWithError("/players", "duplicate");
   if (error) throw new Error(`Player create failed: ${error.message}`);
 
+  invalidateSeasonStats();
   revalidatePath("/players");
+  revalidatePath("/dashboard");
   redirect("/players?success=1");
 }
 
@@ -34,7 +37,9 @@ export async function setPlayerActiveAction(formData: FormData): Promise<void> {
   const rows = must(await db.from("players").update({ active }).eq("id", id).eq("team_id", teamId).select("id"), "Player update");
   if (!rows?.length) backWithError("/players", "not_found");
 
+  invalidateSeasonStats();
   revalidatePath("/players");
+  revalidatePath("/dashboard");
   revalidatePath(`/players/${id}`);
   redirect("/players");
 }
@@ -58,7 +63,9 @@ export async function updatePlayerAction(formData: FormData): Promise<void> {
   if (error) throw new Error(`Player update failed: ${error.message}`);
   if (!data?.length) backWithError("/players", "not_found");
 
+  invalidateSeasonStats();
   revalidatePath("/players");
+  revalidatePath("/dashboard");
   revalidatePath(`/players/${id}`);
   redirect("/players");
 }
@@ -73,6 +80,8 @@ export async function deletePlayerAction(formData: FormData): Promise<void> {
   if (error?.code === "23503") backWithError(`/players/${id}`, "player_has_games");
   if (error) throw new Error(`Player delete failed: ${error.message}`);
 
+  invalidateSeasonStats();
   revalidatePath("/players");
+  revalidatePath("/dashboard");
   redirect("/players");
 }

@@ -1,6 +1,7 @@
 
 "use server";
 import { isUuid } from "@/lib/validation";
+import { invalidateSeasonStats } from "@/lib/seasonCache";
 
 import { randomUUID } from "crypto";
 import { generateOnce, requestReview } from "@/lib/aiReview";
@@ -172,6 +173,7 @@ export async function createGameAction(prevState: any, formData: FormData) {
 
   if (error) return { ok: false, message: error.message };
 
+  invalidateSeasonStats();
   revalidatePath(`/fixtures/${fixtureId}`);
   return { ok: true };
 }
@@ -218,6 +220,9 @@ export async function deleteMatchAction(formData: FormData): Promise<void> {
   if (error) throw new Error(`Match delete failed: ${error.message}`);
   const { error: eventsError } = await supabase.from("scoring_events").update({ is_deleted: true }).in("game_id", gameIds);
   if (eventsError) throw new Error(`Match delete failed: ${eventsError.message}`);
+
+  invalidateSeasonStats();
+  revalidatePath("/dashboard");
 
   revalidatePath(`/fixtures/${fixtureId}`);
 }

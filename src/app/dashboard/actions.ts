@@ -2,7 +2,7 @@
 
 import { generateOnce, requestReview } from "@/lib/aiReview";
 import { revalidatePath } from "next/cache";
-import { getPlayerGameLog, getPlayerCards, getTeamCard } from "@/data/stats";
+import { getPlayerGameLog, getPlayerCards, getTeamCard, loadSeasonStatistics } from "@/data/stats";
 import { getSeasonToDate, getStoredSeasonSummary } from "@/data/seasonSummary";
 import { getSeasons } from "@/data/seasons";
 import { countPlayerSeasonLegs, getPlayerSeasonMatches, getStoredPlayerInsight } from "@/data/playerInsights";
@@ -52,7 +52,9 @@ export async function generateSeasonAiSummaryAction(seasonId: string): Promise<S
     return { ok: true, summary: stored.summary, fixtures: season.completedFixtures, at: stored.at };
   }
 
-  const [team, players] = await Promise.all([getTeamCard(id), getPlayerCards(id)]);
+  // One load of the season feeds both aggregates.
+  const shared = await loadSeasonStatistics(id);
+  const [team, players] = await Promise.all([getTeamCard(id, shared), getPlayerCards(id, false, shared)]);
   // Recent-vs-earlier form per player turns a snapshot into a trend.
   const logs = await Promise.all(players.map((p) => getPlayerGameLog(p.player_id, id)));
 

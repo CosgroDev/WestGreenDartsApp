@@ -100,8 +100,18 @@ try {
   console.log('SMOKE_UNDO_PASS');
 
   // 6. The dashboard reflects the leg that was just played.
+  //    Season statistics are cached: the completed leg must have dropped the
+  //    cache, and a second load must be served from it.
+  const eventReads = () => stack.trace.filter(t => t.table === 'scoring_events').length;
+  let before = eventReads();
   await page.goto(url('/dashboard'));
   await page.getByText('Smoke Player').first().waitFor();
+  assert.ok(eventReads() > before, 'The dashboard served statistics from before the leg was played');
+  const bodyText = await page.locator('body').innerText();
+  assert.ok(/100(\.0)?%/.test(bodyText), 'The dashboard does not show the leg that was just won');
+  before = eventReads();
+  await page.reload(); await page.getByText('Smoke Player').first().waitFor();
+  assert.equal(eventReads(), before, 'A repeat dashboard load re-read every scoring event');
   assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), 'Dashboard overflows a phone screen');
   await page.screenshot({ path: 'smoke-verification/dashboard.png', fullPage: true });
   // Fetched from the page: the session cookie is Secure, which the browser honours on localhost.
@@ -109,7 +119,7 @@ try {
     '/api/exports/events?format=json&game=' + game);
   assert.equal(exported.status, 200);
   assert.equal(exported.rows.length, 5);
-  console.log('SMOKE_DASHBOARD_PASS: dashboard renders the result and the export returns the five visits');
+  console.log('SMOKE_DASHBOARD_PASS: fresh result after scoring, cached repeat load, export returns the five visits');
 
   // 7. Locking the device ends the session.
   await page.goto(url('/settings'));

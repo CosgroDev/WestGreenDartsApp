@@ -1,6 +1,7 @@
 import { allRows, rowsForIds } from "@/lib/database";
 import { matchKey } from "@/lib/matchKey";
 import { canFinishFrom } from "@/lib/scoringUtils";
+import { cachedSeason } from "@/lib/seasonCache";
 import { supabaseServer } from "@/lib/supabaseServer";
 
 // Supabase/PostgREST caps a single response at 1000 rows by default. A
@@ -72,8 +73,15 @@ const TEAM_CARD_EMPTY: TeamCard = {
 
 export type SeasonStatisticsData = { players: any[]; games: any[]; events: any[] };
 export async function loadSeasonStatistics(seasonId?: string): Promise<SeasonStatisticsData> {
+  // The session is checked here, outside the cache, on every call.
   const db = await supabaseServer();
   if (!db) return { players: [], games: [], events: [] };
+  return cachedSeason(seasonId ?? "all", () => readSeasonStatistics(db, seasonId));
+}
+
+async function readSeasonStatistics(
+  db: NonNullable<Awaited<ReturnType<typeof supabaseServer>>>, seasonId?: string
+): Promise<SeasonStatisticsData> {
   const [playerRows, gameRows] = await Promise.all([
     allRows(() => db.from("players").select("id, name, active").order("id")),
     allRows(() => {
