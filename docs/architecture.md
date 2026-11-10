@@ -58,6 +58,12 @@ Do not change these RPC signatures without a plan for old and new app instances 
 
 Statistics are computed in TypeScript from the season's games and events (`src/data/stats.ts`, `src/data/form.ts`, `src/data/seasonSummary.ts`). The loaded season is cached per season and invalidated whenever a score, undo or deletion changes it. Busts count darts but not points; averages are points over darts across legs, not a mean of leg averages.
 
+Opponent visits are stored in `scoring_events` with `thrower = 'opponent'`, and the statistics use them (`src/lib/opposition.ts`):
+
+- Every player card, the team card and each leg in the game log carry the opponents' three-dart average and the player's average against it. The comparison is like for like: legs scored before opponent visits were stored are left out on both sides, and the figures are null when no leg has them.
+- A game is rated hard, even or easy by comparing the opponent's average with the average of every opponent faced that season (`getSeasonOpposition`). The rating needs at least 10 legs of opponent data in the season and a gap of 4 or more; otherwise it is not shown.
+- Both throwers are read in the same paged query and split in code, so the opponent figures cost no extra round trips.
+
 ## AI reviews
 
 `src/lib/aiCoaching.ts` holds the prompts and the derived numbers fed to the model; `src/lib/playerInsights.ts` holds the season-long derivations. `src/lib/aiReview.ts` owns the API call. Each review is generated once and stored; the season summary and player insight regenerate when new results arrive.

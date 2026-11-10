@@ -5,7 +5,7 @@ const player = (name: string, o: Partial<PlayerCard> = {}): PlayerCard => ({
   player_id: name, name, legs_played: 12, legs_won: 6, three_dart_avg: 50, first_nine_avg: 60,
   checkout_pct: 20, twenty_six: 4, one_eighty: 0, high_finish: 80, sixty_plus: 30, hundred_plus: 12,
   hundred_forty_plus: 0, darts_per_leg_won: 30, total_darts: 300, matches_played: 6,
-  scoring_visits: 100, checkout_attempts: 20, checkout_hits: 4, first_nine_legs: 12, recorded_wins: 6, ...o,
+  scoring_visits: 100, checkout_attempts: 20, checkout_hits: 4, first_nine_legs: 12, recorded_wins: 6, opp_legs: 0, opp_three_dart_avg: null, avg_vs_opp: null, ...o,
 });
 
 it("budgets 100 points and has descending tier thresholds", () => {

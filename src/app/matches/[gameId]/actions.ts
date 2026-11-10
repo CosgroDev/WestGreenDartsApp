@@ -4,7 +4,8 @@ import { generateOnce, requestReview } from "@/lib/aiReview";
 import { revalidatePath } from "next/cache";
 import { supabaseServer } from "@/lib/supabaseServer";
 import { getMatchSummary } from "@/data/matchSummary";
-import { getPlayerCards, getPlayerGameLog } from "@/data/stats";
+import { getPlayerCards, getPlayerGameLog, getSeasonOpposition } from "@/data/stats";
+import { fieldAverage, gameDifficulty } from "@/lib/opposition";
 import {
   MATCH_SYSTEM_PROMPT,
   REVIEW_EFFORT,
@@ -56,7 +57,11 @@ export async function generateAiReviewAction(gameId: string): Promise<AiReviewRe
     );
   }
 
+  const fieldAvg = fieldAverage(await getSeasonOpposition(summary.seasonId));
+
   const payload = {
+    seasonOpposition: round1(fieldAvg),
+    difficulty: gameDifficulty(summary.opponent?.threeDartAvg, fieldAvg),
     match: {
       player: summary.westPlayerName,
       opponent: summary.opponentPlayer,

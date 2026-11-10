@@ -83,7 +83,7 @@ const card = (player_id: string, overrides: Partial<PlayerCard> = {}): PlayerCar
   player_id, name: player_id, legs_played: 12, legs_won: 6, three_dart_avg: 45, first_nine_avg: 50,
   checkout_pct: 25, twenty_six: 2, one_eighty: 0, high_finish: 80, sixty_plus: 30, hundred_plus: 10,
   hundred_forty_plus: 2, darts_per_leg_won: 24, total_darts: 300, matches_played: 4, scoring_visits: 100,
-  checkout_attempts: 24, checkout_hits: 6, first_nine_legs: 12, recorded_wins: 6, ...overrides
+  checkout_attempts: 24, checkout_hits: 6, first_nine_legs: 12, recorded_wins: 6, opp_legs: 0, opp_three_dart_avg: null, avg_vs_opp: null, ...overrides
 });
 
 describe("squadContext", () => {

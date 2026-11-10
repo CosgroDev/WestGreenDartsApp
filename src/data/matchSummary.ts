@@ -71,7 +71,42 @@ export type MatchSummary = {
   bestLegDarts: number | null;
   busts: number;
   bands: LegSummary["bands"];
+  /** The opponent's side of the match; null when none of their visits were recorded. */
+  opponent: OpponentMatchStats | null;
 };
+
+export type OpponentMatchStats = SideStats & {
+  /** Legs of the match that have opponent visits. */
+  legsWithVisits: number;
+  checkoutPct: number | null;
+  /** Fewest darts in a leg the opponent won. */
+  bestLegDarts: number | null;
+  /** The West Green player's average over the same legs, for a like-for-like comparison. */
+  playerThreeDartAvg: number | null;
+};
+
+/** The opponent's match-level numbers, from the legs where their visits were recorded. */
+export function summariseOpponent(legs: LegSummary[]): OpponentMatchStats | null {
+  const withVisits = legs.filter((l) => (l.opponentVisits ?? []).length > 0);
+  if (!withVisits.length) return null;
+  const all = summariseVisits(withVisits.flatMap((l) => l.opponentVisits ?? []));
+  const perLeg = withVisits.map((l) => summariseVisits(l.opponentVisits ?? []));
+  const firstNines = perLeg.map((l) => l.firstNineAvg).filter((a): a is number => a !== null);
+  const wonDarts = withVisits
+    .map((l, i) => (l.winner === "opponent" ? perLeg[i].dartsTotal : 0))
+    .filter((d) => d > 0);
+  const ownDarts = withVisits.reduce((s, l) => s + l.dartsTotal, 0);
+  const ownPoints = withVisits.reduce((s, l) => s + l.pointsTotal, 0);
+  return {
+    ...all,
+    // Mean of the leg first-nines, the same way the player's is worked out.
+    firstNineAvg: firstNines.length ? firstNines.reduce((s, a) => s + a, 0) / firstNines.length : null,
+    legsWithVisits: withVisits.length,
+    checkoutPct: all.checkoutAttempts > 0 ? (all.checkoutHits / all.checkoutAttempts) * 100 : null,
+    bestLegDarts: wonDarts.length ? Math.min(...wonDarts) : null,
+    playerThreeDartAvg: ownDarts > 0 ? (ownPoints / ownDarts) * 3 : null
+  };
+}
 
 export function summariseVisits(visits: Visit[]): SideStats {
   const dartsTotal = visits.reduce((s, v) => s + v.darts, 0);
@@ -272,7 +307,8 @@ export async function getMatchSummary(gameId: string): Promise<MatchSummary | nu
     highFinish,
     bestLegDarts,
     busts: legs.reduce((s, l) => s + l.busts, 0),
-    bands
+    bands,
+    opponent: summariseOpponent(legs)
   };
 }
 
@@ -316,6 +352,7 @@ export type TeamMatchSummary = {
   busts: number;
   bands: LegSummary["bands"];
   legs: LegSummary[];
+  opponent: OpponentMatchStats | null;
 };
 
 export type FixtureTeamSummary = {
@@ -340,6 +377,8 @@ export type FixtureTeamSummary = {
   bestLegDarts: number | null;
   busts: number;
   bands: LegSummary["bands"];
+  /** The opposition's combined numbers for the night; null when none of their visits were recorded. */
+  opposition: OpponentMatchStats | null;
   matches: TeamMatchSummary[];
 };
 
@@ -402,7 +441,8 @@ export async function getFixtureTeamSummary(fixtureId: string): Promise<FixtureT
     bestLegDarts: m.bestLegDarts,
     busts: m.busts,
     bands: m.bands,
-    legs: m.legs
+    legs: m.legs,
+    opponent: m.opponent
   }));
 
   const matchWins = summaries.filter((m) => m.result === "win").length;
@@ -459,6 +499,7 @@ export async function getFixtureTeamSummary(fixtureId: string): Promise<FixtureT
     bestLegDarts,
     busts: summaries.reduce((s, m) => s + m.busts, 0),
     bands,
+    opposition: summariseOpponent(summaries.flatMap((m) => m.legs)),
     matches
   };
 }

@@ -23,6 +23,7 @@ const baseMatch = (overrides: Partial<MatchSummary>): MatchSummary => ({
   bestLegDarts: 17,
   busts: 0,
   bands: { ...emptyBands, sixtyPlus: 6, hundredPlus: 3, oneFortyPlus: 1 },
+  opponent: null,
   ...overrides
 });
 
@@ -82,5 +83,36 @@ describe("analyseMatch", () => {
     const titles = res.practice.map((p) => p.title);
     expect(new Set(titles).size).toBe(titles.length);
     expect(titles.length).toBeLessThanOrEqual(3);
+  });
+
+  describe("with the opponent's visits", () => {
+    const opponent = (threeDartAvg: number, playerThreeDartAvg: number) => ({
+      dartsTotal: 40, pointsTotal: 0, threeDartAvg, firstNineAvg: null, checkoutAttempts: 2, checkoutHits: 1,
+      highFinish: 40, busts: 0, bands: emptyBands, legsWithVisits: 2, checkoutPct: 50, bestLegDarts: 20, playerThreeDartAvg
+    });
+
+    it("puts both averages in the headline and rates a hard game", () => {
+      const res = analyseMatch(baseMatch({ result: "loss", westLegs: 0, oppLegs: 2, threeDartAvg: 52, opponent: opponent(61.4, 52) }), 48);
+      expect(res.headline).toBe("Dave went down 0-2 to Steve averaging 52 to 61.4.");
+      expect(res.difficulty).toBe("hard");
+      expect(res.strengths.join(" ")).toMatch(/A hard game: Steve averaged 61.4, well above the 48/);
+    });
+
+    it("says when a match was lost on the finish rather than the scoring", () => {
+      const res = analyseMatch(baseMatch({ result: "loss", westLegs: 0, oppLegs: 2, threeDartAvg: 58, opponent: opponent(47, 58) }), 48);
+      expect(res.difficulty).toBe("even");
+      expect(res.workOns.join(" ")).toMatch(/Out-scored the opponent 58 to Steve's 47 and lost/);
+    });
+
+    it("calls out an easy game that got away", () => {
+      const res = analyseMatch(baseMatch({ result: "draw", westLegs: 1, oppLegs: 1, threeDartAvg: 44, opponent: opponent(40, 44) }), 48);
+      expect(res.difficulty).toBe("easy");
+      expect(res.workOns.join(" ")).toMatch(/there to be won/);
+    });
+
+    it("leaves difficulty unrated without opponent visits or a season yardstick", () => {
+      expect(analyseMatch(baseMatch({}), 48).difficulty).toBeNull();
+      expect(analyseMatch(baseMatch({ opponent: opponent(60, 66.8) }), null).difficulty).toBeNull();
+    });
   });
 });

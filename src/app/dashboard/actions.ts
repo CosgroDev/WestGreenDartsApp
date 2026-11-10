@@ -2,7 +2,8 @@
 
 import { generateOnce, requestReview } from "@/lib/aiReview";
 import { revalidatePath } from "next/cache";
-import { getPlayerGameLog, getPlayerCards, getTeamCard, loadSeasonStatistics } from "@/data/stats";
+import { getPlayerGameLog, getPlayerCards, getSeasonOpposition, getTeamCard, loadSeasonStatistics } from "@/data/stats";
+import { fieldAverage } from "@/lib/opposition";
 import { getSeasonToDate, getStoredSeasonSummary } from "@/data/seasonSummary";
 import { getSeasons } from "@/data/seasons";
 import { countPlayerSeasonLegs, getPlayerSeasonMatches, getSquadSeasonMatches, getStoredPlayerInsight } from "@/data/playerInsights";
@@ -75,6 +76,7 @@ export async function generateSeasonAiSummaryAction(seasonId: string): Promise<S
   const profiles = new Map(squadDerived.players.map(({ playerId, ...profile }) => [playerId, profile]));
 
   const payload = {
+    seasonOpposition: round1(fieldAverage(team)),
     season: {
       completedFixtures: season.completedFixtures,
       fixtureRecord: `${season.fixtureWins}W-${season.fixtureDraws}D-${season.fixtureLosses}L`,
@@ -241,6 +243,7 @@ export async function generatePlayerAiInsightAction(
   if (!card) return { ok: false, reason: "no_data" };
 
   const payload = {
+    seasonOpposition: round1(fieldAverage(await getSeasonOpposition(seasonId))),
     player: {
       name: card.name,
       matches: card.matches_played,

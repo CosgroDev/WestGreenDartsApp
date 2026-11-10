@@ -8,7 +8,8 @@ import { generateOnce, requestReview } from "@/lib/aiReview";
 import { revalidatePath } from "next/cache";
 import { supabaseServer } from "@/lib/supabaseServer";
 import { getFixtureTeamSummary } from "@/data/matchSummary";
-import { getPlayerCards, getPlayerGameLog } from "@/data/stats";
+import { getPlayerCards, getPlayerGameLog, getSeasonOpposition } from "@/data/stats";
+import { fieldAverage, gameDifficulty } from "@/lib/opposition";
 import {
   FIXTURE_SYSTEM_PROMPT,
   REVIEW_EFFORT,
@@ -70,7 +71,11 @@ export async function generateTeamAiReviewAction(fixtureId: string): Promise<Tea
   // what the opposition threw, across every match.
   const { legStory: _legStory, bestVisit: _bestVisit, ...night } = deriveMatch(summary.matches.flatMap((m) => m.legs));
 
+  const fieldAvg = fieldAverage(await getSeasonOpposition(summary.seasonId));
+
   const payload = {
+    seasonOpposition: round1(fieldAvg),
+    difficulty: gameDifficulty(summary.opposition?.threeDartAvg, fieldAvg),
     fixture: {
       label: summary.fixtureLabel,
       opponent: summary.opponent,
@@ -102,6 +107,7 @@ export async function generateTeamAiReviewAction(fixtureId: string): Promise<Tea
       legsScore: `${m.westLegs}-${m.oppLegs}`,
       threeDartAvg: round1(m.threeDartAvg),
       opponentThreeDartAvg: derived.opposition?.opponentThreeDartAvg ?? null,
+      difficulty: gameDifficulty(m.opponent?.threeDartAvg, fieldAvg),
       firstNineAvg: round1(m.firstNineAvg),
       checkout: { hits: m.checkoutHits, attempts: m.checkoutAttempts },
       highFinish: m.highFinish,

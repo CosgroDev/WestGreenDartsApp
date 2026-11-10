@@ -1,5 +1,6 @@
 import { type EventRow, type GameRow, embedded } from "@/lib/dbRows";
 import { allRows, rowsForIds } from "@/lib/database";
+import { totalsByGame } from "@/lib/opposition";
 import { supabaseServer } from "@/lib/supabaseServer";
 
 export type Game = {
@@ -20,6 +21,9 @@ export type Game = {
   first_nine_avg?: number | null;
   total_points: number;
   total_darts: number;
+  /** The opponent's points and darts in the leg (0 when their visits weren't recorded). */
+  opp_points: number;
+  opp_darts: number;
 };
 
 export async function getGamesForFixture(fixtureId: string): Promise<Game[]> {
@@ -41,11 +45,13 @@ export async function getGamesForFixture(fixtureId: string): Promise<Game[]> {
   }
 
   const events = await rowsForIds(gamesRaw.map((g: GameRow) => g.id), ids => supabase
-    .from("scoring_events").select("game_id, score, remaining_after, is_checkout, is_bust, darts")
-    .in("game_id", ids).eq("thrower", "west_green").eq("is_deleted", false)
+    .from("scoring_events").select("game_id, thrower, score, remaining_after, is_checkout, is_bust, darts")
+    .in("game_id", ids).eq("is_deleted", false)
     .order("throw_index", { ascending: true }).order("id", { ascending: true }));
   const byGame = new Map<string, EventRow[]>();
+  const oppTotals = totalsByGame(events.filter((e: EventRow) => e.thrower === "opponent"));
   for (const event of events) {
+    if (event.thrower === "opponent") continue;
     const list = byGame.get(event.game_id) ?? [];
     list.push(event); byGame.set(event.game_id, list);
   }
@@ -110,6 +116,8 @@ export async function getGamesForFixture(fixtureId: string): Promise<Game[]> {
         ...g,
         total_points: totalScore,
         total_darts: totalDarts,
+        opp_points: oppTotals.get(g.id)?.points ?? 0,
+        opp_darts: oppTotals.get(g.id)?.darts ?? 0,
         west_green_player_name: embedded(g.players)?.name,
         high_finish: highFinish,
         twenty_six: buckets.twenty_six,

@@ -207,6 +207,9 @@ const card = (overrides: Partial<PlayerCard> = {}): PlayerCard => ({
   checkout_hits: 13,
   first_nine_legs: 20,
   recorded_wins: 11,
+  opp_legs: 0,
+  opp_three_dart_avg: null,
+  avg_vs_opp: null,
   ...overrides
 });
 
@@ -223,7 +226,9 @@ const logEntry = (game_id: string, avg: number | null): PlayerGameStat => ({
   twenty_six: 0,
   hundred_plus: 0,
   hundred_forty_plus: 0,
-  one_eighty: 0
+  one_eighty: 0,
+  opp_three_dart_avg: null,
+  loser_left: null
 });
 
 describe("buildSeasonBaseline", () => {

@@ -4,7 +4,9 @@ export const revalidate = 0;
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getMatchSummary, getMatchAiReview } from "@/data/matchSummary";
+import { getSeasonOpposition } from "@/data/stats";
 import { analyseMatch } from "@/lib/matchInsights";
+import { DIFFICULTY_LABEL, DIFFICULTY_TONE, fieldAverage, signed } from "@/lib/opposition";
 import { AiReview } from "./AiReview";
 
 type Props = { params: Promise<{ gameId: string }> };
@@ -19,6 +21,12 @@ const visitTone = (score: number, isBust: boolean, isCheckout: boolean) => {
   return "bg-slate-50 text-slate-700 border-slate-200";
 };
 
+const legAvg = (visits: { score: number; darts: number; isBust: boolean }[]) => {
+  const darts = visits.reduce((s, v) => s + v.darts, 0);
+  const points = visits.reduce((s, v) => s + (v.isBust ? 0 : v.score), 0);
+  return darts > 0 ? ((points / darts) * 3).toFixed(1) : "–";
+};
+
 export default async function MatchSummaryPage({ params: paramsPromise }: Props) {
   const params = await paramsPromise;
   const [match, aiReview] = await Promise.all([
@@ -27,7 +35,28 @@ export default async function MatchSummaryPage({ params: paramsPromise }: Props)
   ]);
   if (!match) return notFound();
 
-  const insights = analyseMatch(match);
+  // The season's typical opponent is the yardstick for a hard or an easy game.
+  const fieldAvg = fieldAverage(await getSeasonOpposition(match.seasonId));
+  const insights = analyseMatch(match, fieldAvg);
+  const opp = match.opponent;
+  const num = (n: number | null | undefined, digits = 1) => (n === null || n === undefined ? "–" : n.toFixed(digits));
+  const versus: { label: string; own: string; opp: string }[] = opp
+    ? [
+        { label: "3-dart avg", own: num(opp.playerThreeDartAvg), opp: num(opp.threeDartAvg) },
+        { label: "First 9", own: num(match.firstNineAvg), opp: num(opp.firstNineAvg) },
+        {
+          label: "Checkouts",
+          own: match.checkoutAttempts > 0 ? `${match.checkoutHits}/${match.checkoutAttempts}` : "–",
+          opp: opp.checkoutAttempts > 0 ? `${opp.checkoutHits}/${opp.checkoutAttempts}` : "–"
+        },
+        { label: "High finish", own: String(match.highFinish ?? "–"), opp: String(opp.highFinish ?? "–") },
+        { label: "Best leg (darts)", own: String(match.bestLegDarts ?? "–"), opp: String(opp.bestLegDarts ?? "–") },
+        { label: "100+", own: String(match.bands.hundredPlus), opp: String(opp.bands.hundredPlus) },
+        { label: "Busts", own: String(match.busts), opp: String(opp.busts) }
+      ]
+    : [];
+  const avgGap =
+    opp && opp.playerThreeDartAvg !== null && opp.threeDartAvg !== null ? opp.playerThreeDartAvg - opp.threeDartAvg : null;
   const resultTone =
     match.result === "win"
       ? "border-emerald-200 bg-emerald-50 text-emerald-700"
@@ -61,6 +90,11 @@ export default async function MatchSummaryPage({ params: paramsPromise }: Props)
           <span className={`chip border ${resultTone}`}>
             {match.result === "win" ? "Win" : match.result === "loss" ? "Loss" : "Draw"}
           </span>
+          {insights.difficulty && (
+            <span className={`chip ml-1.5 border ${DIFFICULTY_TONE[insights.difficulty]}`}>
+              {DIFFICULTY_LABEL[insights.difficulty]}
+            </span>
+          )}
           <p className="mt-2 text-sm text-slate-600">{insights.headline}</p>
         </div>
         <p className="score-remaining text-5xl">
@@ -121,6 +155,45 @@ export default async function MatchSummaryPage({ params: paramsPromise }: Props)
         </div>
       </section>
 
+      {opp && (
+        <section className="card">
+          <h2 className="text-lg font-semibold">Head to head</h2>
+          <p className="mb-3 text-xs text-slate-500">
+            {avgGap !== null && (
+              <>
+                {match.westPlayerName} {signed(avgGap)} on average.{" "}
+              </>
+            )}
+            {insights.difficulty && fieldAvg !== null
+              ? `${DIFFICULTY_LABEL[insights.difficulty]}: a typical opponent this season averages ${fieldAvg.toFixed(1)}.`
+              : "Not enough opponent data this season yet to rate how hard the game was."}
+          </p>
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="text-[11px] uppercase tracking-wide text-slate-500">
+                <th className="pb-1 text-left font-semibold">{match.westPlayerName}</th>
+                <th className="pb-1 text-center font-semibold" aria-label="Statistic" />
+                <th className="pb-1 text-right font-semibold">{match.opponentPlayer}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {versus.map((row) => (
+                <tr key={row.label} className="border-t border-slate-100">
+                  <td className="py-1.5 text-left font-bold tabular-nums">{row.own}</td>
+                  <td className="py-1.5 text-center text-xs text-slate-500">{row.label}</td>
+                  <td className="py-1.5 text-right font-bold tabular-nums">{row.opp}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          {opp.legsWithVisits < match.legs.length && (
+            <p className="mt-2 text-[11px] text-slate-500">
+              Opponent visits were recorded for {opp.legsWithVisits} of {match.legs.length} legs; the averages compare those legs only.
+            </p>
+          )}
+        </section>
+      )}
+
       <section className="card">
         <h2 className="text-lg font-semibold mb-2">Leg by leg</h2>
         <div className="flex flex-col gap-3">
@@ -162,11 +235,37 @@ export default async function MatchSummaryPage({ params: paramsPromise }: Props)
               ) : (
                 <p className="mt-2 text-xs text-slate-500">No visit data recorded for this leg.</p>
               )}
+              {(leg.opponentVisits ?? []).length > 0 && (
+                <div className="mt-3 border-t border-slate-200 pt-2">
+                  <p className="text-xs text-slate-500">
+                    {match.opponentPlayer} · {(leg.opponentVisits ?? []).reduce((s, v) => s + v.darts, 0)} darts ·{" "}
+                    {legAvg(leg.opponentVisits ?? [])} avg
+                    {leg.winner === "west"
+                      ? ` · left on ${(leg.opponentVisits ?? []).at(-1)?.remainingAfter}`
+                      : leg.winner === "opponent" && leg.visits.length > 0
+                      ? ` · ${match.westPlayerName} left on ${leg.visits.at(-1)?.remainingAfter}`
+                      : ""}
+                  </p>
+                  <div className="mt-1.5 flex flex-wrap gap-1.5 opacity-80">
+                    {(leg.opponentVisits ?? []).map((v, j) => (
+                      <span
+                        key={j}
+                        className={`inline-flex items-center rounded-lg border px-2 py-0.5 text-xs font-semibold ${visitTone(v.score, v.isBust, v.isCheckout)}`}
+                        title={v.isBust ? `Bust — stayed on ${v.remainingAfter}` : v.isCheckout ? `Checkout: ${v.score}` : `${v.remainingAfter} left`}
+                      >
+                        {v.score}
+                        {v.isBust && <span className="ml-1 text-[10px]">✕</span>}
+                        {v.isCheckout && <span className="ml-1 text-[10px]">🎯</span>}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           ))}
         </div>
         <p className="mt-2 text-[11px] text-slate-500">
-          Visits shown for {match.westPlayerName} only — opponent visits aren&apos;t tracked. 🎯 checkout · ✕ bust
+          {match.westPlayerName}&apos;s visits first, then {match.opponentPlayer}&apos;s where they were recorded. 🎯 checkout · ✕ bust
         </p>
       </section>
 
