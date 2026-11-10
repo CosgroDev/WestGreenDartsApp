@@ -228,5 +228,5 @@ These change behaviour or cost and should not be decided by an agent:
 
 1. **Next 16 / Tailwind 4 / ESLint 10 / Jest 30 upgrades.** All are a major version behind. WP-01 stays on current majors.
 2. **PIN hash algorithm** (WP-04). Stronger hashing means regenerating `PIN_HASH`.
-3. **Hard versus soft delete.** Deleting a player or fixture is permanent today, and a player delete removes their history via foreign keys. A soft-delete model is a schema change.
+3. **Hard versus soft delete.** Deleting a fixture is permanent today. Deleting a player who has games is blocked by the `games.west_green_player_id` foreign key, and the action fails silently (see WP-05). Decide whether players should be soft-deleted instead; that is a schema change.
 4. **League data source.** `src/lib/liveLeague.ts` reads an undocumented API of a third-party site and ports its standings logic. It will break without warning when that site changes; worth asking the league for a supported feed.
