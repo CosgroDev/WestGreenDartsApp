@@ -50,6 +50,8 @@ Scoring is event-based: each visit is a `scoring_events` row, and state is rebui
 - `wgd_score_snapshot` returns a consistent view of a game in one call. `src/lib/stableRead.ts` is the fallback when the RPC is absent.
 - Double-out rules, bust handling and checkout validation live in `src/lib/scoringUtils.ts` and are mirrored in the RPC.
 
+- The league scoring screen keeps the one unconfirmed visit in local storage (`src/lib/pendingVisit.ts`) and resends it, with the same request ID, if the page reloads before the server answers.
+
 Do not change these RPC signatures without a plan for old and new app instances running side by side during a deploy.
 
 ## Statistics

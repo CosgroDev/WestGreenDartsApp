@@ -2,6 +2,34 @@
 
 A hand-off plan built from a full scan of the repository at commit `6681385`. Each work package (WP) is written so one agent can pick it up cold: it states the problem with file references, the change wanted, and how to prove it is done.
 
+## Status — implemented 10 November 2026
+
+All twelve packages were worked on the branch `claude/clever-pasteur-8ea21o`. Nothing was applied to the live database or deployed.
+
+| Package | State | What is left |
+| --- | --- | --- |
+| WP-01 Dependencies | Done | Dev-only advisories remain in the Jest/ESLint toolchain; they need major upgrades. |
+| WP-02 Lint and CI | Done | 62 lint warnings remain (mostly `no-explicit-any`). |
+| WP-03 Hygiene | Done | — |
+| WP-04 PIN gate | Done, with one change | A missing `SESSION_SECRET` logs an error instead of refusing to start, so a deploy cannot lock the team out. The PIN hash algorithm is unchanged (owner decision). |
+| WP-05 Server actions | Mostly done | Reads in `src/data/` are still not filtered by `team_id`: legacy rows may have a null team, and filtering could hide them. Check the live data first. |
+| WP-06 Migrations | Done | The owner must run `supabase migration repair` once on the live project (see `docs/getting-started.md`). |
+| WP-07 Types | Partly done | `any` usages are down from 135 to 45. The remainder are in the practice and drill modules. Row types are hand-written, not generated. |
+| WP-08 Read path | Done | The unused SQL statistics views were left in place; dropping them is a destructive change to the live database. |
+| WP-09 AI reviews | Done | — |
+| WP-10 Tests | Mostly done | `src/data/` modules for fixtures, players, seasons and the drills have no unit tests; the smoke test covers them indirectly. |
+| WP-11 Components | Partly done | Killer is split. The league scorer lost its keypad, prompt and summary but is still 443 lines; the practice scorer is untouched at 457. A shared score pad was not built because the two keypads differ by design. |
+| WP-12 Resilience | Done | Checked with axe rather than Lighthouse. Reload recovery covers league scoring only, not practice. |
+
+Checks at the end of the work: lint 0 errors, typecheck clean, 223 unit tests, database tests, production build, browser smoke test and the browser verification script all pass; `npm audit --omit=dev` reports zero advisories.
+
+### Before deploying
+
+1. Back up the database.
+2. Record the three baseline migrations as applied, then apply the two new ones (`20261110090000`, `20261110100000`) — steps in `docs/getting-started.md`. `20261110090000` adds a one-current-season constraint; if two seasons are marked current it keeps the newest.
+3. Set `SESSION_SECRET` if it is not set. Doing so signs every device out once.
+4. Deploy, then sign in and score one practice leg.
+
 ## Baseline at scan time
 
 | Check | Result |
