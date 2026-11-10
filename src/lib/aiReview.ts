@@ -40,6 +40,10 @@ export async function requestReview(
     if (response.stop_reason === "refusal") {
       return { ok: false, message: `The AI declined to review this ${subject}.` };
     }
+    // A review cut off at the token limit would be stored and shown forever.
+    if (response.stop_reason === "max_tokens") {
+      return { ok: false, message: `The AI ran out of room writing this ${subject} review. Try again.` };
+    }
     const text = (response.content as { type: string; text?: string }[])
       .filter((block) => block.type === "text")
       .map((block) => block.text ?? "")

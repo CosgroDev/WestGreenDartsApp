@@ -9,6 +9,23 @@ export type Visit = {
   remainingAfter: number;
   isBust: boolean;
   isCheckout: boolean;
+  /** What the other player had left when this visit began (absent if their visits weren't recorded). */
+  otherLeft?: number;
+  /** Position of this visit in the leg's throw order across both players. */
+  seq?: number;
+};
+
+/** One side's numbers for a leg, worked out from that side's visits alone. */
+export type SideStats = {
+  dartsTotal: number;
+  pointsTotal: number;
+  threeDartAvg: number | null;
+  firstNineAvg: number | null;
+  checkoutAttempts: number;
+  checkoutHits: number;
+  highFinish: number | null;
+  busts: number;
+  bands: { sixtyPlus: number; eightyPlus: number; hundredPlus: number; oneFortyPlus: number; oneEighty: number; twentySix: number };
 };
 
 export type LegSummary = {
@@ -24,6 +41,10 @@ export type LegSummary = {
   highFinish: number | null;
   busts: number;
   bands: { sixtyPlus: number; eightyPlus: number; hundredPlus: number; oneFortyPlus: number; oneEighty: number; twentySix: number };
+  /** The opponent's visits in this leg. Empty or absent when they weren't recorded. */
+  opponentVisits?: Visit[];
+  /** True when the West Green player threw first in the leg (null/absent if unknown). */
+  westStarted?: boolean | null;
 };
 
 export type MatchSummary = {
@@ -38,7 +59,7 @@ export type MatchSummary = {
   oppLegs: number;
   result: "win" | "loss" | "draw";
   legs: LegSummary[];
-  // match-level aggregates (West Green player only — opponent visits aren't tracked)
+  // match-level aggregates for the West Green player; the opponent's visits are on each leg
   dartsTotal: number;
   pointsTotal: number;
   threeDartAvg: number | null;
@@ -52,7 +73,7 @@ export type MatchSummary = {
   bands: LegSummary["bands"];
 };
 
-export function summariseLeg(gameId: string, winner: LegSummary["winner"], visits: Visit[]): LegSummary {
+export function summariseVisits(visits: Visit[]): SideStats {
   const dartsTotal = visits.reduce((s, v) => s + v.darts, 0);
   const pointsTotal = visits.reduce((s, v) => s + (v.isBust ? 0 : v.score), 0);
   const firstThree = visits.slice(0, 3);
@@ -79,9 +100,6 @@ export function summariseLeg(gameId: string, winner: LegSummary["winner"], visit
     if (v.score === 180) bands.oneEighty += 1;
   });
   return {
-    gameId,
-    winner,
-    visits,
     dartsTotal,
     pointsTotal,
     threeDartAvg: dartsTotal > 0 ? (pointsTotal / dartsTotal) * 3 : null,
@@ -92,6 +110,51 @@ export function summariseLeg(gameId: string, winner: LegSummary["winner"], visit
     busts: visits.filter((v) => v.isBust).length,
     bands
   };
+}
+
+export function summariseLeg(
+  gameId: string,
+  winner: LegSummary["winner"],
+  visits: Visit[],
+  extra: { opponentVisits?: Visit[]; westStarted?: boolean | null } = {}
+): LegSummary {
+  return { gameId, winner, visits, ...summariseVisits(visits), ...extra };
+}
+
+/**
+ * Split one leg's events (both throwers, in throw order) into each side's
+ * visits. Every visit carries what the other player had left when it began,
+ * which is what turns a list of scores into the story of a race.
+ */
+export function splitLegEvents(events: EventRow[], startScore = 501) {
+  const west: Visit[] = [];
+  const opponent: Visit[] = [];
+  let westLeft = startScore;
+  let oppLeft = startScore;
+  events.forEach((e, seq) => {
+    const isOpponent = e.thrower === "opponent";
+    const remainingAfter = typeof e.remaining_after === "number" ? e.remaining_after : 0;
+    const visit: Visit = {
+      score: typeof e.score === "number" ? e.score : 0,
+      darts: typeof e.darts === "number" ? e.darts : 3,
+      remainingAfter,
+      isBust: e.is_bust === true,
+      isCheckout: e.is_checkout === true,
+      otherLeft: isOpponent ? westLeft : oppLeft,
+      seq
+    };
+    if (isOpponent) {
+      opponent.push(visit);
+      oppLeft = remainingAfter;
+    } else {
+      west.push(visit);
+      westLeft = remainingAfter;
+    }
+  });
+  // Without any opponent visits the "other player" numbers mean nothing.
+  if (!opponent.length) west.forEach((v) => delete v.otherLeft);
+  const westStarted = opponent.length && events.length ? events[0].thrower !== "opponent" : null;
+  return { west, opponent, westStarted };
 }
 
 /**
@@ -114,7 +177,7 @@ export async function getMatchSummary(gameId: string): Promise<MatchSummary | nu
     supabase.from("fixtures").select("id, opponent, home, season_id").eq("id", game.fixture_id).single(),
     supabase
       .from("games")
-      .select("id, match_id, opponent_player, west_green_player_id, winner, status, created_at")
+      .select("id, match_id, opponent_player, west_green_player_id, west_green_starts, winner, status, created_at")
       .eq("fixture_id", game.fixture_id)
       .eq("deleted", false)
       .order("created_at", { ascending: true })
@@ -132,34 +195,32 @@ export async function getMatchSummary(gameId: string): Promise<MatchSummary | nu
   );
   if (!legsGames.length) return null;
 
+  // Both throwers, in throw order: the opponent's visits are what show whether
+  // a leg was lost to better scoring or thrown away on the finish.
   const { data: events } = await allRows(() => supabase
     .from("scoring_events")
-    .select("game_id, score, darts, remaining_after, is_bust, is_checkout, throw_index")
-    .eq("thrower", "west_green")
+    .select("game_id, thrower, score, darts, remaining_after, is_bust, is_checkout, throw_index")
     .in("game_id", legsGames.map((g: LegRow) => g.id))
     .eq("is_deleted", false)
     .order("throw_index", { ascending: true }).order("id", { ascending: true }));
 
-  const eventsByGame = new Map<string, Visit[]>();
+  const eventsByGame = new Map<string, EventRow[]>();
   (events || []).forEach((e: EventRow) => {
-    const list = eventsByGame.get(e.game_id) || [];
-    list.push({
-      score: typeof e.score === "number" ? e.score : 0,
-      darts: typeof e.darts === "number" ? e.darts : 3,
-      remainingAfter: typeof e.remaining_after === "number" ? e.remaining_after : 0,
-      isBust: e.is_bust === true,
-      isCheckout: e.is_checkout === true
-    });
-    eventsByGame.set(e.game_id, list);
+    eventsByGame.set(e.game_id, [...(eventsByGame.get(e.game_id) || []), e]);
   });
 
-  const legs: LegSummary[] = legsGames.map((g: LegRow) =>
-    summariseLeg(
+  const legs: LegSummary[] = legsGames.map((g: LegRow) => {
+    const split = splitLegEvents(eventsByGame.get(g.id) || []);
+    return summariseLeg(
       g.id,
       g.winner === "west_green" ? "west" : g.winner === "opponent" ? "opponent" : "draw",
-      eventsByGame.get(g.id) || []
-    )
-  );
+      split.west,
+      {
+        opponentVisits: split.opponent,
+        westStarted: split.westStarted ?? (typeof g.west_green_starts === "boolean" ? g.west_green_starts : null)
+      }
+    );
+  });
 
   const westLegs = legs.filter((l) => l.winner === "west").length;
   const oppLegs = legs.filter((l) => l.winner === "opponent").length;
@@ -269,7 +330,7 @@ export type FixtureTeamSummary = {
   matchDraws: number;
   legsFor: number;
   legsAgainst: number;
-  // team-wide aggregates (West Green players only — opponent visits aren't tracked)
+  // team-wide aggregates for the West Green players; the opponents' visits are on each leg
   threeDartAvg: number | null;
   firstNineAvg: number | null;
   checkoutHits: number;

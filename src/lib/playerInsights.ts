@@ -1,4 +1,8 @@
+import type { CheckoutPlayerStat } from "@/data/checkoutPractice";
+import type { DoublesPlayerStat } from "@/data/doublesPractice";
+import type { Game121PlayerStat } from "@/data/game121";
 import type { LegSummary } from "@/data/matchSummary";
+import type { PracticePlayerStat } from "@/data/practice";
 import type { PlayerCard } from "@/data/stats";
 import { buildPerformanceLeaderboard } from "@/lib/playerPerformance";
 import { buildPlayerAuras } from "@/lib/playerAura";
@@ -12,8 +16,9 @@ import { deriveMatch, round1 } from "@/lib/aiCoaching";
  * say *why* legs are won or lost. Everything here is worked out from every
  * visit of the season so the model can find the patterns a player can't see
  * from the scoresheet: where finishing breaks down by range, whether throwing
- * first matters, how they handle deciders, how consistent they are and where
- * they sit in the squad.
+ * first matters, how they handle deciders, how consistent they are, how they
+ * fare against what the opponent actually threw, and where they sit in the
+ * squad.
  */
 
 export type InsightLeg = LegSummary & {
@@ -56,6 +61,14 @@ const record = (legs: InsightLeg[]) => {
 const legsAvg = (legs: LegSummary[]) => {
   const darts = legs.reduce((s, l) => s + l.dartsTotal, 0);
   const points = legs.reduce((s, l) => s + l.pointsTotal, 0);
+  return darts > 0 ? round1((points / darts) * 3) : null;
+};
+
+/** The opponents' combined average over the legs where their visits were recorded. */
+const opponentAvg = (legs: LegSummary[]) => {
+  const visits = legs.flatMap((l) => l.opponentVisits ?? []);
+  const darts = visits.reduce((s, v) => s + v.darts, 0);
+  const points = visits.reduce((s, v) => s + (v.isBust ? 0 : v.score), 0);
   return darts > 0 ? round1((points / darts) * 3) : null;
 };
 
@@ -159,7 +172,15 @@ export function derivePlayerSeason(matches: InsightMatch[]) {
 
   const legAvgs = legs.map((l) => l.threeDartAvg).filter((a): a is number => a !== null);
   const wonDarts = won.map((l) => l.dartsTotal).filter((d) => d > 0);
-  const { legStory: _legStory, ...derived } = deriveMatch(legs);
+  const {
+    legStory: _legStory,
+    throwOrder: _throwOrder,
+    doubleInHand,
+    medianLeftWhenLost,
+    legsLostOnADouble,
+    opposition,
+    ...derived
+  } = deriveMatch(legs);
 
   // Trend: first half of the season vs the second, and the last three matches.
   const half = Math.floor(ordered.length / 2);
@@ -204,6 +225,7 @@ export function derivePlayerSeason(matches: InsightMatch[]) {
         result: results[i].result,
         legs: `${results[i].won}-${results[i].lost}`,
         threeDartAvg: legsAvg(m.legs),
+        opponentThreeDartAvg: opponentAvg(m.legs),
         firstNineAvg: legsFirstNine(m.legs),
         checkout: `${finishing.hits}/${finishing.attempts}`,
         highFinish: high,
@@ -261,14 +283,21 @@ export function derivePlayerSeason(matches: InsightMatch[]) {
         pct: pct(hits, v),
         busts: b
       })),
+      /** Visits that began on a one-dart finish: the truest read of double hitting. */
+      doubleInHand: { ...doubleInHand, pct: pct(doubleInHand.hits, doubleInHand.visits) },
       /** The number left on the first visit a leg became finishable — set-up quality. */
       medianFirstFinishLeft: median(firstFinishLeft),
+      /** What was still needed in the legs that got away. */
+      medianLeftWhenLost,
+      legsLostOnADouble,
       favouriteCheckouts: [...checkouts.entries()]
         .sort((a, b) => b[1] - a[1] || b[0] - a[0])
         .slice(0, 5)
         .map(([finish, times]) => ({ finish, times })),
       highestCheckout: checkouts.size ? Math.max(...checkouts.keys()) : null
     },
+    /** Measured against what the opponents actually threw; null if their visits weren't recorded. */
+    opposition,
     speed: {
       fastestLegDarts: wonDarts.length ? Math.min(...wonDarts) : null,
       medianDartsPerLegWon: median(wonDarts),
@@ -288,6 +317,119 @@ export function derivePlayerSeason(matches: InsightMatch[]) {
 }
 
 export type PlayerSeasonDerived = ReturnType<typeof derivePlayerSeason>;
+
+/**
+ * The squad's season from every visit, for the AI season review: one
+ * team-wide profile (how legs are won and lost, by throw order, venue and
+ * against what opponents threw), a night-by-night timeline, and a short
+ * diagnostic line per player.
+ */
+export function deriveSquadSeason(squad: { playerId: string; matches: InsightMatch[] }[]) {
+  const all = squad.flatMap((p) => p.matches);
+  const { matchTimeline: _timeline, record: _record, consistency: _consistency, ...team } = derivePlayerSeason(all);
+
+  const nights = new Map<string, InsightMatch[]>();
+  all.forEach((m) => {
+    const key = `${m.date.slice(0, 10)}|${m.opponentTeam}`;
+    nights.set(key, [...(nights.get(key) ?? []), m]);
+  });
+
+  return {
+    team,
+    nights: [...nights.entries()]
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([, matches]) => {
+        const legs = matches.flatMap((m) => m.legs);
+        const d = deriveMatch(legs);
+        return {
+          date: matches[0].date.slice(0, 10),
+          opponent: matches[0].opponentTeam,
+          venue: matches[0].home ? "home" : "away",
+          legs: `${legs.filter((l) => l.winner === "west").length}-${legs.filter((l) => l.winner === "opponent").length}`,
+          threeDartAvg: legsAvg(legs),
+          opponentThreeDartAvg: opponentAvg(legs),
+          checkout: `${legs.reduce((s, l) => s + l.checkoutHits, 0)}/${legs.reduce((s, l) => s + l.checkoutAttempts, 0)}`,
+          legsLostWithFinishChances: d.legsLostWithFinishChances,
+          legsLostNeverOnFinish: d.legsLostNeverOnFinish
+        };
+      }),
+    players: squad
+      .filter((p) => p.matches.length > 0)
+      .map((p) => {
+        const d = derivePlayerSeason(p.matches);
+        return {
+          playerId: p.playerId,
+          legsLostWithFinishChances: d.scoring.legsLostWithFinishChances,
+          legsLostNeverOnFinish: d.scoring.legsLostNeverOnFinish,
+          avgDartsToReachFinish: d.scoring.avgDartsToReachFinish,
+          doubleInHand: d.finishing.doubleInHand,
+          medianFirstFinishLeft: d.finishing.medianFirstFinishLeft,
+          throwingFirst: d.throwOrder?.throwingFirst ?? null,
+          throwingSecond: d.throwOrder?.throwingSecond ?? null,
+          opponentThreeDartAvg: d.opposition?.opponentThreeDartAvg ?? null,
+          outscoredOpponent: d.opposition?.outscoredOpponent ?? null,
+          outscoredByOpponent: d.opposition?.outscoredByOpponent ?? null,
+          legAvgStdDev: d.consistency.legAvgStdDev
+        };
+      })
+  };
+}
+
+export type PracticeSources = {
+  legs: PracticePlayerStat[];
+  checkout: CheckoutPlayerStat[];
+  doubles: DoublesPlayerStat[];
+  game121: Game121PlayerStat[];
+};
+
+/**
+ * What the player has logged in the app's practice games (all time, not just
+ * this season). It lets the insight compare practice with match play and
+ * build on drills the player already does rather than suggesting them cold.
+ * Each block is null when the player has logged nothing in that game.
+ */
+export function practiceContext(playerId: string, sources: PracticeSources) {
+  const legs = sources.legs.find((p) => p.player_id === playerId);
+  const checkout = sources.checkout.find((p) => p.player_id === playerId);
+  const doubles = sources.doubles.find((p) => p.player_id === playerId);
+  const game121 = sources.game121.find((p) => p.player_id === playerId);
+  return {
+    practice501: legs
+      ? {
+          legs: legs.legs_played,
+          legsWon: legs.legs_won,
+          threeDartAvg: round1(legs.three_dart_avg),
+          firstNineAvg: round1(legs.first_nine_avg),
+          highFinish: legs.high_finish
+        }
+      : null,
+    randomCheckout: checkout
+      ? {
+          attempts: checkout.attempts,
+          checkouts: checkout.checkouts,
+          checkoutPct: round1(checkout.checkout_pct),
+          avgDartsWhenSuccessful: round1(checkout.avg_darts)
+        }
+      : null,
+    doublesSwitch: doubles
+      ? {
+          games: doubles.games_played,
+          visitsAtADouble: doubles.total_attempts,
+          hitPct: round1(doubles.double_pct),
+          firstDartHitPct: round1(doubles.first_dart_pct),
+          weakestDoubles: doubles.weakest_doubles
+        }
+      : null,
+    challenge121: game121
+      ? {
+          games: game121.games_played,
+          gamesWon: game121.games_won,
+          bestCheckout: game121.best_checkout,
+          finishedAtFirstAttemptPct: round1(game121.lock_rate)
+        }
+      : null
+  };
+}
 
 /**
  * Where the player sits in the squad: rank (1 = best) and the squad's

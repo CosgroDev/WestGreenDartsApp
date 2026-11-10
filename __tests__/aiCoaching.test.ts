@@ -7,7 +7,8 @@ import {
   FIXTURE_SYSTEM_PROMPT,
   SEASON_SYSTEM_PROMPT
 } from "../src/lib/aiCoaching";
-import type { LegSummary, Visit } from "../src/data/matchSummary";
+import { splitLegEvents, summariseLeg, type LegSummary, type Visit } from "../src/data/matchSummary";
+import type { EventRow } from "../src/lib/dbRows";
 import type { PlayerCard, PlayerGameStat } from "../src/data/stats";
 
 const emptyBands = { sixtyPlus: 0, eightyPlus: 0, hundredPlus: 0, oneFortyPlus: 0, oneEighty: 0, twentySix: 0 };
@@ -88,6 +89,99 @@ describe("deriveMatch", () => {
     expect(r.legsLostNeverOnFinish).toBe(1);
     expect(r.legsLostWithFinishChances).toBe(0);
     expect(r.avgDartsToReachFinish).toBeNull();
+  });
+});
+
+// Both throwers' events for one leg, in throw order, as the database returns them.
+const events = (rows: [thrower: "west_green" | "opponent", score: number, left: number, flags?: Partial<EventRow>][]): EventRow[] =>
+  rows.map(([thrower, score, remaining_after, flags], i) => ({
+    id: i + 1, game_id: "g", thrower, throw_index: i + 1, score, darts: 3, remaining_after, is_bust: false, is_checkout: false, ...flags
+  }));
+
+const legFromEvents = (id: string, winner: LegSummary["winner"], rows: Parameters<typeof events>[0]) => {
+  const split = splitLegEvents(events(rows));
+  return summariseLeg(id, winner, split.west, { opponentVisits: split.opponent, westStarted: split.westStarted });
+};
+
+describe("splitLegEvents", () => {
+  it("separates the throwers and records what the other player had left at each visit", () => {
+    const split = splitLegEvents(events([["opponent", 100, 401], ["west_green", 60, 441], ["opponent", 85, 316], ["west_green", 140, 301]]));
+    expect(split.westStarted).toBe(false);
+    expect(split.west.map((x) => x.otherLeft)).toEqual([401, 316]);
+    expect(split.opponent.map((x) => x.otherLeft)).toEqual([501, 441]);
+    expect(split.west.map((x) => x.seq)).toEqual([1, 3]);
+  });
+
+  it("says nothing about the opponent when their visits were not recorded", () => {
+    const split = splitLegEvents(events([["west_green", 60, 441], ["west_green", 100, 341]]));
+    expect(split.opponent).toEqual([]);
+    expect(split.westStarted).toBeNull();
+    expect(split.west[0].otherLeft).toBeUndefined();
+  });
+});
+
+describe("deriveMatch with the opponent's visits", () => {
+  // Leg 1 (with the throw): first to a finish, missed 40 twice with the opponent
+  // on a finish, and lost with 20 left.
+  const thrownAway = legFromEvents("l1", "opponent", [
+    ["west_green", 140, 361], ["opponent", 60, 441],
+    ["west_green", 140, 221], ["opponent", 60, 381],
+    ["west_green", 100, 121], ["opponent", 100, 281],
+    ["west_green", 81, 40], ["opponent", 140, 141],
+    ["west_green", 0, 40], ["opponent", 101, 40],
+    ["west_green", 20, 20], ["opponent", 40, 0, { is_checkout: true, darts: 1 }]
+  ]);
+  // Leg 2 (against the throw): behind after nine darts, won after the opponent missed a finish.
+  const nicked = legFromEvents("l2", "west", [
+    ["opponent", 140, 361], ["west_green", 60, 441],
+    ["opponent", 140, 221], ["west_green", 60, 381],
+    ["opponent", 100, 121], ["west_green", 100, 281],
+    ["opponent", 81, 40], ["west_green", 100, 181],
+    ["opponent", 0, 40], ["west_green", 141, 40],
+    ["opponent", 20, 20], ["west_green", 40, 0, { is_checkout: true, darts: 2 }]
+  ]);
+  const d = deriveMatch([thrownAway, nicked]);
+
+  it("tells how each leg was lost and who threw first", () => {
+    expect(d.legStory[0]).toMatchObject({ threwFirst: true, won: false, leftWhenLost: 20, firstFinishLeft: 121, firstToAFinish: "player" });
+    expect(d.legStory[1]).toMatchObject({ threwFirst: false, won: true, leftWhenLost: null, firstToAFinish: "opponent" });
+    expect(d.medianLeftWhenLost).toBe(20);
+    expect(d.legsLostOnADouble).toBe(1);
+    expect(d.throwOrder).toEqual({ throwingFirst: { legs: 1, won: 0 }, throwingSecond: { legs: 1, won: 1 } });
+  });
+
+  it("lists each finishing visit with what the opponent had left", () => {
+    expect(d.legStory[0].finishChances).toEqual([
+      { left: 121, scored: 81, outcome: "missed", opponentLeft: 281 },
+      { left: 40, scored: 0, outcome: "missed", opponentLeft: 141 },
+      { left: 40, scored: 20, outcome: "missed", opponentLeft: 40 }
+    ]);
+    expect(d.doubleInHand).toEqual({ visits: 3, hits: 1 });
+    expect(d.opposition?.finishVisitsWithOpponentOnAFinish).toEqual({ visits: 3, hits: 1 });
+    expect(d.opposition?.finishVisitsWithOpponentNotOnAFinish).toEqual({ visits: 1, hits: 0 });
+  });
+
+  it("compares the player with what the opponent threw", () => {
+    const o = d.opposition!;
+    expect(o.legsWithOpponentVisits).toBe(2);
+    expect(o.opponentCheckout).toEqual({ hits: 1, attempts: 5 });
+    expect(o.opponentHighFinish).toBe(40);
+    // Leg averages count every dart: the missed doubles drag leg 1 below the
+    // opponent's 15-darter, and the 17-dart leg 2 is above the opponent's.
+    expect(o.outscoredOpponent).toEqual({ legs: 1, won: 1 });
+    expect(o.outscoredByOpponent).toEqual({ legs: 1, won: 0 });
+    expect(o.firstToAFinish).toEqual({ legs: 1, won: 0 });
+    expect(o.secondToAFinish).toEqual({ legs: 1, won: 1 });
+    expect(o.legsWonAfterOpponentMissedAFinish).toBe(1);
+    expect(d.legStory[1].opponent).toMatchObject({ left: 20, missedFinishVisits: 3, firstNineLead: -160 });
+  });
+
+  it("leaves the opposition out when no opponent visits were recorded", () => {
+    const r = deriveMatch([wonLeg, lostLeg]);
+    expect(r.opposition).toBeNull();
+    expect(r.throwOrder).toBeNull();
+    expect(r.legStory[0]).toMatchObject({ opponent: null, firstToAFinish: null });
+    expect(r.legStory[1].finishChances).toEqual([{ left: 129, scored: 0, outcome: "bust" }]);
   });
 });
 
@@ -179,7 +273,10 @@ describe("system prompts", () => {
       expect(prompt).toMatch(/Practice:/);
       expect(prompt).toMatch(/Random Checkout/);
       expect(prompt).toMatch(/Doubles Switch/);
-      expect(prompt).toMatch(/never state or guess what an opponent/);
+      // The opponent's visits are in the data; the prompt has to say how to use them and when they are missing.
+      expect(prompt).toMatch(/The opponent's visits are recorded too/);
+      expect(prompt).toMatch(/their visits were not recorded/);
+      expect(prompt).toMatch(/doubleInHand/);
     }
   );
 });

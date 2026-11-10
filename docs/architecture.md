@@ -60,7 +60,15 @@ Statistics are computed in TypeScript from the season's games and events (`src/d
 
 ## AI reviews
 
-`src/lib/aiCoaching.ts` holds the prompts and the derived numbers fed to the model. `src/lib/aiReview.ts` owns the API call. Each review is generated once and stored; the season summary and player insight regenerate when new results arrive.
+`src/lib/aiCoaching.ts` holds the prompts and the derived numbers fed to the model; `src/lib/playerInsights.ts` holds the season-long derivations. `src/lib/aiReview.ts` owns the API call. Each review is generated once and stored; the season summary and player insight regenerate when new results arrive.
+
+What the model is shown decides how much a review can say, so the payloads are built from every visit rather than from the stat tiles:
+
+- Both throwers' visits are read in throw order (`splitLegEvents` in `src/data/matchSummary.ts`), so each visit carries what the other player had left at the time. Legs scored before opponent visits were stored have none; every opponent block is then null and the prompts tell the model to say nothing about the opponent.
+- `deriveMatch` works out how each leg was lost (with finish chances, or never reaching one), what was left, one-dart-finish conversion, the leg record with and against the throw, and the comparison with what the opponent threw (who out-scored whom, who reached a finish first, finishing with the opponent also on a finish).
+- The season review adds a squad-wide profile and a night-by-night timeline (`deriveSquadSeason`) and the league table when the league site can be read. The player insight adds the player's logged practice (`practiceContext`).
+
+When changing a payload, change the description of it in the matching system prompt too: the prompt is the only thing that tells the model what a field means.
 
 ## Caching
 

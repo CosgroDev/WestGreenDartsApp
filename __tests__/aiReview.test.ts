@@ -39,6 +39,14 @@ describe("requestReview", () => {
     expect(await requestReview({ ...request, subject: "season" }, client)).toEqual({ ok: false, message: "The AI declined to review this season." });
   });
 
+  it("rejects a review that was cut off at the token limit rather than storing half of one", async () => {
+    const { client } = clientReturning({ stop_reason: "max_tokens", content: [{ type: "text", text: "Keep doing: you" }] });
+    expect(await requestReview(request, client)).toEqual({
+      ok: false,
+      message: "The AI ran out of room writing this match review. Try again."
+    });
+  });
+
   it("reports an empty response", async () => {
     const { client } = clientReturning({ stop_reason: "end_turn", content: [{ type: "text", text: "   " }] });
     expect(await requestReview(request, client)).toEqual({ ok: false, message: "Empty response from the AI." });

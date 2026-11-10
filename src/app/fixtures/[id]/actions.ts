@@ -66,6 +66,10 @@ export async function generateTeamAiReviewAction(fixtureId: string): Promise<Tea
     .map((x) => ({ player: x.m.westPlayerName, vsSeasonAvg: x.vsSeason!.threeDartAvg as number }))
     .sort((p, q) => q.vsSeasonAvg - p.vsSeasonAvg);
 
+  // The whole night as one set of legs: how legs were lost, the throw, and
+  // what the opposition threw, across every match.
+  const { legStory: _legStory, bestVisit: _bestVisit, ...night } = deriveMatch(summary.matches.flatMap((m) => m.legs));
+
   const payload = {
     fixture: {
       label: summary.fixtureLabel,
@@ -87,10 +91,7 @@ export async function generateTeamAiReviewAction(fixtureId: string): Promise<Tea
       teamBands: summary.bands
     },
     teamDerived: {
-      legsLostWithFinishChances: matches.reduce((s, x) => s + x.derived.legsLostWithFinishChances, 0),
-      legsLostNeverOnFinish: matches.reduce((s, x) => s + x.derived.legsLostNeverOnFinish, 0),
-      lowVisits: matches.reduce((s, x) => s + x.derived.lowVisits, 0),
-      scoringPhaseVisits: matches.reduce((s, x) => s + x.derived.scoringPhaseVisits, 0),
+      ...night,
       aboveSeasonNorm: byVsSeason.filter((p) => p.vsSeasonAvg >= 3),
       belowSeasonNorm: byVsSeason.filter((p) => p.vsSeasonAvg <= -3).reverse()
     },
@@ -98,8 +99,9 @@ export async function generateTeamAiReviewAction(fixtureId: string): Promise<Tea
       player: m.westPlayerName,
       opponent: m.opponentPlayer,
       result: m.result,
-      legs: `${m.westLegs}-${m.oppLegs}`,
+      legsScore: `${m.westLegs}-${m.oppLegs}`,
       threeDartAvg: round1(m.threeDartAvg),
+      opponentThreeDartAvg: derived.opposition?.opponentThreeDartAvg ?? null,
       firstNineAvg: round1(m.firstNineAvg),
       checkout: { hits: m.checkoutHits, attempts: m.checkoutAttempts },
       highFinish: m.highFinish,
@@ -111,9 +113,13 @@ export async function generateTeamAiReviewAction(fixtureId: string): Promise<Tea
         avgDartsToReachFinish: derived.avgDartsToReachFinish,
         legsLostWithFinishChances: derived.legsLostWithFinishChances,
         legsLostNeverOnFinish: derived.legsLostNeverOnFinish,
+        doubleInHand: derived.doubleInHand,
         lowVisits: derived.lowVisits,
-        bestVisit: derived.bestVisit
+        bestVisit: derived.bestVisit,
+        legsWonAfterOpponentMissedAFinish: derived.opposition?.legsWonAfterOpponentMissedAFinish ?? null
       },
+      // The finishing visits themselves stay in the single-match review.
+      legs: derived.legStory.map(({ finishChances: _chances, ...l }) => l),
       seasonAvg: baseline?.threeDartAvg ?? null,
       vsSeason
     }))

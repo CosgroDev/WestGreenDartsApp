@@ -60,6 +60,7 @@ export async function generateAiReviewAction(gameId: string): Promise<AiReviewRe
     match: {
       player: summary.westPlayerName,
       opponent: summary.opponentPlayer,
+      fixture: summary.fixtureLabel,
       result: summary.result,
       legsScore: `${summary.westLegs}-${summary.oppLegs}`,
       threeDartAvg: round1(summary.threeDartAvg),
@@ -76,11 +77,19 @@ export async function generateAiReviewAction(gameId: string): Promise<AiReviewRe
       : null,
     legs: summary.legs.map((l, i) => ({
       leg: i + 1,
-      winner: l.winner,
+      winner: l.winner === "west" ? "player" : l.winner,
+      threwFirst: l.westStarted ?? null,
       darts: l.dartsTotal,
       visits: l.visits.map((v) => ({
         score: v.score,
-        remainingAfter: v.remainingAfter,
+        left: v.remainingAfter,
+        opponentLeft: v.otherLeft,
+        bust: v.isBust || undefined,
+        checkout: v.isCheckout || undefined
+      })),
+      opponentVisits: (l.opponentVisits ?? []).map((v) => ({
+        score: v.score,
+        left: v.remainingAfter,
         bust: v.isBust || undefined,
         checkout: v.isCheckout || undefined
       }))
