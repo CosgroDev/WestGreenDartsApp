@@ -1,3 +1,4 @@
+import { type EventRow, type GameRow, type PlayerRow } from "@/lib/dbRows";
 import { allRows, rowsForIds } from "@/lib/database";
 import { matchKey } from "@/lib/matchKey";
 import { canFinishFrom } from "@/lib/scoringUtils";
@@ -15,7 +16,7 @@ async function fetchAllScoringEvents(
   gameIds: string[],
   columns: string,
   orderColumn: string = "id"
-): Promise<any[]> {
+): Promise<EventRow[]> {
   return rowsForIds(gameIds, ids => supabase.from("scoring_events")
     .select(columns).in("game_id", ids).eq("is_deleted", false).eq("thrower", "west_green")
     .order(orderColumn, {ascending: true}).order("id", {ascending: true}));
@@ -71,7 +72,7 @@ const TEAM_CARD_EMPTY: TeamCard = {
   one_eighty_count: 0,
 };
 
-export type SeasonStatisticsData = { players: any[]; games: any[]; events: any[] };
+export type SeasonStatisticsData = { players: PlayerRow[]; games: GameRow[]; events: EventRow[] };
 export async function loadSeasonStatistics(seasonId?: string): Promise<SeasonStatisticsData> {
   // The session is checked here, outside the cache, on every call.
   const db = await supabaseServer();
@@ -107,10 +108,10 @@ export async function getPlayerCards(seasonId?: string, includeInactive = false,
     return includeInactive ? query : query.eq("active", true);
   });
   if (playersErr || !activePlayers || !activePlayers.length) return [];
-  const activeIds = new Set(activePlayers.map((p: any) => p.id));
+  const activeIds = new Set(activePlayers.map((p: PlayerRow) => p.id));
 
   // Completed games for active players, optionally scoped to a season via fixture join
-  const { data: games, error: gamesErr } = shared ? { data: shared.games.filter(g => g.status === "completed" && activeIds.has(g.west_green_player_id)), error: null } : await allRows(() => {
+  const { data: games, error: gamesErr } = shared ? { data: shared.games.filter(g => g.status === "completed" && activeIds.has(g.west_green_player_id ?? "")), error: null } : await allRows(() => {
     let gamesQuery = supabase!
       .from("games")
       .select(
@@ -124,7 +125,7 @@ export async function getPlayerCards(seasonId?: string, includeInactive = false,
       .order("completed_at", { ascending: true });
 
     if (seasonId) {
-      gamesQuery = (gamesQuery as any).eq("fixtures.season_id", seasonId);
+      gamesQuery = gamesQuery.eq("fixtures.season_id", seasonId);
     }
 
     return gamesQuery.order("id", {ascending: true});
@@ -155,7 +156,7 @@ export async function getPlayerCards(seasonId?: string, includeInactive = false,
       gameIds: string[];
     }
   >();
-  games.forEach((g: any) => {
+  games.forEach((g: GameRow) => {
     const pid = g.west_green_player_id;
     if (!pid) return;
     const entry =
@@ -192,7 +193,7 @@ export async function getPlayerCards(seasonId?: string, includeInactive = false,
   });
 
   // Fetch scoring events for all those games
-  const allGameIds = games.map((g: any) => g.id);
+  const allGameIds = games.map((g: GameRow) => g.id);
   const events = shared ? shared.events : await fetchAllScoringEvents(
     supabase!, allGameIds,
     "game_id, score, darts, is_bust, is_checkout, remaining_after, is_deleted", "throw_index"
@@ -205,8 +206,8 @@ export async function getPlayerCards(seasonId?: string, includeInactive = false,
     });
 
     // Collect first 3 events per game to compute first 9 darts per leg
-    const first3ByGame = new Map<string, any[]>();
-    events.forEach((e: any) => {
+    const first3ByGame = new Map<string, EventRow[]>();
+    events.forEach((e: EventRow) => {
       if (e.is_bust) e = {...e, score: 0};
       const pid = gameToPlayer.get(e.game_id);
       if (!pid) return;
@@ -271,7 +272,7 @@ export async function getPlayerCards(seasonId?: string, includeInactive = false,
 
   const players: PlayerCard[] = [];
   for (const [pid, val] of perPlayer.entries()) {
-    const name = activePlayers.find((p: any) => p.id === pid)?.name ?? pid;
+    const name = activePlayers.find((p: PlayerRow) => p.id === pid)?.name ?? pid;
     const three_dart_avg =
       val.totalDarts > 0 ? (val.totalScore / val.totalDarts) * 3 : null;
     const first_nine_avg = val.first9Darts > 0 ? (val.first9Score / val.first9Darts) * 3 : null;
@@ -353,14 +354,14 @@ export async function getPlayerGameLog(
       .order("completed_at", { ascending: false });
 
     if (seasonId) {
-      gamesQuery = (gamesQuery as any).eq("fixtures.season_id", seasonId);
+      gamesQuery = gamesQuery.eq("fixtures.season_id", seasonId);
     }
 
     return gamesQuery.order("id", {ascending: true});
   });
   if (gamesErr || !games || !games.length) return [];
 
-  const gameIds = games.map((g: any) => g.id);
+  const gameIds = games.map((g: GameRow) => g.id);
   const events = await fetchAllScoringEvents(
     supabase,
     gameIds,
@@ -403,7 +404,7 @@ export async function getPlayerGameLog(
     return a;
   };
 
-  (events || []).forEach((e: any) => {
+  (events || []).forEach((e: EventRow) => {
     if (e.is_bust) e = {...e, score: 0};
     const a = ensure(e.game_id);
     if (typeof e.score === "number") {
@@ -434,7 +435,7 @@ export async function getPlayerGameLog(
     }
   });
 
-  return games.map((g: any) => {
+  return games.map((g: GameRow) => {
     const a = agg.get(g.id);
     const three_dart_avg = a && a.totalDarts > 0 ? (a.totalScore / a.totalDarts) * 3 : null;
     const first_nine_avg = a && a.first9Darts > 0 ? (a.first9Score / a.first9Darts) * 3 : null;
@@ -474,7 +475,7 @@ export async function getTeamCard(seasonId?: string, shared?: SeasonStatisticsDa
       .eq("status", "completed");
 
     if (seasonId) {
-      gamesQuery = (gamesQuery as any).eq("fixtures.season_id", seasonId);
+      gamesQuery = gamesQuery.eq("fixtures.season_id", seasonId);
     }
 
     return gamesQuery.order("id", {ascending: true});
@@ -486,11 +487,11 @@ export async function getTeamCard(seasonId?: string, shared?: SeasonStatisticsDa
   }
 
   const legs_played = games.length;
-  const legs_won = games.filter((g: any) => g.winner === "west_green").length;
+  const legs_won = games.filter((g: GameRow) => g.winner === "west_green").length;
 
   const wonDarts = games
-    .filter((g: any) => g.winner === "west_green" && typeof g.darts_thrown === "number" && g.darts_thrown > 0)
-    .map((g: any) => g.darts_thrown as number);
+    .filter((g: GameRow) => g.winner === "west_green" && typeof g.darts_thrown === "number" && g.darts_thrown > 0)
+    .map((g: GameRow) => g.darts_thrown as number);
   const darts_per_leg_won =
     wonDarts.length > 0 ? wonDarts.reduce((s, v) => s + v, 0) / wonDarts.length : null;
 
@@ -503,7 +504,7 @@ export async function getTeamCard(seasonId?: string, shared?: SeasonStatisticsDa
   let one_eighty_count = 0;
 
   if (games.length) {
-    const gameIds = games.map((g: any) => g.id);
+    const gameIds = games.map((g: GameRow) => g.id);
     const events = shared ? shared.events : await fetchAllScoringEvents(
       supabase!,
       gameIds,
@@ -515,7 +516,7 @@ export async function getTeamCard(seasonId?: string, shared?: SeasonStatisticsDa
     let checkoutAttempts = 0;
     let checkoutHits = 0;
 
-    events.forEach((e: any) => {
+    events.forEach((e: EventRow) => {
       if (e.is_bust) e = {...e, score: 0};
       if (typeof e.score === "number") totalScore += e.score;
       if (typeof e.darts === "number") totalDarts += e.darts;

@@ -1,3 +1,4 @@
+import { type GameRow, type PlayerRow } from "@/lib/dbRows";
 import { allRows } from "@/lib/database";
 import { matchKey } from "@/lib/matchKey";
 import { supabaseServer } from "@/lib/supabaseServer";
@@ -23,7 +24,7 @@ export type PlayerForm = {
  * game (leg) records for one player vs one opponent within a fixture —
  * the same grouping the fixture detail page uses.
  */
-export async function getPlayerForm(seasonId?: string, shared?: { players: any[]; games: any[] }): Promise<PlayerForm[]> {
+export async function getPlayerForm(seasonId?: string, shared?: { players: PlayerRow[]; games: GameRow[] }): Promise<PlayerForm[]> {
   const supabase = shared ? null : await supabaseServer();
   if (!supabase && !shared) return [];
 
@@ -33,9 +34,9 @@ export async function getPlayerForm(seasonId?: string, shared?: { players: any[]
     .eq("active", true).order("id", { ascending: true }));
   if (playersErr || !activePlayers || !activePlayers.length) return [];
 
-  const activeIds = new Set(activePlayers.map((p: any) => p.id));
+  const activeIds = new Set(activePlayers.map((p: PlayerRow) => p.id));
   const { data: games, error: gamesErr } = shared ? {
-    data: shared.games.filter(g => activeIds.has(g.west_green_player_id)), error: null
+    data: shared.games.filter(g => activeIds.has(g.west_green_player_id ?? "")), error: null
   } : await allRows(() => {
     let query = supabase!.from("games")
       .select("id, match_id, fixture_id, west_green_player_id, opponent_player, winner, status, created_at, completed_at, fixtures!inner(season_id)")
@@ -58,7 +59,7 @@ export async function getPlayerForm(seasonId?: string, shared?: { players: any[]
     completed: number; inProgress: boolean;
   };
   const groups = new Map<string, Group>();
-  games.forEach((g: any) => {
+  games.forEach((g: GameRow) => {
     if (!g.west_green_player_id) return;
     const key = matchKey(g);
     const entry =
@@ -117,7 +118,7 @@ export async function getPlayerForm(seasonId?: string, shared?: { players: any[]
   });
 
   return activePlayers
-    .map((p: any) => ({
+    .map((p: PlayerRow) => ({
       player_id: p.id,
       name: p.name,
       matches: (perPlayer.get(p.id) || []).sort((a, b) => b.date.localeCompare(a.date))

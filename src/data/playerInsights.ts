@@ -1,3 +1,4 @@
+import { fixtureOf, type EventRow, type GameRow } from "@/lib/dbRows";
 import { allRows, rowsForIds } from "@/lib/database";
 import { matchKey } from "@/lib/matchKey";
 import { supabaseServer } from "@/lib/supabaseServer";
@@ -25,8 +26,8 @@ async function loadPlayerSeasonGames(supabase: Db, playerId: string, seasonId: s
       .order("id", { ascending: true })
   );
 
-  const byMatch = new Map<string, any[]>();
-  games.forEach((g: any) => {
+  const byMatch = new Map<string, GameRow[]>();
+  games.forEach((g: GameRow) => {
     const key = matchKey(g);
     byMatch.set(key, [...(byMatch.get(key) ?? []), g]);
   });
@@ -54,7 +55,7 @@ export async function getPlayerSeasonMatches(
   if (!supabase || !playerId || !seasonId) return null;
 
   const { matches: grouped, completedLegs } = await loadPlayerSeasonGames(supabase, playerId, seasonId);
-  const gameIds = grouped.flat().map((g: any) => g.id);
+  const gameIds = grouped.flat().map((g: GameRow) => g.id);
   const events = await rowsForIds(gameIds, (ids) =>
     supabase
       .from("scoring_events")
@@ -67,7 +68,7 @@ export async function getPlayerSeasonMatches(
   );
 
   const visitsByGame = new Map<string, Visit[]>();
-  events.forEach((e: any) => {
+  events.forEach((e: EventRow) => {
     const list = visitsByGame.get(e.game_id) ?? [];
     list.push({
       score: typeof e.score === "number" ? e.score : 0,
@@ -80,13 +81,13 @@ export async function getPlayerSeasonMatches(
   });
 
   const matches: InsightMatch[] = grouped.map((list) => {
-    const f = list[0].fixtures;
+    const f = fixtureOf(list[0]);
     return {
       date: f.starts_at,
       opponentTeam: f.opponent,
       opponentPlayer: list[0].opponent_player || "Opponent",
       home: f.home === true,
-      legs: list.map((g: any) => ({
+      legs: list.map((g: GameRow) => ({
         ...summariseLeg(
           g.id,
           g.winner === "west_green" ? "west" : g.winner === "opponent" ? "opponent" : "draw",

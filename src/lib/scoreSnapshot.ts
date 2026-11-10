@@ -1,14 +1,16 @@
 import { finishRoutes } from "./finishRoutes";
 import { buildLegStats } from "./scoringUtils";
-export function leagueScoreSnapshot(raw: any) {
+import type { LeagueGameMeta, LeagueState, RawSnapshot, ScoringSide } from "./scoreTypes";
+export function leagueScoreSnapshot(raw: RawSnapshot): LeagueState {
   const events = raw.events ?? [];
-  const visits = events.filter((e: any) => e.thrower === "west_green");
-  const opponent = events.filter((e: any) => e.thrower === "opponent");
+  const visits = events.filter((e) => e.thrower === "west_green");
+  const opponent = events.filter((e) => e.thrower === "opponent");
   const remaining = visits.at(-1)?.remaining_after ?? 501;
-  const meta = { ...raw.meta,
+  const last = events.at(-1);
+  const meta: LeagueGameMeta = { ...raw.meta,
     opponentRemaining: opponent.at(-1)?.remaining_after ?? 501,
-    activeSide: events.length ? (events.at(-1).thrower === "opponent" ? "west" : "opponent") : (raw.meta.west_green_starts ? "west" : "opponent"),
-    throwLog: events.map((e: any) => e.thrower === "opponent" ? "opponent" : "west")
+    activeSide: last ? (last.thrower === "opponent" ? "west" : "opponent") : (raw.meta.west_green_starts ? "west" : "opponent"),
+    throwLog: events.map((e): ScoringSide => e.thrower === "opponent" ? "opponent" : "west")
   };
   return { ok: true, visits, remaining, finishHint: finishRoutes[remaining] ?? null, meta,
     completedLegs: raw.completedLegs ?? [] };

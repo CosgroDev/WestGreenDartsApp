@@ -1,10 +1,11 @@
 import { randomUUID } from "crypto";
 import { missingSnapshotRPC } from "./scoreSnapshot";
+import type { CommandResult } from "./scoreTypes";
 import { supabaseServer } from "./supabaseServer";
 
 export async function scoringCommand(gameId: string, practice: boolean, command: string, options: {
   side?: string; score?: number; darts?: number; revision?: number; requestId?: string; returnState?: boolean;
-} = {}): Promise<any> {
+} = {}): Promise<CommandResult> {
   const db = await supabaseServer();
   if (!db || !process.env.TEAM_ID) return { ok: false, message: "Database or team is not configured" };
   let revision = options.revision;
@@ -24,5 +25,5 @@ export async function scoringCommand(gameId: string, practice: boolean, command:
     ({ data, error } = await db.rpc("wgd_score_command", args));
   }
   if (error) return { ok: false, message: error.message };
-  return data;
+  return data as CommandResult;
 }

@@ -20,6 +20,7 @@ import {
   getLegSummariesAction,
   LegSummaryWire
 } from "./actions";
+import type { LeagueGameMeta, LeagueState } from "@/lib/scoreTypes";
 
 type Visit = {
   score: number;
@@ -58,7 +59,7 @@ export default function ScoringPage() {
   const [loading, setLoading] = useState(true);
   const pending = saving || loading;
   const [alert, setAlert] = useState<string | null>(null);
-  const [gameMeta, setGameMeta] = useState<any>(null);
+  const [gameMeta, setGameMeta] = useState<LeagueGameMeta | null>(null);
   const inputLocked = pending || saveError !== null || !gameMeta;
   const [activeSide, setActiveSide] = useState<"west" | "opponent">("west");
   const [inputScore, setInputScore] = useState("");
@@ -87,8 +88,8 @@ export default function ScoringPage() {
   const displayRemaining = remaining;
   const displayOppRemaining = oppRemaining;
 
-  const mapVisits = (res: any): Visit[] => res.visits.map((v: any) => ({score: v.score, darts: v.darts, remainingAfter: v.remaining_after, isBust: v.is_bust, isCheckout: v.is_checkout}));
-  const applyState = (res: any) => {
+  const mapVisits = (res: LeagueState): Visit[] => res.visits.map((v) => ({score: v.score, darts: v.darts, remainingAfter: v.remaining_after, isBust: v.is_bust, isCheckout: v.is_checkout}));
+  const applyState = (res: LeagueState) => {
     setVisits(mapVisits(res));
     setGameMeta(res.meta);
     setOppRemaining(res.meta?.opponentRemaining ?? 501);
@@ -156,7 +157,7 @@ export default function ScoringPage() {
     if (!res.ok) throw new Error(res.message || "Could not save the score.");
     applyState(res);
     setInputScore(""); setFinishPrompt(null); setAlert(null);
-    const kind = getLegCelebration(res.meta?.status, res.meta?.winner, mapVisits(res));
+    const kind = getLegCelebration(res.meta?.status, res.meta?.winner ?? undefined, mapVisits(res));
     if (kind) {
       setCelebration((previous) => ({ kind, sequence: (previous?.sequence ?? 0) + 1 }));
     }
@@ -195,10 +196,11 @@ export default function ScoringPage() {
     if (!gameId || pending) return;
     startTransition(async () => {
       const res = await loadGameStateAction(gameId);
-      if (!res.ok || !res.meta) throw new Error(res.message || "Could not reload the score.");
+      if (!res.ok) throw new Error(res.message || "Could not reload the score.");
+      if (!res.meta) throw new Error("Could not reload the score.");
       applyState(res); clearSaveError(); setAlert(null);
       if (res.meta.status === "completed" && (res.meta.legs?.west ?? 0) + (res.meta.legs?.opp ?? 0) < 2) {
-        const next = res.meta.nextGameId ? { ok: true, gameId: res.meta.nextGameId } : await newLegAction(gameId);
+        const next = res.meta.nextGameId ? { ok: true as const, gameId: res.meta.nextGameId } : await newLegAction(gameId);
         if (!next.ok) throw new Error(next.message || "Could not start the next leg.");
         router.replace(`/scoring?game=${next.gameId}${fixtureId ? `&fixture=${fixtureId}` : ""}&home=${isHome ? "1" : "0"}`);
       }

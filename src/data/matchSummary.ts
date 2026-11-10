@@ -1,3 +1,4 @@
+import { type EventRow, type LegRow, embedded } from "@/lib/dbRows";
 import { allRows } from "@/lib/database";
 import { canFinishFrom } from "@/lib/scoringUtils";
 import { supabaseServer } from "@/lib/supabaseServer";
@@ -122,7 +123,7 @@ export async function getMatchSummary(gameId: string): Promise<MatchSummary | nu
 
   const oppKey = (game.opponent_player || "").trim().toLowerCase();
   const legsGames = siblings.filter(
-    (g: any) =>
+    (g: LegRow) =>
       (game.match_id
         ? g.match_id === game.match_id
         : g.west_green_player_id === game.west_green_player_id &&
@@ -135,12 +136,12 @@ export async function getMatchSummary(gameId: string): Promise<MatchSummary | nu
     .from("scoring_events")
     .select("game_id, score, darts, remaining_after, is_bust, is_checkout, throw_index")
     .eq("thrower", "west_green")
-    .in("game_id", legsGames.map((g: any) => g.id))
+    .in("game_id", legsGames.map((g: LegRow) => g.id))
     .eq("is_deleted", false)
     .order("throw_index", { ascending: true }).order("id", { ascending: true }));
 
   const eventsByGame = new Map<string, Visit[]>();
-  (events || []).forEach((e: any) => {
+  (events || []).forEach((e: EventRow) => {
     const list = eventsByGame.get(e.game_id) || [];
     list.push({
       score: typeof e.score === "number" ? e.score : 0,
@@ -152,7 +153,7 @@ export async function getMatchSummary(gameId: string): Promise<MatchSummary | nu
     eventsByGame.set(e.game_id, list);
   });
 
-  const legs: LegSummary[] = legsGames.map((g: any) =>
+  const legs: LegSummary[] = legsGames.map((g: LegRow) =>
     summariseLeg(
       g.id,
       g.winner === "west_green" ? "west" : g.winner === "opponent" ? "opponent" : "draw",
@@ -192,9 +193,9 @@ export async function getMatchSummary(gameId: string): Promise<MatchSummary | nu
   return {
     fixtureId: game.fixture_id,
     fixtureLabel: fixture ? `${fixture.home ? "Home vs" : "Away @"} ${fixture.opponent}` : "Fixture",
-    seasonId: (fixture as any)?.season_id ?? null,
+    seasonId: fixture?.season_id ?? null,
     westPlayerId: game.west_green_player_id ?? null,
-    westPlayerName: (game as any).players?.name ?? "West Green",
+    westPlayerName: embedded(game.players)?.name ?? "West Green",
     opponentPlayer: game.opponent_player || "Opponent",
     westLegs: isDraw && westLegs === 0 && oppLegs === 0 ? 1 : westLegs,
     oppLegs: isDraw && westLegs === 0 && oppLegs === 0 ? 1 : oppLegs,
@@ -232,8 +233,8 @@ export async function getMatchAiReview(
   if (error || !data) return { review: null, reviewAt: null };
 
   return {
-    review: (data as any).ai_review ?? null,
-    reviewAt: (data as any).ai_review_at ?? null
+    review: data.ai_review ?? null,
+    reviewAt: data.ai_review_at ?? null
   };
 }
 
@@ -304,8 +305,8 @@ export async function getFixtureTeamSummary(fixtureId: string): Promise<FixtureT
 
   // Group legs into matches by match_id, falling back to West Green player +
   // opponent name for legacy rows (mirrors fixture page).
-  const groups = new Map<string, any[]>();
-  games.forEach((g: any) => {
+  const groups = new Map<string, LegRow[]>();
+  games.forEach((g: LegRow) => {
     const key =
       g.match_id ?? `${g.west_green_player_id || "none"}|${(g.opponent_player || "").trim().toLowerCase()}`;
     const list = groups.get(key) ?? [];
@@ -379,7 +380,7 @@ export async function getFixtureTeamSummary(fixtureId: string): Promise<FixtureT
   return {
     fixtureId,
     fixtureLabel: fixture ? `${fixture.home ? "Home vs" : "Away @"} ${fixture.opponent}` : "Fixture",
-    seasonId: (fixture as any)?.season_id ?? null,
+    seasonId: fixture?.season_id ?? null,
     opponent: fixture?.opponent ?? "Opponent",
     matchesPlayed: summaries.length,
     teamResult,
