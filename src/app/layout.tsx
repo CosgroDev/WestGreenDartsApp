@@ -8,8 +8,9 @@ export const metadata: Metadata = {
   icons: {
     icon: "/west_green_logo.png",
     shortcut: "/west_green_logo.png",
-    apple: "/west_green_logo.png"
-  }
+    apple: "/icon-192.png"
+  },
+  appleWebApp: { capable: true, title: "West Green", statusBarStyle: "black-translucent" }
 };
 
 export const viewport = {

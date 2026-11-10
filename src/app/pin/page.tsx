@@ -51,7 +51,7 @@ export default function PinPage() {
         </div>
       </div>
 
-      <div className={`flex items-center gap-3 ${shaking ? "shake" : ""}`} aria-label="PIN entry">
+      <div className={`flex items-center gap-3 ${shaking ? "shake" : ""}`} role="img" aria-label={`${pin.length} ${pin.length === 1 ? "digit" : "digits"} entered`}>
         {Array.from({ length: dotTotal }).map((_, i) => (
           <span key={i} className={`pin-dot ${i < pin.length ? "filled" : ""}`} />
         ))}

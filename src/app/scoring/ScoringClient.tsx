@@ -1,6 +1,8 @@
 "use client";
 import { useScoreTask } from "@/lib/useScoreTask";
 import { ScoreSaveStatus } from "@/components/ScoreSaveStatus";
+import { ConnectionBanner } from "@/components/ConnectionBanner";
+import { clearPendingVisit, readPendingVisit, savePendingVisit } from "@/lib/pendingVisit";
 
 export const dynamic = "force-dynamic";
 export const revalidate = false;
@@ -21,6 +23,7 @@ import {
   LegSummaryWire
 } from "./actions";
 import type { LeagueGameMeta, LeagueState } from "@/lib/scoreTypes";
+import { CheckoutDartsPrompt, MatchSummaryPanel, ScoreKeypad, type LegSummary } from "./parts";
 
 type Visit = {
   score: number;
@@ -36,16 +39,6 @@ const SCORING_VIEW_KEY = "wgd-scoring-view";
 const isValidCheckoutLocal = (remaining: number, score: number) =>
   remaining - score === 0 && canFinishFrom(remaining);
 
-type LegSummary = {
-  winner: "west" | "opponent";
-  dartsTotal: number;
-  pointsTotal: number;
-  threeDA: number | null;
-  firstNine: number | null;
-  firstNinePoints: number | null;
-  firstNineDarts: number | null;
-  buckets: Record<string, number>;
-};
 
 export default function ScoringPage() {
   const searchParams = useSearchParams();
@@ -59,6 +52,7 @@ export default function ScoringPage() {
   const [loading, setLoading] = useState(true);
   const pending = saving || loading;
   const [alert, setAlert] = useState<string | null>(null);
+  const [recovered, setRecovered] = useState<string | null>(null);
   const [gameMeta, setGameMeta] = useState<LeagueGameMeta | null>(null);
   const inputLocked = pending || saveError !== null || !gameMeta;
   const [activeSide, setActiveSide] = useState<"west" | "opponent">("west");
@@ -103,8 +97,26 @@ export default function ScoringPage() {
     let cancelled = false;
     setLoading(true);
     (async () => {
-      const res = await loadGameStateAction(gameId);
+      let res = await loadGameStateAction(gameId);
       if (cancelled) return;
+      if (!res.ok || !res.meta) { setAlert("Could not load this game"); return; }
+      // A visit sent just before a reload may never have been confirmed. Send it
+      // again with its original request ID: the server records it at most once.
+      const unconfirmed = readPendingVisit(gameId);
+      if (unconfirmed) {
+        const replay = await recordVisitAction(gameId, unconfirmed.score, unconfirmed.darts,
+          unconfirmed.side === "west" ? "west_green" : "opponent", unconfirmed.revision, unconfirmed.requestId);
+        clearPendingVisit();
+        if (cancelled) return;
+        if (replay.ok) {
+          const fresh = await loadGameStateAction(gameId);
+          if (cancelled) return;
+          if (fresh.ok && fresh.meta) res = fresh;
+          setRecovered(`The ${unconfirmed.score} entered before the page reloaded has been saved.`);
+        } else {
+          setAlert(`The ${unconfirmed.score} entered before the page reloaded was not saved: ${replay.message}`);
+        }
+      }
       if (!res.ok || !res.meta) { setAlert("Could not load this game"); return; }
       applyState(res);
       const west = res.meta.legs?.west ?? 0;
@@ -153,7 +165,11 @@ export default function ScoringPage() {
 
   const submitVisit = async (score: number, side: "west" | "opponent", darts: number, requestId: string) => {
     if (!gameId || !gameMeta) return;
+    // Kept until the server answers, so a reload during an outage can resend it.
+    savePendingVisit({ gameId, score, side, darts, revision: gameMeta.revision, requestId });
     const res = await recordVisitAction(gameId, score, darts, side === "west" ? "west_green" : "opponent", gameMeta.revision, requestId);
+    clearPendingVisit();
+    setRecovered(null);
     if (!res.ok) throw new Error(res.message || "Could not save the score.");
     applyState(res);
     setInputScore(""); setFinishPrompt(null); setAlert(null);
@@ -255,6 +271,8 @@ export default function ScoringPage() {
   const statusBlock = (
     <>
       {alert && <div role="alert" className="text-sm text-red-800"><p>{alert}</p><button className="btn-secondary mt-2" disabled={pending} onClick={reloadLatest}>Reload latest score</button></div>}
+      <ConnectionBanner />
+      {recovered && <p role="status" className="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm font-semibold text-emerald-800">{recovered}</p>}
       <ScoreSaveStatus pending={saving} saved={saved} error={saveError} retry={retrySave} reload={reloadLatest} />
       {isCompleted && (
         <div className="flex flex-col gap-2">
@@ -299,35 +317,13 @@ export default function ScoringPage() {
               ))}
             </div>
 
-            <div className="grid grid-cols-3 gap-2">
-              {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((n) => (
-                <button key={n} type="button" className={`keypad-key ${keyClass}`} disabled={inputLocked} onClick={() => appendDigit(n)}>
-                  {n}
-                </button>
-              ))}
-              <button
-                type="button"
-                className={`keypad-key ${keyClass} text-xl text-slate-500`}
-                onClick={() => setInputScore((s) => s.slice(0, -1))}
-                disabled={inputLocked}
-                aria-label="Delete digit"
-              >
-                ⌫
-              </button>
-              <button type="button" className={`keypad-key ${keyClass}`} disabled={inputLocked} onClick={() => appendDigit(0)}>
-                0
-              </button>
-              <button
-                type="button"
-                className={`keypad-key ${keyClass} bg-emerald-600 text-xl text-white`}
-                style={{ borderColor: "rgba(18,184,134,0.6)" }}
-                onClick={() => addScore(parseInt(inputScore || "0", 10))}
-                disabled={inputLocked}
-                aria-label="Enter score"
-              >
-                ✓
-              </button>
-            </div>
+            <ScoreKeypad
+              keyClass={keyClass}
+              disabled={inputLocked}
+              onDigit={appendDigit}
+              onDelete={() => setInputScore((value) => value.slice(0, -1))}
+              onEnter={() => addScore(parseInt(inputScore || "0", 10))}
+            />
 
             <button
               type="button"
@@ -341,31 +337,13 @@ export default function ScoringPage() {
         )}
 
         {finishPrompt && (
-          <div className="flex flex-col gap-3 rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-center">
-            <p className="text-lg font-bold text-emerald-800">GAME SHOT! 🎉</p>
-            <p className="text-sm font-semibold text-slate-700">How many darts on the checkout?</p>
-            <div className="grid grid-cols-3 gap-2">
-              {[1, 2, 3].map((d) => (
-                <button
-                  key={d}
-                  type="button"
-                  className={`keypad-key ${keyClass} !text-lg`}
-                  disabled={inputLocked || !canFinishFrom(finishPrompt.score, d)}
-                  onClick={() => { const requestId = crypto.randomUUID(); startTransition(() => submitVisit(finishPrompt.score, finishPrompt.side, d, requestId)); }}
-                >
-                  {d} dart{d > 1 ? "s" : ""}
-                </button>
-              ))}
-            </div>
-            <button
-              type="button"
-              className="text-sm font-semibold text-red-600 underline"
-              disabled={inputLocked}
-              onClick={() => setFinishPrompt(null)}
-            >
-              Cancel
-            </button>
-          </div>
+          <CheckoutDartsPrompt
+            score={finishPrompt.score}
+            keyClass={keyClass}
+            disabled={inputLocked}
+            onDarts={(darts) => { const requestId = crypto.randomUUID(); startTransition(() => submitVisit(finishPrompt.score, finishPrompt.side, darts, requestId)); }}
+            onCancel={() => setFinishPrompt(null)}
+          />
         )}
 
       </section>
@@ -458,59 +436,7 @@ export default function ScoringPage() {
           })}
         </div>
 
-        {isCompleted && (
-          <div className="mt-3 rounded-md border border-slate-200 bg-slate-50 p-3 text-sm text-slate-700">
-            <p className="font-semibold mb-2">Match summary (best of 2)</p>
-            <div className="flex flex-col gap-2">
-              {legSummaries.map((leg, i) => (
-                <div key={i} className="rounded-md border border-slate-200 p-2 bg-white">
-                  <p className="font-semibold">
-                    Leg {i + 1}: {leg.winner === "west" ? wgdName : oppName}
-                  </p>
-                  <p>Total darts (West): {leg.dartsTotal}</p>
-                  <p>3-dart average (West): {leg.threeDA !== null ? leg.threeDA.toFixed(1) : "-"}</p>
-                  <p>First 9 darts avg (West): {leg.firstNine !== null ? leg.firstNine.toFixed(1) : "-"}</p>
-                  <p>Opponent 3DA: not tracked</p>
-                  <div className="mt-1 grid grid-cols-3 gap-1 text-xs text-slate-600">
-                    {Object.entries(leg.buckets).map(([label, val]) => (
-                      <span key={label}>
-                        {label}: <strong>{val}</strong>
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              ))}
-              {legSummaries.length > 1 && (() => {
-                const totalDarts = legSummaries.reduce((s, l) => s + l.dartsTotal, 0);
-                const totalPoints = legSummaries.reduce((s, l) => s + l.pointsTotal, 0);
-                const totalBuckets = legSummaries.reduce((acc, l) => {
-                  Object.entries(l.buckets).forEach(([k, v]) => (acc[k] = (acc[k] || 0) + v));
-                  return acc;
-                }, {} as Record<string, number>);
-                const total3da = totalDarts > 0 ? (totalPoints / totalDarts) * 3 : null;
-                const totalFirst9Points = legSummaries.reduce((s, l) => s + (l.firstNinePoints ?? 0), 0);
-                const totalFirst9Darts = legSummaries.reduce((s, l) => s + (l.firstNineDarts ?? 0), 0);
-                const totalFirst9 = totalFirst9Darts > 0 ? (totalFirst9Points / totalFirst9Darts) * 3 : null;
-                return (
-                  <div className="rounded-md border border-slate-200 p-2">
-                    <p className="font-semibold">Totals</p>
-                    <p>Total darts (West): {totalDarts}</p>
-                    <p>Average 3DA (West): {total3da ? total3da.toFixed(1) : "-"}</p>
-                    <p>Average first 9 (West): {totalFirst9 ? totalFirst9.toFixed(1) : "-"}</p>
-                    <p>Opponent 3DA: not tracked</p>
-                    <div className="mt-1 grid grid-cols-3 gap-1 text-xs text-slate-600">
-                      {Object.entries(totalBuckets).map(([label, val]) => (
-                        <span key={label}>
-                          {label}: <strong>{val}</strong>
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                );
-              })()}
-            </div>
-          </div>
-        )}
+        {isCompleted && <MatchSummaryPanel legs={legSummaries} westName={wgdName} opponentName={oppName} />}
       </section>
     </main>
   );

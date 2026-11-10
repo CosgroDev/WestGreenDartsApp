@@ -99,6 +99,29 @@ try {
   await until('undo', async () => await live() === 0);
   console.log('SMOKE_UNDO_PASS');
 
+  // 5b. A visit that was sent but never confirmed is resent after a reload,
+  //     and resending one that did save does not record it twice.
+  const pending = { gameId: legTwo, score: 45, side: 'opponent', darts: 3, revision: Number(await revision(legTwo)), requestId: randomUUID(), at: Date.now() };
+  await page.evaluate(v => localStorage.setItem('wgd_pending_visit', JSON.stringify(v)), pending);
+  await page.reload();
+  await page.getByText('The 45 entered before the page reloaded has been saved.').waitFor();
+  assert.equal(await live(), 1);
+  assert.equal((await one('select score from scoring_events where game_id=$1 and not is_deleted', [legTwo])).score, 45);
+  assert.equal(await page.evaluate(() => localStorage.getItem('wgd_pending_visit')), null);
+  await page.evaluate(v => localStorage.setItem('wgd_pending_visit', JSON.stringify(v)), { ...pending, at: Date.now() });
+  await page.reload();
+  await until('replay to settle', async () => await page.evaluate(() => localStorage.getItem('wgd_pending_visit')) === null);
+  await until('keypad ready', async () => await enter.isVisible() && !(await enter.isDisabled()));
+  assert.equal(await live(), 1, 'A replayed visit was recorded twice');
+  console.log('SMOKE_RELOAD_RECOVERY_PASS: an unconfirmed visit is resent once after a reload');
+
+  // 5c. Losing the connection is announced on the scoring screen.
+  await context.setOffline(true);
+  await page.getByText(/No connection/).waitFor();
+  await context.setOffline(false);
+  await page.getByText('Back online.').waitFor();
+  console.log('SMOKE_OFFLINE_NOTICE_PASS');
+
   // 6. The dashboard reflects the leg that was just played.
   //    Season statistics are cached: the completed leg must have dropped the
   //    cache, and a second load must be served from it.

@@ -520,3 +520,8 @@ button:disabled { cursor: wait; }
 button:focus-visible, summary:focus-visible, a:focus-visible, select:focus-visible {
   outline: 2px solid var(--green); outline-offset: 3px;
 }
+
+/* White text on the accent green is only 3.1:1. Filled green buttons use a
+   deeper green so their labels reach WCAG AA (5.0:1, 4.6:1 on hover). */
+.btn-primary, .bg-emerald-600.text-white { background-color: #087f5b; }
+.btn-primary:hover, .bg-emerald-600.text-white:hover { background-color: #09865f; }
