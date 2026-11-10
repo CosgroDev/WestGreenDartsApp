@@ -83,6 +83,8 @@ export type OpponentMatchStats = SideStats & {
   bestLegDarts: number | null;
   /** The West Green player's average over the same legs, for a like-for-like comparison. */
   playerThreeDartAvg: number | null;
+  /** The West Green player's numbers over the same legs only. */
+  player: SideStats & { bestLegDarts: number | null };
 };
 
 /** The opponent's match-level numbers, from the legs where their visits were recorded. */
@@ -97,6 +99,8 @@ export function summariseOpponent(legs: LegSummary[]): OpponentMatchStats | null
     .filter((d) => d > 0);
   const ownDarts = withVisits.reduce((s, l) => s + l.dartsTotal, 0);
   const ownPoints = withVisits.reduce((s, l) => s + l.pointsTotal, 0);
+  const ownFirstNines = withVisits.map((l) => l.firstNineAvg).filter((a): a is number => a !== null);
+  const ownWonDarts = withVisits.filter((l) => l.winner === "west" && l.dartsTotal > 0).map((l) => l.dartsTotal);
   return {
     ...all,
     // Mean of the leg first-nines, the same way the player's is worked out.
@@ -104,7 +108,12 @@ export function summariseOpponent(legs: LegSummary[]): OpponentMatchStats | null
     legsWithVisits: withVisits.length,
     checkoutPct: all.checkoutAttempts > 0 ? (all.checkoutHits / all.checkoutAttempts) * 100 : null,
     bestLegDarts: wonDarts.length ? Math.min(...wonDarts) : null,
-    playerThreeDartAvg: ownDarts > 0 ? (ownPoints / ownDarts) * 3 : null
+    playerThreeDartAvg: ownDarts > 0 ? (ownPoints / ownDarts) * 3 : null,
+    player: {
+      ...summariseVisits(withVisits.flatMap((l) => l.visits)),
+      firstNineAvg: ownFirstNines.length ? ownFirstNines.reduce((s, a) => s + a, 0) / ownFirstNines.length : null,
+      bestLegDarts: ownWonDarts.length ? Math.min(...ownWonDarts) : null
+    }
   };
 }
 

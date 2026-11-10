@@ -179,7 +179,7 @@ The season arrives as JSON:
   - "venue": home against away.
   - "consistency": spread of leg averages (a standard deviation above about 9 is streaky, under about 5 is very steady), best and worst legs.
   - "scoring": per-visit rates, scoring-phase average (visits started above 170), darts needed to reach a finish, low visits, legs lost with finish chances against legs lost without ever reaching one.
-  - "finishing": success by the range the visit started from, doubleInHand, busts, one-dart finishes, favourite checkouts, "medianFirstFinishLeft" (the number typically left on first reaching a finish), "medianLeftWhenLost" and "legsLostOnADouble" (legs lost needing 40 or fewer).
+  - "finishing": success by the range the visit started from, doubleInHand, busts, one-dart finishes, favourite checkouts, "medianFirstFinishLeft" (the number typically left on first reaching a finish), "medianLeftWhenLost" and "legsLostOnADouble" (legs lost while sitting on a one-dart finish).
   - "opposition": the opponents' combined average beside the player's over the same legs, the leg record when out-scoring the opponent and when out-scored, the record when first and second to a finish, finishing with and without the opponent also on a finish, and legs won after the opponent missed a finish.
   - "speed": darts per leg won.
   - "trend": first half of the season against the second, and the last three matches against everything before.
@@ -293,7 +293,7 @@ export type MatchDerived = {
   doubleInHand: { visits: number; hits: number };
   /** What the player still needed in the legs they lost. */
   medianLeftWhenLost: number | null;
-  /** Legs lost with 40 or fewer left — one dart from winning. */
+  /** Legs lost while on a one-dart finish (an even number up to 40, or 50) — one dart from winning. */
   legsLostOnADouble: number;
   /** Leg record with the throw and against it; null when the order is unknown. */
   throwOrder: { throwingFirst: Tally; throwingSecond: Tally } | null;
@@ -502,7 +502,7 @@ export function deriveMatch(legs: LegSummary[]): MatchDerived {
     legsLostNeverOnFinish,
     doubleInHand,
     medianLeftWhenLost: median(leftWhenLost),
-    legsLostOnADouble: leftWhenLost.filter((n) => n <= 40).length,
+    legsLostOnADouble: leftWhenLost.filter(oneDartFinish).length,
     throwOrder: throwingFirst.legs + throwingSecond.legs > 0 ? { throwingFirst, throwingSecond } : null,
     opposition: legsWithOpponentVisits
       ? {

@@ -88,7 +88,11 @@ describe("analyseMatch", () => {
   describe("with the opponent's visits", () => {
     const opponent = (threeDartAvg: number, playerThreeDartAvg: number) => ({
       dartsTotal: 40, pointsTotal: 0, threeDartAvg, firstNineAvg: null, checkoutAttempts: 2, checkoutHits: 1,
-      highFinish: 40, busts: 0, bands: emptyBands, legsWithVisits: 2, checkoutPct: 50, bestLegDarts: 20, playerThreeDartAvg
+      highFinish: 40, busts: 0, bands: emptyBands, legsWithVisits: 2, checkoutPct: 50, bestLegDarts: 20, playerThreeDartAvg,
+      player: {
+        dartsTotal: 40, pointsTotal: 0, threeDartAvg: playerThreeDartAvg, firstNineAvg: null, checkoutAttempts: 0,
+        checkoutHits: 0, highFinish: null, busts: 0, bands: emptyBands, bestLegDarts: null
+      }
     });
 
     it("puts both averages in the headline and rates a hard game", () => {

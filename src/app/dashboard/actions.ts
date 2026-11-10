@@ -70,8 +70,10 @@ export async function generateSeasonAiSummaryAction(seasonId: string): Promise<S
     // subject, so the review is still written when that site can't be read.
     getCachedLeagueContext().catch(() => null)
   ]);
+  // Everyone who played, active or not: the team profile has to cover the same
+  // legs as the team card and the fixture results.
   const squadDerived = deriveSquadSeason(
-    players.map((p) => ({ playerId: p.player_id, matches: squadMatches.get(p.player_id) ?? [] }))
+    [...squadMatches.entries()].map(([playerId, matches]) => ({ playerId, matches }))
   );
   const profiles = new Map(squadDerived.players.map(({ playerId, ...profile }) => [playerId, profile]));
 

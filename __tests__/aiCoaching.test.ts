@@ -7,7 +7,7 @@ import {
   FIXTURE_SYSTEM_PROMPT,
   SEASON_SYSTEM_PROMPT
 } from "../src/lib/aiCoaching";
-import { splitLegEvents, summariseLeg, type LegSummary, type Visit } from "../src/data/matchSummary";
+import { splitLegEvents, summariseLeg, summariseOpponent, type LegSummary, type Visit } from "../src/data/matchSummary";
 import type { EventRow } from "../src/lib/dbRows";
 import type { PlayerCard, PlayerGameStat } from "../src/data/stats";
 
@@ -174,6 +174,23 @@ describe("deriveMatch with the opponent's visits", () => {
     expect(o.secondToAFinish).toEqual({ legs: 1, won: 1 });
     expect(o.legsWonAfterOpponentMissedAFinish).toBe(1);
     expect(d.legStory[1].opponent).toMatchObject({ left: 20, missedFinishVisits: 3, firstNineLead: -160 });
+  });
+
+  it("only counts a lost leg as on a double when one dart would have won it", () => {
+    const lostOn = (left: number) => leg("x", "opponent", [v(501 - left, left)]);
+    const r = deriveMatch([lostOn(39), lostOn(50), lostOn(32), lostOn(60)]);
+    // 39 needs two darts; 50 is the bull.
+    expect(r.legsLostOnADouble).toBe(2);
+  });
+
+  it("compares the head-to-head numbers over the same legs when some have no opponent visits", () => {
+    const o = summariseOpponent([thrownAway, wonLeg])!;
+    expect(o.legsWithVisits).toBe(1);
+    // wonLeg has no opponent visits, so its checkout and 13-dart leg stay out of the player's side.
+    expect(o.player).toMatchObject({ checkoutHits: 0, checkoutAttempts: 3, highFinish: null, bestLegDarts: null, dartsTotal: 18 });
+    expect(o.playerThreeDartAvg).toBe(o.player.threeDartAvg);
+    expect(o).toMatchObject({ checkoutHits: 1, checkoutAttempts: 2, bestLegDarts: 16 });
+    expect(summariseOpponent([wonLeg, lostLeg])).toBeNull();
   });
 
   it("leaves the opposition out when no opponent visits were recorded", () => {

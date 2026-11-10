@@ -40,19 +40,21 @@ export default async function MatchSummaryPage({ params: paramsPromise }: Props)
   const insights = analyseMatch(match, fieldAvg);
   const opp = match.opponent;
   const num = (n: number | null | undefined, digits = 1) => (n === null || n === undefined ? "–" : n.toFixed(digits));
-  const versus: { label: string; own: string; opp: string }[] = opp
+  // Both columns cover the same legs: the ones with opponent visits recorded.
+  const own = opp?.player;
+  const versus: { label: string; own: string; opp: string }[] = opp && own
     ? [
-        { label: "3-dart avg", own: num(opp.playerThreeDartAvg), opp: num(opp.threeDartAvg) },
-        { label: "First 9", own: num(match.firstNineAvg), opp: num(opp.firstNineAvg) },
+        { label: "3-dart avg", own: num(own.threeDartAvg), opp: num(opp.threeDartAvg) },
+        { label: "First 9", own: num(own.firstNineAvg), opp: num(opp.firstNineAvg) },
         {
           label: "Checkouts",
-          own: match.checkoutAttempts > 0 ? `${match.checkoutHits}/${match.checkoutAttempts}` : "–",
+          own: own.checkoutAttempts > 0 ? `${own.checkoutHits}/${own.checkoutAttempts}` : "–",
           opp: opp.checkoutAttempts > 0 ? `${opp.checkoutHits}/${opp.checkoutAttempts}` : "–"
         },
-        { label: "High finish", own: String(match.highFinish ?? "–"), opp: String(opp.highFinish ?? "–") },
-        { label: "Best leg (darts)", own: String(match.bestLegDarts ?? "–"), opp: String(opp.bestLegDarts ?? "–") },
-        { label: "100+", own: String(match.bands.hundredPlus), opp: String(opp.bands.hundredPlus) },
-        { label: "Busts", own: String(match.busts), opp: String(opp.busts) }
+        { label: "High finish", own: String(own.highFinish ?? "–"), opp: String(opp.highFinish ?? "–") },
+        { label: "Best leg (darts)", own: String(own.bestLegDarts ?? "–"), opp: String(opp.bestLegDarts ?? "–") },
+        { label: "100+", own: String(own.bands.hundredPlus), opp: String(opp.bands.hundredPlus) },
+        { label: "Busts", own: String(own.busts), opp: String(opp.busts) }
       ]
     : [];
   const avgGap =
@@ -188,7 +190,7 @@ export default async function MatchSummaryPage({ params: paramsPromise }: Props)
           </table>
           {opp.legsWithVisits < match.legs.length && (
             <p className="mt-2 text-[11px] text-slate-500">
-              Opponent visits were recorded for {opp.legsWithVisits} of {match.legs.length} legs; the averages compare those legs only.
+              Opponent visits were recorded for {opp.legsWithVisits} of {match.legs.length} legs; this table compares those legs only.
             </p>
           )}
         </section>
