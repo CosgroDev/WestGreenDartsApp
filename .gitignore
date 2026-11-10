@@ -27,3 +27,8 @@ Thumbs.db
 
 # TypeScript incremental build
 *.tsbuildinfo
+
+performance-verification/
+smoke-verification/
+league-investigation/
+coverage/

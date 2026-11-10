@@ -1,4 +1,6 @@
 "use server";
+import { backWithError } from "@/lib/actionResult";
+import { isUuid } from "@/lib/validation";
 import { allRows } from "@/lib/database";
 import { stableRead } from "@/lib/stableRead";
 import { drillCommand, endDrill } from "@/lib/drillCommand";
@@ -18,10 +20,10 @@ export async function startDoublesGameAction(formData: FormData): Promise<void> 
     .map((s) => s.trim())
     .filter(Boolean);
 
-  if (playerIds.length === 0) return;
+  if (playerIds.length === 0 || playerIds.length > 20 || !playerIds.every(isUuid)) backWithError("/practice", "no_players");
 
   const supabase = await supabaseServer();
-  if (!supabase) return;
+  if (!supabase) throw new Error("Database is not configured");
 
   const { data: session, error } = await supabase
     .from("doubles_practice_sessions")
@@ -29,7 +31,7 @@ export async function startDoublesGameAction(formData: FormData): Promise<void> 
     .select("id")
     .single();
 
-  if (error || !session) return;
+  if (error || !session) throw new Error(`Doubles session create failed: ${error?.message ?? "no row"}`);
 
   const rows = playerIds.map((playerId, i) => ({
     session_id: session.id,
@@ -42,7 +44,7 @@ export async function startDoublesGameAction(formData: FormData): Promise<void> 
   }));
 
   const { error: playersError } = await supabase.from("doubles_practice_players").insert(rows);
-  if (playersError) return;
+  if (playersError) throw new Error(`Doubles session create failed: ${playersError.message}`);
 
   redirect(`/practice/doubles/scoring?session=${session.id}`);
 }

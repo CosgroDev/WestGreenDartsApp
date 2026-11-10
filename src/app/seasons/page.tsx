@@ -1,7 +1,9 @@
+import { ActionError } from "@/components/ActionError";
 import { getSeasons } from "@/data/seasons";
 import { createSeasonAction, setCurrentSeasonAction } from "./actions";
 
-export default async function SeasonsPage() {
+export default async function SeasonsPage({ searchParams }: { searchParams?: Promise<{ error?: string }> }) {
+  const actionError = (await searchParams)?.error;
   const seasons = await getSeasons();
   const uniqueSeasons = seasons.filter(
     (s, idx, arr) => arr.findIndex((t) => t.name.toLowerCase() === s.name.toLowerCase()) === idx
@@ -13,6 +15,7 @@ export default async function SeasonsPage() {
         <p className="text-xs font-semibold uppercase tracking-[0.2em] text-emerald-700">Seasons</p>
         <h1 className="text-2xl font-bold">Manage Seasons</h1>
       </header>
+      <ActionError code={actionError} />
 
       <section className="card">
         <h2 className="text-lg font-semibold mb-3">Add season</h2>

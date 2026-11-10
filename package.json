@@ -9,6 +9,7 @@
     "lint": "eslint . --ext .ts,.tsx,.js,.mjs",
     "test": "jest",
     "test:database": "node scripts/test-database.mjs",
+    "test:smoke": "node scripts/smoke.mjs",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {

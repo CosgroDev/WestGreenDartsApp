@@ -1,5 +1,6 @@
 
 "use server";
+import { isUuid } from "@/lib/validation";
 
 import { randomUUID } from "crypto";
 import Anthropic from "@anthropic-ai/sdk";
@@ -192,10 +193,12 @@ export async function deleteMatchAction(formData: FormData): Promise<void> {
   const opponent = formData.get("opponent") as string | null;
   const westId = (formData.get("westId") as string | null) || null;
 
-  if (!fixtureId || (!matchId && !opponent)) return;
+  if (!isUuid(fixtureId) || (matchId && !isUuid(matchId)) || (westId && !isUuid(westId)) || (!matchId && !opponent)) {
+    throw new Error("Match delete was called with invalid identifiers");
+  }
 
   const supabase = await supabaseServer();
-  if (!supabase) return;
+  if (!supabase) throw new Error("Database is not configured");
 
   // Find leg IDs for this match. Prefer the stable match_id; fall back to the
   // fixture page's legacy grouping (case-insensitive opponent name, null-safe
@@ -205,7 +208,8 @@ export async function deleteMatchAction(formData: FormData): Promise<void> {
     .select("id, match_id, opponent_player, west_green_player_id")
     .eq("fixture_id", fixtureId)
     .eq("deleted", false);
-  if (fetchErr || !games || games.length === 0) return;
+  if (fetchErr) throw new Error(`Match lookup failed: ${fetchErr.message}`);
+  if (!games || games.length === 0) return;
 
   const targetOpponent = (opponent || "").trim().toLowerCase();
   const gameIds = games
@@ -219,11 +223,12 @@ export async function deleteMatchAction(formData: FormData): Promise<void> {
   if (gameIds.length === 0) return;
 
   // Soft-delete scoring events for those legs
-  await supabase.from("scoring_events").update({ is_deleted: true }).in("game_id", gameIds);
-
+  // Hide the legs first: a leg is what every reader filters on, so a failure
+  // after this point leaves stray events on hidden legs rather than a visible half-deleted match.
   const { error } = await supabase.from("games").update({ deleted: true }).in("id", gameIds);
-
-  if (error) return;
+  if (error) throw new Error(`Match delete failed: ${error.message}`);
+  const { error: eventsError } = await supabase.from("scoring_events").update({ is_deleted: true }).in("game_id", gameIds);
+  if (eventsError) throw new Error(`Match delete failed: ${eventsError.message}`);
 
   revalidatePath(`/fixtures/${fixtureId}`);
 }

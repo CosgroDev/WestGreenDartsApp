@@ -1,3 +1,5 @@
+-- Practice 501 sessions, games and events.
+
 -- Practice module tables
 create table if not exists practice_sessions (
   id uuid primary key default gen_random_uuid(),
@@ -50,3 +52,10 @@ alter table practice_sessions add constraint practice_sessions_status_check
 alter table practice_games drop constraint if exists practice_games_status_check;
 alter table practice_games add constraint practice_games_status_check
   check (status in ('in_progress','completed','deleted'));
+
+-- Add thrower column to practice_events to track which side threw
+alter table practice_events add column if not exists thrower text null; -- expected values: player_a | player_b
+
+-- Add team_id to practice_events (was missing from initial migration)
+alter table practice_events add column if not exists team_id uuid null references teams(id) on delete cascade;
+create index if not exists practice_events_team_idx on practice_events(team_id);

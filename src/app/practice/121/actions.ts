@@ -1,4 +1,6 @@
 "use server";
+import { backWithError } from "@/lib/actionResult";
+import { isUuid } from "@/lib/validation";
 import { allRows } from "@/lib/database";
 import { stableRead } from "@/lib/stableRead";
 import { drillCommand, endDrill } from "@/lib/drillCommand";
@@ -14,8 +16,9 @@ export async function start121GameAction(formData: FormData): Promise<void> {
   const playerId = (formData.get("playerId") as string) || null;
   // When checked, base advances on any finish within 9 darts (not just Turn 1).
   const advanceBaseOnAnyFinish = formData.get("advanceBaseOnAnyFinish") === "on";
+  if (playerId && !isUuid(playerId)) backWithError("/practice", "invalid");
   const supabase = await supabaseServer();
-  if (!supabase) return;
+  if (!supabase) throw new Error("Database is not configured");
 
   const { data, error } = await supabase
     .from("game_121_sessions")
@@ -31,7 +34,7 @@ export async function start121GameAction(formData: FormData): Promise<void> {
     .select("id")
     .single();
 
-  if (error || !data) return;
+  if (error || !data) throw new Error(`121 session create failed: ${error?.message ?? "no row"}`);
   redirect(`/practice/121/scoring?session=${data.id}`);
 }
 

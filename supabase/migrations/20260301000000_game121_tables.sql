@@ -1,3 +1,5 @@
+-- 121 checkout challenge sessions and turns.
+
 -- 121 checkout progression game tables
 -- One session = one attempt to progress from checkout 121 → 170
 
@@ -29,3 +31,16 @@ create table if not exists game_121_turns (
 );
 
 create index if not exists game_121_turns_session_idx on game_121_turns(session_id);
+
+-- Allow abandoned status on game_121_sessions
+alter table game_121_sessions drop constraint if exists game_121_sessions_status_check;
+alter table game_121_sessions add constraint game_121_sessions_status_check
+  check (status in ('in_progress', 'won', 'abandoned'));
+
+-- 121 base-target mode toggle
+-- Default (false): classic rules — base only locks when you finish on Turn 1.
+-- When true: base target advances by one every time you finish within 9 darts
+-- (any of the 3 turns), not just on a Turn 1 finish.
+
+alter table game_121_sessions
+  add column if not exists advance_base_on_any_finish boolean not null default false;

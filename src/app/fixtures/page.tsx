@@ -1,3 +1,4 @@
+import { ActionError } from "@/components/ActionError";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
@@ -23,9 +24,10 @@ function formatDate(date: string) {
 export default async function FixturesPage({
   searchParams: paramsPromise
 }: {
-  searchParams?: Promise<{ season?: string }>;
+  searchParams?: Promise<{ season?: string; error?: string }>;
 }) {
   const searchParams = await paramsPromise;
+  const actionError = searchParams?.error;
   const seasons = await getSeasons();
   // dedupe by name but keep id; pick first occurrence
   const uniqueSeasons = seasons.filter(
@@ -217,6 +219,7 @@ export default async function FixturesPage({
           </div>
         </div>
       </header>
+      <ActionError code={actionError} />
 
       {inProgressFixtures.length > 0 && (
         <section className="card !border-amber-300" style={{ boxShadow: "0 0 24px rgba(245,158,11,0.18)" }}>

@@ -1,5 +1,7 @@
--- West Green Darts schema (v0.1)
--- Designed for single-team v1; keep team_id to ease future multi-team.
+-- Baseline schema: core tables, statistics views and indexes.
+-- Existing installations already have these objects; mark this migration as
+-- applied instead of running it (see docs/getting-started.md).
+
 
 create table if not exists teams (
   id uuid primary key default gen_random_uuid(),

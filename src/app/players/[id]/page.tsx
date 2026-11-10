@@ -1,11 +1,13 @@
+import { ActionError } from "@/components/ActionError";
 import Link from "next/link";
 import { getPlayers } from "@/data/players";
 import { updatePlayerAction, deletePlayerAction } from "../actions";
 import { notFound } from "next/navigation";
 
-type Props = { params: Promise<{ id: string }> };
+type Props = { params: Promise<{ id: string }>; searchParams?: Promise<{ error?: string }> };
 
-export default async function PlayerEditPage({ params: paramsPromise }: Props) {
+export default async function PlayerEditPage({ params: paramsPromise, searchParams }: Props) {
+  const actionError = (await searchParams)?.error;
   const params = await paramsPromise;
   const players = await getPlayers();
   const player = players.find((p) => p.id === params.id);
@@ -27,6 +29,7 @@ export default async function PlayerEditPage({ params: paramsPromise }: Props) {
           <h1 className="text-2xl font-semibold">{player.name}</h1>
         </div>
       </header>
+      <ActionError code={actionError} />
 
       <section className="card">
         <form action={updatePlayerAction} className="flex flex-col gap-3">

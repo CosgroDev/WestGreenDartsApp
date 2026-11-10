@@ -1,7 +1,17 @@
 // Web Crypto keeps session verification usable in both middleware and Node.
 export const SESSION_SECONDS = 30 * 24 * 60 * 60;
 const encoder = new TextEncoder();
-const secret = () => process.env.SESSION_SECRET || process.env.SUPABASE_SERVICE_ROLE_KEY;
+let warned = false;
+const secret = () => {
+  if (process.env.SESSION_SECRET) return process.env.SESSION_SECRET;
+  // Signing with the database key works, but couples two secrets: rotating one
+  // signs everyone out, and a leak of one is a leak of both.
+  if (process.env.NODE_ENV === "production" && !warned) {
+    warned = true;
+    console.error("SESSION_SECRET is not set; falling back to the service role key for session signing. Set SESSION_SECRET.");
+  }
+  return process.env.SUPABASE_SERVICE_ROLE_KEY;
+};
 const signingKey = async () => {
   const value = secret();
   if (!value) throw new Error("Session signing secret is not configured");
