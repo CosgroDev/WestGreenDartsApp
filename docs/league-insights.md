@@ -38,9 +38,13 @@ as unresolved rather than claimed to be upcoming.
 
 ## Accuracy and limits
 Walk-forward backtest fits only strictly earlier weeks, after 20 training games.
-It reports mean absolute home-score error in legs and compares a training-only
-league home-share baseline on exactly the same held-out fixtures. If the model
-does not beat the baseline the page explicitly says so. Undated games are excluded
+It reports mean absolute home-score error in legs and compares an even-split
+baseline (half the legs to each side) on exactly the same held-out fixtures. If
+the model does not beat the baseline the page explicitly says so. The even split
+replaced a league home-average baseline: home teams in this league win about half
+the legs, so the home average scored worse than a plain even split and flattered
+the model. On the live data (November 2026, 126 tested matches) the model's error
+was 1.26 legs against 1.33 for the even split. Undated games are excluded
 from form and backtesting. The test orders by schedule week; retroactively updated
 results and postponements prevent claiming true historical forecast performance.
 No confidence intervals or independent-leg win probabilities are invented.
@@ -69,19 +73,26 @@ for, and original Team API order for exact ties. Fractional values are expected
 points, not official results. Completed seasons simply retain their final table.
 
 Forecasts include earlier unresolved and undated unplayed fixtures. We verify
-exactly one home and one away fixture per opponent from the source. If this does
-not hold, the page labels the projection conditional on the supplied schedule;
-it does not invent games. Forecasts are suppressed if source caps are reached,
+that every pair of teams meets exactly twice in the source. A pair that plays
+both games at the same venue (a rearranged fixture) still counts as complete and
+is noted separately (`venueBalanced`). If any pair meets fewer or more than twice,
+the page labels the projection conditional on the supplied schedule; it does not
+invent games. Forecasts are suppressed if source caps are reached,
 played scores are missing/invalid, match lengths differ, or an active team has
 fewer than five completed games.
 
 For uncertainty, 2,000 repeatable scenarios sample centred whole-match residuals
 from strict earlier-week backtesting, then round/clamp each home score to 0–match
-length and award the complementary away score. Teams' fitted strengths remain
-fixed. The UI shows the most frequent finish, scenario percentages and the middle
+length and award the complementary away score. Each scenario also refits the
+team strengths on a bootstrap resample of the completed results, so a team whose
+strength is misjudged is misjudged in all its remaining games at once. This
+matters most early in the season, when strengths rest on few results. The
+expected (non-scenario) table still uses the strengths fitted on all results. The UI shows the most frequent finish, scenario percentages and the middle
 80% position/points range. This does not assume independent legs; it does assume
 independent future match errors, and does not capture line-up changes, correlated
-team slumps, parameter uncertainty, new deductions or schedule changes.
+team slumps, new deductions or schedule changes. The backtest found no sign of
+form carrying over: a team's error in one match barely predicts its next
+(correlation 0.04), so recency weighting was tested and not adopted.
 Scenario percentages are not calibrated real-world probabilities.
 New tests cover schedule-wide leg conservation, deductions/ties/stable order,
 earlier fixtures, insufficient/truncated/inconsistent data, deterministic ranges,

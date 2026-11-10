@@ -44,19 +44,21 @@ export function predictedHomeShare(model: Model, homeId: string, awayId: string)
 function analysePastPredictions(teamIds: string[], results: InsightResult[]) {
   const dated = results.filter(r => r.week !== null);
   const weeks = [...new Set(dated.map(r => r.week!))].sort((a, b) => a - b);
+  // The baseline is an even split of the legs. Home teams here win about half
+  // the legs, so a league home-average baseline is weaker than this and would
+  // flatter the model.
   let count = 0, error = 0, baselineError = 0;
   const residuals: number[] = [];
   for (const week of weeks) {
     const training = dated.filter(r => r.week! < week);
     if (training.length < 20) continue;
     const model = fitStrengths(teamIds, training);
-    const baseline = training.reduce((sum, r) => sum + r.homeScore / (r.homeScore + r.awayScore), 0) / training.length;
     for (const r of dated.filter(r => r.week === week)) {
       const total = r.homeScore + r.awayScore;
       const residual = r.homeScore - predictedHomeShare(model, r.homeId, r.awayId) * total;
       residuals.push(residual);
       error += Math.abs(residual);
-      baselineError += Math.abs(baseline * total - r.homeScore);
+      baselineError += Math.abs(total / 2 - r.homeScore);
       count++;
     }
   }
@@ -65,6 +67,23 @@ function analysePastPredictions(teamIds: string[], results: InsightResult[]) {
 }
 export function backtest(teamIds: string[], results: InsightResult[]) {
   return analysePastPredictions(teamIds, results).validation;
+}
+
+// A fair double round robin: every pair of teams meets twice, once at each
+// venue. Checks the unordered pair as well, so a pair that met twice at the
+// same venue (a rearranged fixture) does not count as missing a game.
+export function isCompleteDoubleRoundRobin(teamIds: string[], fixtures: { homeId: string; awayId: string }[]) {
+  const count = new Map<string, number>();
+  for (const f of fixtures) {
+    const key = f.homeId + "|" + f.awayId;
+    count.set(key, (count.get(key) ?? 0) + 1);
+  }
+  const directed = (a: string, b: string) => count.get(a + "|" + b) ?? 0;
+  return teamIds.every((a, i) => teamIds.slice(i + 1).every(b => directed(a, b) + directed(b, a) === 2));
+}
+export function isVenueBalanced(teamIds: string[], fixtures: { homeId: string; awayId: string }[]) {
+  return teamIds.every(a => teamIds.every(b => a === b ||
+    fixtures.filter(f => f.homeId === a && f.awayId === b).length === 1));
 }
 type RemainingFixture = { id: string; week: number | null; homeId: string; awayId: string };
 export function getHistoricalLegErrors(teamIds: string[], results: InsightResult[]) {
@@ -83,20 +102,24 @@ function seededRandom(seed: string) {
 
 export function projectSeason(
   standings: LeagueStanding[], remaining: RemainingFixture[], model: Model,
-  matchLegs: number, targetId: string, teamOrder: string[], residuals: number[]
+  matchLegs: number, targetId: string, teamOrder: string[], residuals: number[],
+  // Refits the strengths on a resampled set of results for each scenario, so
+  // a team that was over- or under-rated is wrong in all of its remaining
+  // fixtures at once. Without it the strengths are treated as exact.
+  resampleModel?: (random: () => number) => Model
 ) {
   const order = new Map(teamOrder.map((id, i) => [id, i]));
   const rank = (rows: LeagueStanding[]) => rows.sort((a, b) =>
     b.points - a.points || b.legDiff - a.legDiff || b.legsFor - a.legsFor ||
     (order.get(a.teamId) ?? 0) - (order.get(b.teamId) ?? 0))
     .map((r, i) => ({ ...r, position: i + 1 }));
-  const simulate = (sample?: () => number) => {
+  const simulate = (sample?: () => number, scenarioModel = model) => {
     const rows = standings.map(row => ({ ...row }));
     const byId = new Map(rows.map(r => [r.teamId, r]));
     for (const f of remaining) {
       const home = byId.get(f.homeId), away = byId.get(f.awayId);
       if (!home || !away) throw new Error("Unknown projected fixture team");
-      const expected = predictedHomeShare(model, f.homeId, f.awayId) * matchLegs;
+      const expected = predictedHomeShare(scenarioModel, f.homeId, f.awayId) * matchLegs;
       const hs = sample ? Math.max(0, Math.min(matchLegs, Math.round(expected + sample()))) : expected;
       const as = matchLegs - hs;
       home.legsFor += hs; home.legsAgainst += as; home.played++;
@@ -123,7 +146,8 @@ export function projectSeason(
     fixtures: remaining.map(r => [r.id, r.homeId, r.awayId]), matchLegs, residuals
   }));
   for (let i = 0; i < iterations; i++) {
-    const rows = simulate(finished ? undefined : () => residuals[Math.floor(random() * residuals.length)] - mean);
+    const rows = finished ? simulate() : simulate(() => residuals[Math.floor(random() * residuals.length)] - mean,
+      resampleModel ? resampleModel(random) : model);
     const team = rows.find(t => t.teamId === targetId)!;
     positions.push(team.position); points.push(team.points);
   }
@@ -138,6 +162,7 @@ export function projectSeason(
   };
   return {
     table: projected, target, iterations, residualSample: residuals.length,
+    strengthUncertainty: Boolean(resampleModel) && iterations > 1,
     mostFrequentPosition: likely?.position ?? null, distribution: counts,
     positionRange: iterations ? { low: quantile(positions, 0.1), high: quantile(positions, 0.9) } : null,
     pointsRange: iterations ? { low: quantile(points, 0.1), high: quantile(points, 0.9) } : null
@@ -219,13 +244,15 @@ export function buildLeagueInsights(data: Awaited<ReturnType<typeof getLiveLeagu
     : matchLegs === null ? "There is no consistent match length in the recorded results."
     : insufficientTeams.length ? "Some teams have fewer than five completed games; a full-league forecast is not reliable yet."
     : null;
-  // Verify a complete home-and-away round robin from source fixtures, rather
-  // than inventing missing games. Non-standard schedules are labelled conditional.
-  const coverageVerified = ids.every(homeId => ids.every(awayId => homeId === awayId ||
-    eligible.filter(f => f.home_team_id === homeId && f.away_team_id === awayId).length === 1));
+  // Verify a complete double round robin from source fixtures, rather than
+  // inventing missing games. Non-standard schedules are labelled conditional.
+  const schedule = eligible.map(f => ({ homeId: f.home_team_id!, awayId: f.away_team_id! }));
+  const coverageVerified = isCompleteDoubleRoundRobin(ids, schedule);
+  const venueBalanced = isVenueBalanced(ids, schedule);
   const projection = projectionUnavailable ? null : projectSeason(standings,
     remainingFixtures.map(f => ({ id: f.id, week: f.week ?? null, homeId: f.home_team_id!, awayId: f.away_team_id! })),
-    model, matchLegs!, target.teamId, teams.filter(t => ids.includes(t.id)).map(t => t.id), historicalErrors);
+    model, matchLegs!, target.teamId, teams.filter(t => ids.includes(t.id)).map(t => t.id), historicalErrors,
+    random => fitStrengths(ids, results.map(() => results[Math.floor(random() * results.length)])));
   const opponents = stats.filter(t => t.teamId !== target.teamId).map(t => {
     const direct = results.filter(r => (r.homeId === target.teamId && r.awayId === t.teamId) ||
       (r.awayId === target.teamId && r.homeId === t.teamId));
@@ -246,7 +273,7 @@ export function buildLeagueInsights(data: Awaited<ReturnType<typeof getLiveLeagu
     .filter(r => r.homeId === target.teamId || r.awayId === target.teamId)
     .reduce((sum, r) => sum + (model.strengths[r.homeId === target.teamId ? r.awayId : r.homeId] || 0), 0) / targetStats.played : null;
   return { league: TARGET_LEAGUE, targetTeam: TARGET_TEAM, targetId: target.teamId, checkedAt: data.checkedAt,
-    projection, projectionUnavailable, coverageVerified, remainingMatches: remainingFixtures.length,
+    projection, projectionUnavailable, coverageVerified, venueBalanced, remainingMatches: remainingFixtures.length,
     source: data.source, teams: stats.map(t => ({ ...t, adjustedStrength: model.strengths[t.teamId] })), results, forecasts, opponents, validation, matchLegs,
     scheduleStrength, adjustedStrength: model.strengths[target.teamId],
     omittedResults: eligible.filter(f => f.played).length - results.length,

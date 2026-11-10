@@ -6,7 +6,7 @@ const globalCache = globalThis as typeof globalThis & {
 };
 export async function getCachedLeagueInsights(force = false) {
   const data = await getCachedLiveLeagueData(force);
-  const key = "league-insights-model-v2:" + data.checkedAt;
+  const key = "league-insights-model-v3:" + data.checkedAt;
   if (globalCache.__westGreenDerivedInsights?.key === key) return globalCache.__westGreenDerivedInsights.promise;
   // Raw-data refresh controls when this version changes. Explicit model version
   // prevents an old calculation surviving a deployment that changes the model.

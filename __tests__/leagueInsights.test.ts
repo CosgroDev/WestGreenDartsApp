@@ -1,4 +1,4 @@
-import { buildLeagueInsights, projectSeason, fitStrengths, predictedHomeShare, backtest, type InsightResult } from "../src/lib/leagueInsights";
+import { buildLeagueInsights, projectSeason, fitStrengths, predictedHomeShare, backtest, isCompleteDoubleRoundRobin, isVenueBalanced, type InsightResult } from "../src/lib/leagueInsights";
 const teams = [
   { id: "w", name: "West Green", league_id: "l", number: 15 },
   { id: "a", name: "Alpha", league_id: "l", points_deduction: 4 },
@@ -139,4 +139,44 @@ test("a finished season has no additional legs and its current ranking is final"
     fitStrengths(["w", "a"], []), 12, "w", ["w", "a"], []);
   expect(p.target).toMatchObject({ points: 20, position: 1, remaining: 0, additionalLegs: 0 });
   expect(p.positionRange).toEqual({ low: 1, high: 1 });
+});
+
+test("schedule coverage counts each pair meeting twice, even at the same venue", () => {
+  const ids = ["w", "a", "b"];
+  const full = [["w", "a"], ["a", "w"], ["w", "b"], ["b", "w"], ["a", "b"], ["b", "a"]].map(([homeId, awayId]) => ({ homeId, awayId }));
+  expect(isCompleteDoubleRoundRobin(ids, full)).toBe(true);
+  expect(isVenueBalanced(ids, full)).toBe(true);
+  // A rearranged fixture: a hosts b twice. Still a complete schedule.
+  const sameVenue = [...full.slice(0, 4), { homeId: "a", awayId: "b" }, { homeId: "a", awayId: "b" }];
+  expect(isCompleteDoubleRoundRobin(ids, sameVenue)).toBe(true);
+  expect(isVenueBalanced(ids, sameVenue)).toBe(false);
+  expect(isCompleteDoubleRoundRobin(ids, full.slice(0, 5))).toBe(false);
+  expect(isCompleteDoubleRoundRobin(ids, [...full, { homeId: "w", awayId: "a" }])).toBe(false);
+});
+test("backtest baseline is an even split of the legs", () => {
+  const training: InsightResult[] = Array.from({ length: 20 }, (_, i) => ({
+    id: String(i), week: 1, homeId: "w", awayId: "a", home: "", away: "", homeScore: 9, awayScore: 3
+  }));
+  const heldOut = { ...training[0], id: "held", week: 2, homeScore: 9, awayScore: 3 };
+  expect(backtest(["w", "a"], [...training, heldOut]).baselineLegError).toBe(3);
+});
+test("resampling strengths widens the season range and stays repeatable", () => {
+  const rows = [standing("w", 60, 60), standing("a", 60, 60), standing("b", 60, 60)];
+  const remaining = Array.from({ length: 6 }, (_, i) => ({ id: "r" + i, week: 10 + i,
+    homeId: ["w", "a", "b"][i % 3], awayId: ["a", "b", "w"][i % 3] }));
+  const results: InsightResult[] = Array.from({ length: 30 }, (_, i) => ({
+    id: "p" + i, week: i + 1, homeId: ["w", "a", "b"][i % 3], awayId: ["a", "b", "w"][i % 3],
+    home: "", away: "", homeScore: [2, 6, 10][(i * 7) % 3], awayScore: 12 - [2, 6, 10][(i * 7) % 3]
+  }));
+  const model = fitStrengths(["w", "a", "b"], results);
+  const residuals = Array.from({ length: 30 }, (_, i) => [-1, 0, 1][i % 3]);
+  const resample = (random: () => number) => fitStrengths(["w", "a", "b"], results.map(() => results[Math.floor(random() * results.length)]));
+  const fixed = projectSeason(rows.map(r => ({ ...r })), remaining, model, 12, "w", ["w", "a", "b"], residuals);
+  const wide = projectSeason(rows.map(r => ({ ...r })), remaining, model, 12, "w", ["w", "a", "b"], residuals, resample);
+  const again = projectSeason(rows.map(r => ({ ...r })), remaining, model, 12, "w", ["w", "a", "b"], residuals, resample);
+  expect(wide).toEqual(again);
+  expect(wide.strengthUncertainty).toBe(true);
+  expect(fixed.strengthUncertainty).toBe(false);
+  expect(wide.pointsRange!.high - wide.pointsRange!.low).toBeGreaterThanOrEqual(fixed.pointsRange!.high - fixed.pointsRange!.low);
+  expect(wide.target.points).toBe(fixed.target.points); // expected table is unchanged
 });
