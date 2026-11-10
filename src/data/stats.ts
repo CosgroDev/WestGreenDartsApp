@@ -1,6 +1,7 @@
 import { type EventRow, type GameRow, type PlayerRow } from "@/lib/dbRows";
 import { allRows, rowsForIds } from "@/lib/database";
 import { matchKey } from "@/lib/matchKey";
+import { NO_OPPOSITION, summariseOpposition, threeDartAvg, totalsByGame, type OppositionSummary } from "@/lib/opposition";
 import { canFinishFrom } from "@/lib/scoringUtils";
 import { cachedSeason } from "@/lib/seasonCache";
 import { supabaseServer } from "@/lib/supabaseServer";
@@ -11,15 +12,21 @@ import { supabaseServer } from "@/lib/supabaseServer";
 // drops rows past the limit instead of erroring — under-counting whichever
 // legs/players happen to fall past the cutoff. Page through with `.range()`
 // so every event is counted regardless of season size.
+// Both throwers come back in one paged sequence; the aggregators count the
+// West Green visits and the opponent visits only feed the opposition figures.
 async function fetchAllScoringEvents(
   supabase: NonNullable<Awaited<ReturnType<typeof supabaseServer>>>,
   gameIds: string[],
   columns: string,
   orderColumn: string = "id"
-): Promise<EventRow[]> {
-  return rowsForIds(gameIds, ids => supabase.from("scoring_events")
-    .select(columns).in("game_id", ids).eq("is_deleted", false).eq("thrower", "west_green")
+): Promise<{ west: EventRow[]; opponent: EventRow[] }> {
+  const rows = await rowsForIds(gameIds, ids => supabase.from("scoring_events")
+    .select(columns + ", thrower").in("game_id", ids).eq("is_deleted", false)
     .order(orderColumn, {ascending: true}).order("id", {ascending: true}));
+  return {
+    west: rows.filter((e: EventRow) => e.thrower !== "opponent"),
+    opponent: rows.filter((e: EventRow) => e.thrower === "opponent")
+  };
 }
 
 export type PlayerCard = {
@@ -44,7 +51,7 @@ export type PlayerCard = {
   checkout_hits: number;
   first_nine_legs: number;
   recorded_wins: number;
-};
+} & OppositionSummary;
 
 export type TeamCard = {
   legs_played: number;
@@ -57,7 +64,7 @@ export type TeamCard = {
   hundred_plus: number;
   hundred_forty_plus: number;
   one_eighty_count: number;
-};
+} & OppositionSummary;
 
 const TEAM_CARD_EMPTY: TeamCard = {
   legs_played: 0,
@@ -70,13 +77,21 @@ const TEAM_CARD_EMPTY: TeamCard = {
   hundred_plus: 0,
   hundred_forty_plus: 0,
   one_eighty_count: 0,
+  ...NO_OPPOSITION,
 };
 
-export type SeasonStatisticsData = { players: PlayerRow[]; games: GameRow[]; events: EventRow[] };
+export type SeasonStatisticsData = {
+  players: PlayerRow[];
+  games: GameRow[];
+  /** West Green visits. */
+  events: EventRow[];
+  /** Opponent visits for the same legs. */
+  opponentEvents: EventRow[];
+};
 export async function loadSeasonStatistics(seasonId?: string): Promise<SeasonStatisticsData> {
   // The session is checked here, outside the cache, on every call.
   const db = await supabaseServer();
-  if (!db) return { players: [], games: [], events: [] };
+  if (!db) return { players: [], games: [], events: [], opponentEvents: [] };
   return cachedSeason(seasonId ?? "all", () => readSeasonStatistics(db, seasonId));
 }
 
@@ -96,7 +111,21 @@ async function readSeasonStatistics(
   const games = gameRows.data;
   const events = await fetchAllScoringEvents(db, games.filter(g => g.status === "completed").map(g => g.id),
     "id, game_id, throw_index, score, darts, is_bust, is_checkout, remaining_after, is_deleted", "throw_index");
-  return { players: playerRows.data, games, events };
+  return { players: playerRows.data, games, events: events.west, opponentEvents: events.opponent };
+}
+
+/**
+ * What every opponent of the season threw, against what West Green threw in
+ * the same legs. Its average is the yardstick for a hard or an easy game.
+ */
+export async function getSeasonOpposition(seasonId?: string | null): Promise<OppositionSummary> {
+  if (!seasonId) return NO_OPPOSITION;
+  const shared = await loadSeasonStatistics(seasonId);
+  return summariseOpposition(
+    shared.games.filter(g => g.status === "completed").map(g => g.id),
+    totalsByGame(shared.events),
+    totalsByGame(shared.opponentEvents)
+  );
 }
 
 export async function getPlayerCards(seasonId?: string, includeInactive = false, shared?: SeasonStatisticsData): Promise<PlayerCard[]> {
@@ -194,10 +223,13 @@ export async function getPlayerCards(seasonId?: string, includeInactive = false,
 
   // Fetch scoring events for all those games
   const allGameIds = games.map((g: GameRow) => g.id);
-  const events = shared ? shared.events : await fetchAllScoringEvents(
+  const fetched = shared ? { west: shared.events, opponent: shared.opponentEvents } : await fetchAllScoringEvents(
     supabase!, allGameIds,
     "game_id, score, darts, is_bust, is_checkout, remaining_after, is_deleted", "throw_index"
   );
+  const events = fetched.west;
+  const ownTotals = totalsByGame(events);
+  const oppTotals = totalsByGame(fetched.opponent);
 
   if (events) {
     const gameToPlayer = new Map<string, string>();
@@ -304,6 +336,7 @@ export async function getPlayerCards(seasonId?: string, includeInactive = false,
       checkout_hits: val.checkoutHits,
       first_nine_legs: val.first9Darts / 9,
       recorded_wins: val.wonDarts.length,
+      ...summariseOpposition(val.gameIds, ownTotals, oppTotals),
     });
   }
 
@@ -327,6 +360,10 @@ export type PlayerGameStat = {
   hundred_plus: number;
   hundred_forty_plus: number;
   one_eighty: number;
+  /** The opponent's average in this leg; null when their visits weren't recorded. */
+  opp_three_dart_avg: number | null;
+  /** What the loser of the leg still needed: the opponent when won, the player when lost. */
+  loser_left: number | null;
 };
 
 /**
@@ -362,12 +399,24 @@ export async function getPlayerGameLog(
   if (gamesErr || !games || !games.length) return [];
 
   const gameIds = games.map((g: GameRow) => g.id);
-  const events = await fetchAllScoringEvents(
+  const fetched = await fetchAllScoringEvents(
     supabase,
     gameIds,
     "game_id, score, darts, is_bust, is_checkout, remaining_after",
     "throw_index"
   );
+  const events = fetched.west;
+  const oppTotals = totalsByGame(fetched.opponent);
+  // Events are in throw order, so the last one per leg is where that side finished.
+  const lastLeft = (rows: EventRow[]) => {
+    const left = new Map<string, number>();
+    rows.forEach((e) => {
+      if (typeof e.remaining_after === "number") left.set(e.game_id, e.remaining_after);
+    });
+    return left;
+  };
+  const westLeft = lastLeft(events);
+  const oppLeft = lastLeft(fetched.opponent);
 
   type Agg = {
     totalScore: number;
@@ -454,6 +503,9 @@ export async function getPlayerGameLog(
       hundred_plus: a?.t100 ?? 0,
       hundred_forty_plus: a?.t140 ?? 0,
       one_eighty: a?.t180 ?? 0,
+      opp_three_dart_avg: threeDartAvg(oppTotals.get(g.id)),
+      // Only meaningful when the opponent's visits exist to say how the leg ended.
+      loser_left: oppTotals.has(g.id) ? (won ? oppLeft.get(g.id) : westLeft.get(g.id)) ?? null : null,
     };
   });
 }
@@ -502,14 +554,17 @@ export async function getTeamCard(seasonId?: string, shared?: SeasonStatisticsDa
   let hundred_plus = 0;
   let hundred_forty_plus = 0;
   let one_eighty_count = 0;
+  let opposition = NO_OPPOSITION;
 
   if (games.length) {
     const gameIds = games.map((g: GameRow) => g.id);
-    const events = shared ? shared.events : await fetchAllScoringEvents(
+    const fetched = shared ? { west: shared.events, opponent: shared.opponentEvents } : await fetchAllScoringEvents(
       supabase!,
       gameIds,
-      "score, darts, is_bust, is_checkout, remaining_after"
+      "game_id, score, darts, is_bust, is_checkout, remaining_after"
     );
+    const events = fetched.west;
+    opposition = summariseOpposition(gameIds, totalsByGame(events), totalsByGame(fetched.opponent));
 
     let totalScore = 0;
     let totalDarts = 0;
@@ -559,5 +614,6 @@ export async function getTeamCard(seasonId?: string, shared?: SeasonStatisticsDa
     hundred_plus,
     hundred_forty_plus,
     one_eighty_count,
+    ...opposition,
   };
 }

@@ -6,6 +6,7 @@ import type { PlayerCard, PlayerGameStat } from "@/data/stats";
 import type { PerformanceLeaderboard, PlayerPerformance } from "@/lib/playerPerformance";
 import type { PlayerAura } from "@/lib/playerAura";
 import { compareLeaderboardPlayers } from "@/lib/leaderboard";
+import { DIFFICULTY_LABEL, DIFFICULTY_TONE, gameDifficulty, signed } from "@/lib/opposition";
 import { LeaderboardExplanation } from "./LeaderboardExplanation";
 import { PlayerAiInsight } from "./PlayerAiInsight";
 import { loadPlayerGameLogAction } from "./actions";
@@ -16,9 +17,11 @@ type Props = {
   seasonId: string;
   performance: PerformanceLeaderboard;
   auras: Record<string, PlayerAura>;
+  /** The season's typical opponent average: the yardstick for a hard or an easy game. */
+  fieldAvg: number | null;
 };
 
-export function Leaderboard({ players, formByPlayer, seasonId, performance, auras }: Props) {
+export function Leaderboard({ players, formByPlayer, seasonId, performance, auras, fieldAvg }: Props) {
   const [ranking, setRanking] = useState<"performance" | "wins">("performance");
   const ratingsById = new Map(performance.ratings.map(r => [r.playerId, r]));
   const playersById = new Map(players.map(p => [p.player_id, p]));
@@ -134,6 +137,8 @@ export function Leaderboard({ players, formByPlayer, seasonId, performance, aura
                   <DetailStat label="Checkout" value={p.checkout_pct !== null ? p.checkout_pct.toFixed(0) + "%" : "–"} />
                   <DetailStat label="Darts/leg won" value={p.darts_per_leg_won !== null ? p.darts_per_leg_won.toFixed(1) : "–"} />
                   <DetailStat label="High finish" value={p.high_finish !== null ? String(p.high_finish) : "–"} />
+                  <DetailStat label="Opp 3DA" value={p.opp_three_dart_avg !== null ? p.opp_three_dart_avg.toFixed(1) : "–"} />
+                  <DetailStat label="vs opponents" value={signed(p.avg_vs_opp)} />
                   <DetailStat label="Matches" value={String(p.matches_played)} />
                   <DetailStat label="Visits" value={String(p.scoring_visits)} />
                   <DetailStat label="60+" value={String(p.sixty_plus)} />
@@ -154,7 +159,7 @@ export function Leaderboard({ players, formByPlayer, seasonId, performance, aura
                   ) : log && log.length > 0 ? (
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                       {log.map((g) => (
-                        <GameCard key={g.game_id} game={g} />
+                        <GameCard key={g.game_id} game={g} fieldAvg={fieldAvg} />
                       ))}
                     </div>
                   ) : (
@@ -210,7 +215,8 @@ function AuraBadge({ aura }: { aura?: PlayerAura }) {
   );
 }
 
-function GameCard({ game }: { game: PlayerGameStat }) {
+function GameCard({ game, fieldAvg }: { game: PlayerGameStat; fieldAvg: number | null }) {
+  const difficulty = gameDifficulty(game.opp_three_dart_avg, fieldAvg);
   const date = new Date(game.date);
   const dateLabel = isNaN(date.getTime())
     ? ""
@@ -226,12 +232,19 @@ function GameCard({ game }: { game: PlayerGameStat }) {
           <p className="truncate text-sm font-semibold text-slate-800">vs {game.opponent}</p>
           {dateLabel && <p className="text-[11px] text-slate-400">{dateLabel}</p>}
         </div>
-        <span
-          className={`shrink-0 rounded-full px-2.5 py-1 text-[11px] font-bold ${
-            game.won ? "bg-emerald-100 text-emerald-700" : "bg-red-50 text-red-600"
-          }`}
-        >
-          {game.won ? "W" : "L"}
+        <span className="flex shrink-0 items-center gap-1.5">
+          {difficulty && (
+            <span className={`rounded-full border px-2 py-0.5 text-[10px] font-semibold ${DIFFICULTY_TONE[difficulty]}`}>
+              {DIFFICULTY_LABEL[difficulty]}
+            </span>
+          )}
+          <span
+            className={`rounded-full px-2.5 py-1 text-[11px] font-bold ${
+              game.won ? "bg-emerald-100 text-emerald-700" : "bg-red-50 text-red-600"
+            }`}
+          >
+            {game.won ? "W" : "L"}
+          </span>
         </span>
       </div>
 
@@ -244,6 +257,11 @@ function GameCard({ game }: { game: PlayerGameStat }) {
           value={(game.won ? game.checkout : game.high_finish) !== null
             ? String(game.won ? game.checkout : game.high_finish)
             : "–"}
+        />
+        <Stat label="Opp 3DA" value={game.opp_three_dart_avg !== null ? game.opp_three_dart_avg.toFixed(1) : "–"} />
+        <Stat
+          label={game.won ? "Opp left on" : "Left on"}
+          value={game.loser_left !== null ? String(game.loser_left) : "–"}
         />
       </div>
 

@@ -10,7 +10,7 @@ const MAX_AGE_SECONDS = 300;
 export async function cachedSeason<T>(seasonKey: string, read: () => Promise<T>): Promise<T> {
   let cached: () => Promise<T>;
   try {
-    cached = unstable_cache(read, ["season-stats-v1", seasonKey], { tags: [TAG], revalidate: MAX_AGE_SECONDS });
+    cached = unstable_cache(read, ["season-stats-v2", seasonKey], { tags: [TAG], revalidate: MAX_AGE_SECONDS });
   } catch {
     return read();
   }

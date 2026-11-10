@@ -1,4 +1,5 @@
 import type { MatchSummary } from "@/data/matchSummary";
+import { DIFFICULTY_MARGIN, gameDifficulty, type Difficulty } from "@/lib/opposition";
 
 export type PracticeSuggestion = {
   title: string;
@@ -11,6 +12,8 @@ export type MatchInsights = {
   strengths: string[];
   workOns: string[];
   practice: PracticeSuggestion[];
+  /** How hard the game was against the season's typical opponent; null when it can't be judged. */
+  difficulty: Difficulty | null;
 };
 
 const round1 = (n: number) => Math.round(n * 10) / 10;
@@ -18,9 +21,11 @@ const round1 = (n: number) => Math.round(n * 10) / 10;
 /**
  * Rule-based darts coaching read of a completed match. Looks at the dynamics
  * that decide pub-league legs: heavy scoring (treble 20 consistency), how fast
- * a leg starts (first 9), and conversion once on a finish (checkout %, busts).
+ * a leg starts (first 9), and conversion once on a finish (checkout %, busts),
+ * all set against what the opponent threw when their visits were recorded.
+ * `fieldAvg` is the average of every opponent faced this season.
  */
-export function analyseMatch(m: MatchSummary): MatchInsights {
+export function analyseMatch(m: MatchSummary, fieldAvg: number | null = null): MatchInsights {
   const strengths: string[] = [];
   const workOns: string[] = [];
   const practice: PracticeSuggestion[] = [];
@@ -30,6 +35,39 @@ export function analyseMatch(m: MatchSummary): MatchInsights {
 
   const tda = m.threeDartAvg;
   const f9 = m.firstNineAvg;
+
+  // --- The opposition: was it a hard game, and who out-scored whom ---
+  const opp = m.opponent;
+  const oppAvg = opp?.threeDartAvg ?? null;
+  const ownAvg = opp?.playerThreeDartAvg ?? null;
+  const difficulty = gameDifficulty(oppAvg, fieldAvg);
+  if (oppAvg !== null && ownAvg !== null) {
+    const gap = ownAvg - oppAvg;
+    const versus = `${round1(ownAvg)} to ${m.opponentPlayer}'s ${round1(oppAvg)}`;
+    if (m.result !== "loss" && gap <= -DIFFICULTY_MARGIN) {
+      strengths.push(`Out-scored ${versus} and still took ${m.result === "win" ? "the match" : "a leg"} — that was won on the finish.`);
+    } else if (m.result === "loss" && gap >= DIFFICULTY_MARGIN) {
+      workOns.push(`Out-scored the opponent ${versus} and lost — the legs went on the finish, not the scoring.`);
+      addPractice({
+        title: "121 Challenge",
+        href: "/practice/121",
+        reason: "The scoring was good enough to win; this is about closing legs out once the finish is on."
+      });
+    } else if (m.result === "win" && gap >= DIFFICULTY_MARGIN) {
+      strengths.push(`Out-scored the opponent ${versus}.`);
+    }
+    if (difficulty === "hard" && fieldAvg !== null) {
+      strengths.push(
+        m.result === "loss"
+          ? `A hard game: ${m.opponentPlayer} averaged ${round1(oppAvg)}, well above the ${round1(fieldAvg)} of a typical opponent this season.`
+          : `${m.result === "win" ? "Beat" : "Held"} an opponent averaging ${round1(oppAvg)}, well above the ${round1(fieldAvg)} of a typical opponent this season.`
+      );
+    } else if (difficulty === "easy" && fieldAvg !== null && m.result !== "win") {
+      workOns.push(
+        `${m.opponentPlayer} averaged ${round1(oppAvg)}, below the ${round1(fieldAvg)} of a typical opponent this season — this one was there to be won.`
+      );
+    }
+  }
 
   // --- Scoring power ---
   if (tda !== null) {
@@ -120,12 +158,14 @@ export function analyseMatch(m: MatchSummary): MatchInsights {
 
   // --- Headline ---
   const score = `${m.westLegs}-${m.oppLegs}`;
+  const averaging =
+    tda === null ? "" : ` averaging ${round1(tda)}${oppAvg !== null ? ` to ${round1(oppAvg)}` : ""}`;
   const headline =
     m.result === "win"
-      ? `${m.westPlayerName} beat ${m.opponentPlayer} ${score}${tda !== null ? ` averaging ${round1(tda)}` : ""}.`
+      ? `${m.westPlayerName} beat ${m.opponentPlayer} ${score}${averaging}.`
       : m.result === "loss"
-      ? `${m.westPlayerName} went down ${score} to ${m.opponentPlayer}${tda !== null ? ` averaging ${round1(tda)}` : ""}.`
-      : `${m.westPlayerName} drew ${score} with ${m.opponentPlayer}${tda !== null ? ` averaging ${round1(tda)}` : ""}.`;
+      ? `${m.westPlayerName} went down ${score} to ${m.opponentPlayer}${averaging}.`
+      : `${m.westPlayerName} drew ${score} with ${m.opponentPlayer}${averaging}.`;
 
   if (!strengths.length && tda !== null) {
     strengths.push("Every match scored is data in the bank — the trends on the dashboard do the talking.");
@@ -134,5 +174,5 @@ export function analyseMatch(m: MatchSummary): MatchInsights {
     workOns.push("Nothing glaring this match — keep the routine going.");
   }
 
-  return { headline, strengths, workOns, practice: practice.slice(0, 3) };
+  return { headline, strengths, workOns, practice: practice.slice(0, 3), difficulty };
 }

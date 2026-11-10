@@ -1,6 +1,6 @@
 import { summariseLeg, type Visit } from "../src/data/matchSummary";
 import type { PlayerCard } from "../src/data/stats";
-import { derivePlayerSeason, squadContext, type InsightLeg, type InsightMatch } from "../src/lib/playerInsights";
+import { derivePlayerSeason, deriveSquadSeason, practiceContext, squadContext, type InsightLeg, type InsightMatch } from "../src/lib/playerInsights";
 import { PLAYER_SYSTEM_PROMPT } from "../src/lib/aiCoaching";
 
 const v = (score: number, remainingAfter: number, extra: Partial<Visit> = {}): Visit => ({
@@ -83,7 +83,7 @@ const card = (player_id: string, overrides: Partial<PlayerCard> = {}): PlayerCar
   player_id, name: player_id, legs_played: 12, legs_won: 6, three_dart_avg: 45, first_nine_avg: 50,
   checkout_pct: 25, twenty_six: 2, one_eighty: 0, high_finish: 80, sixty_plus: 30, hundred_plus: 10,
   hundred_forty_plus: 2, darts_per_leg_won: 24, total_darts: 300, matches_played: 4, scoring_visits: 100,
-  checkout_attempts: 24, checkout_hits: 6, first_nine_legs: 12, recorded_wins: 6, ...overrides
+  checkout_attempts: 24, checkout_hits: 6, first_nine_legs: 12, recorded_wins: 6, opp_legs: 0, opp_three_dart_avg: null, avg_vs_opp: null, ...overrides
 });
 
 describe("squadContext", () => {
@@ -108,7 +108,78 @@ describe("squadContext", () => {
   });
 });
 
+describe("derivePlayerSeason against the opposition", () => {
+  const o = (score: number, remainingAfter: number, extra: Partial<Visit> = {}) => v(score, remainingAfter, extra);
+  // Won in 13 darts while the opponent was still on 261.
+  const won: InsightLeg = { ...quickWin("w1"), opponentVisits: [o(60, 441), o(60, 381), o(60, 321), o(60, 261)] };
+  // Lost on 129 to an opponent who threw better.
+  const lost: InsightLeg = {
+    ...lostOnFinish("l1"),
+    opponentVisits: [o(100, 401), o(100, 301), o(100, 201), o(100, 101), o(61, 40), o(0, 40), o(40, 0, { isCheckout: true, darts: 1 })]
+  };
+  const d = derivePlayerSeason([match("2026-10-01T19:30:00Z", true, [won, lost])]);
+
+  it("sets the player's average beside the opponents' over the same legs", () => {
+    expect(d.opposition).toMatchObject({ legsWithOpponentVisits: 2, outscoredOpponent: { legs: 1, won: 1 }, outscoredByOpponent: { legs: 1, won: 0 } });
+    expect(d.opposition!.opponentThreeDartAvg).toBe(71.7);
+    expect(d.matchTimeline[0].opponentThreeDartAvg).toBe(71.7);
+  });
+
+  it("reads double hitting and how the lost legs were lost", () => {
+    expect(d.finishing.doubleInHand).toEqual({ visits: 1, hits: 1, pct: 100 });
+    expect(d.finishing.medianLeftWhenLost).toBe(129);
+    expect(d.finishing.legsLostOnADouble).toBe(0);
+  });
+
+  it("is null when no opponent visits were recorded", () => {
+    expect(derivePlayerSeason([match("2026-10-01T19:30:00Z", true, [quickWin("a")])]).opposition).toBeNull();
+  });
+});
+
+describe("deriveSquadSeason", () => {
+  const s = deriveSquadSeason([
+    { playerId: "p1", matches: [match("2026-10-01T19:30:00Z", true, [quickWin("a1"), lostOnFinish("a2")])] },
+    { playerId: "p2", matches: [match("2026-10-01T19:30:00Z", true, [quickWin("b1"), quickWin("b2", false)]), match("2026-10-08T19:30:00Z", false, [lostOnFinish("c1"), lostOnFinish("c2", true)])] },
+    { playerId: "idle", matches: [] }
+  ]);
+
+  it("rolls every player's matches up into league nights in date order", () => {
+    expect(s.nights.map((n) => [n.date, n.venue, n.legs])).toEqual([["2026-10-01", "home", "3-1"], ["2026-10-08", "away", "0-2"]]);
+    expect(s.nights[1]).toMatchObject({ legsLostWithFinishChances: 2, legsLostNeverOnFinish: 0 });
+  });
+
+  it("profiles the squad as a whole and each player who has played", () => {
+    expect(s.team.venue.home).toMatchObject({ legs: 4, won: 3 });
+    expect(s.team.throwOrder?.throwingFirst).toMatchObject({ legs: 3, won: 2 });
+    expect(s.players.map((p) => p.playerId)).toEqual(["p1", "p2"]);
+    expect(s.players[1]).toMatchObject({ legsLostWithFinishChances: 2, doubleInHand: { visits: 2, hits: 2, pct: 100 } });
+  });
+});
+
+describe("practiceContext", () => {
+  const sources = {
+    legs: [{ player_id: "me", name: "Me", legs_played: 10, legs_won: 6, three_dart_avg: 51.26, first_nine_avg: 55, twenty_six: 1, one_eighty: 0, high_finish: 90 }],
+    checkout: [],
+    doubles: [{ player_id: "me", name: "Me", games_played: 4, games_won: 1, total_attempts: 80, double_pct: 41.2, first_dart_pct: 12, weakest_doubles: [3, 7] }],
+    game121: [{ player_id: "other", name: "Other", games_played: 2, games_won: 1, best_checkout: 130, lock_rate: 20 }]
+  };
+
+  it("picks out what the player has logged and leaves the rest null", () => {
+    const p = practiceContext("me", sources);
+    expect(p.practice501).toMatchObject({ legs: 10, legsWon: 6, threeDartAvg: 51.3 });
+    expect(p.doublesSwitch).toMatchObject({ games: 4, hitPct: 41.2, weakestDoubles: [3, 7] });
+    expect(p.randomCheckout).toBeNull();
+    expect(p.challenge121).toBeNull();
+  });
+});
+
 describe("PLAYER_SYSTEM_PROMPT", () => {
+  it("explains the practice and opposition blocks it is sent", () => {
+    expect(PLAYER_SYSTEM_PROMPT).toMatch(/"practice":/);
+    expect(PLAYER_SYSTEM_PROMPT).toMatch(/"opposition":/);
+  });
+
+
   it("asks for the labelled sections the leaderboard renders", () => {
     for (const label of ["Strengths:", "Holding you back:", "Hidden pattern:", "Practice plan:"]) {
       expect(PLAYER_SYSTEM_PROMPT).toContain(label);

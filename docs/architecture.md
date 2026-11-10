@@ -58,9 +58,23 @@ Do not change these RPC signatures without a plan for old and new app instances 
 
 Statistics are computed in TypeScript from the season's games and events (`src/data/stats.ts`, `src/data/form.ts`, `src/data/seasonSummary.ts`). The loaded season is cached per season and invalidated whenever a score, undo or deletion changes it. Busts count darts but not points; averages are points over darts across legs, not a mean of leg averages.
 
+Opponent visits are stored in `scoring_events` with `thrower = 'opponent'`, and the statistics use them (`src/lib/opposition.ts`):
+
+- Every player card, the team card and each leg in the game log carry the opponents' three-dart average and the player's average against it. The comparison is like for like: legs scored before opponent visits were stored are left out on both sides, and the figures are null when no leg has them.
+- A game is rated hard, even or easy by comparing the opponent's average with the average of every opponent faced that season (`getSeasonOpposition`). The rating needs at least 10 legs of opponent data in the season and a gap of 4 or more; otherwise it is not shown.
+- Both throwers are read in the same paged query and split in code, so the opponent figures cost no extra round trips.
+
 ## AI reviews
 
-`src/lib/aiCoaching.ts` holds the prompts and the derived numbers fed to the model. `src/lib/aiReview.ts` owns the API call. Each review is generated once and stored; the season summary and player insight regenerate when new results arrive.
+`src/lib/aiCoaching.ts` holds the prompts and the derived numbers fed to the model; `src/lib/playerInsights.ts` holds the season-long derivations. `src/lib/aiReview.ts` owns the API call. Each review is generated once and stored; the season summary and player insight regenerate when new results arrive.
+
+What the model is shown decides how much a review can say, so the payloads are built from every visit rather than from the stat tiles:
+
+- Both throwers' visits are read in throw order (`splitLegEvents` in `src/data/matchSummary.ts`), so each visit carries what the other player had left at the time. Legs scored before opponent visits were stored have none; every opponent block is then null and the prompts tell the model to say nothing about the opponent.
+- `deriveMatch` works out how each leg was lost (with finish chances, or never reaching one), what was left, one-dart-finish conversion, the leg record with and against the throw, and the comparison with what the opponent threw (who out-scored whom, who reached a finish first, finishing with the opponent also on a finish).
+- The season review adds a squad-wide profile and a night-by-night timeline (`deriveSquadSeason`) and the league table when the league site can be read. The player insight adds the player's logged practice (`practiceContext`).
+
+When changing a payload, change the description of it in the matching system prompt too: the prompt is the only thing that tells the model what a field means.
 
 ## Caching
 

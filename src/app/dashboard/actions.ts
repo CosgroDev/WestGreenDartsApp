@@ -2,11 +2,17 @@
 
 import { generateOnce, requestReview } from "@/lib/aiReview";
 import { revalidatePath } from "next/cache";
-import { getPlayerGameLog, getPlayerCards, getTeamCard, loadSeasonStatistics } from "@/data/stats";
+import { getPlayerGameLog, getPlayerCards, getSeasonOpposition, getTeamCard, loadSeasonStatistics } from "@/data/stats";
+import { fieldAverage } from "@/lib/opposition";
 import { getSeasonToDate, getStoredSeasonSummary } from "@/data/seasonSummary";
 import { getSeasons } from "@/data/seasons";
-import { countPlayerSeasonLegs, getPlayerSeasonMatches, getStoredPlayerInsight } from "@/data/playerInsights";
-import { derivePlayerSeason, squadContext } from "@/lib/playerInsights";
+import { countPlayerSeasonLegs, getPlayerSeasonMatches, getSquadSeasonMatches, getStoredPlayerInsight } from "@/data/playerInsights";
+import { getPracticePlayerStats } from "@/data/practice";
+import { getCheckoutPlayerStats } from "@/data/checkoutPractice";
+import { getDoublesPlayerStats } from "@/data/doublesPractice";
+import { get121PlayerStats } from "@/data/game121";
+import { getCachedLeagueContext } from "@/data/leagueSnapshot";
+import { derivePlayerSeason, deriveSquadSeason, practiceContext, squadContext } from "@/lib/playerInsights";
 import { supabaseServer } from "@/lib/supabaseServer";
 import {
   PLAYER_INSIGHT_EFFORT,
@@ -56,9 +62,23 @@ export async function generateSeasonAiSummaryAction(seasonId: string): Promise<S
   const shared = await loadSeasonStatistics(id);
   const [team, players] = await Promise.all([getTeamCard(id, shared), getPlayerCards(id, false, shared)]);
   // Recent-vs-earlier form per player turns a snapshot into a trend.
-  const logs = await Promise.all(players.map((p) => getPlayerGameLog(p.player_id, id)));
+  const [logs, squadMatches, league] = await Promise.all([
+    Promise.all(players.map((p) => getPlayerGameLog(p.player_id, id))),
+    // Every visit of the season, both throwers: how legs are won and lost.
+    getSquadSeasonMatches(id),
+    // The table comes from the league's own site. It is context, not the
+    // subject, so the review is still written when that site can't be read.
+    getCachedLeagueContext().catch(() => null)
+  ]);
+  // Everyone who played, active or not: the team profile has to cover the same
+  // legs as the team card and the fixture results.
+  const squadDerived = deriveSquadSeason(
+    [...squadMatches.entries()].map(([playerId, matches]) => ({ playerId, matches }))
+  );
+  const profiles = new Map(squadDerived.players.map(({ playerId, ...profile }) => [playerId, profile]));
 
   const payload = {
+    seasonOpposition: round1(fieldAverage(team)),
     season: {
       completedFixtures: season.completedFixtures,
       fixtureRecord: `${season.fixtureWins}W-${season.fixtureDraws}D-${season.fixtureLosses}L`,
@@ -71,6 +91,20 @@ export async function generateSeasonAiSummaryAction(seasonId: string): Promise<S
         legs: `${f.legsFor}-${f.legsAgainst}`
       }))
     },
+    league: league
+      ? {
+          position: league.targetPosition,
+          points: league.targetPoints,
+          table: league.standings.map((row) => ({
+            position: row.position,
+            team: row.team,
+            played: row.played,
+            points: row.points,
+            legDiff: row.legDiff,
+            westGreen: row.target || undefined
+          }))
+        }
+      : null,
     team: {
       legs: `${team.legs_won}-${team.legs_played - team.legs_won}`,
       threeDartAvg: round1(team.three_dart_avg),
@@ -97,9 +131,11 @@ export async function generateSeasonAiSummaryAction(seasonId: string): Promise<S
         hundredFortyPlus: p.hundred_forty_plus,
         oneEighty: p.one_eighty,
         twentySix: p.twenty_six,
-        form: playerForm(logs[i])
+        form: playerForm(logs[i]),
+        profile: profiles.get(p.player_id) ?? null
       }))
       .filter((p) => p.matches > 0),
+    squadDerived: { team: squadDerived.team, nights: squadDerived.nights },
     previousSummary: stored.summary
   };
 
@@ -194,12 +230,22 @@ export async function generatePlayerAiInsightAction(
     return { ok: true, summary: stored.summary, legs: season.completedLegs, at: stored.at };
   }
 
+  // What they've logged in the practice games: lets the insight set practice
+  // against match play and build the plan on what they already do.
+  const [practiceLegs, practiceCheckout, practiceDoubles, practice121] = await Promise.all([
+    getPracticePlayerStats(),
+    getCheckoutPlayerStats(),
+    getDoublesPlayerStats(),
+    get121PlayerStats()
+  ]);
+
   const card =
     cards.find((c) => c.player_id === playerId) ??
     (await getPlayerCards(seasonId, true)).find((c) => c.player_id === playerId);
   if (!card) return { ok: false, reason: "no_data" };
 
   const payload = {
+    seasonOpposition: round1(fieldAverage(await getSeasonOpposition(seasonId))),
     player: {
       name: card.name,
       matches: card.matches_played,
@@ -216,6 +262,12 @@ export async function generatePlayerAiInsightAction(
     },
     derived: derivePlayerSeason(season.matches),
     squad: squadContext(playerId, cards.some((c) => c.player_id === playerId) ? cards : [...cards, card]),
+    practice: practiceContext(playerId, {
+      legs: practiceLegs,
+      checkout: practiceCheckout,
+      doubles: practiceDoubles,
+      game121: practice121
+    }),
     previousInsight: stored.summary
   };
 

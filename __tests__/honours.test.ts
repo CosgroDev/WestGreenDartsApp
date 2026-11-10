@@ -5,7 +5,7 @@ const player = (name: string, overrides: Partial<PlayerCard> = {}): PlayerCard =
   player_id: name, name, legs_played: 8, legs_won: 4,
   matches_played: 4, three_dart_avg: 55, first_nine_avg: 65,
   checkout_pct: 40, checkout_attempts: 10, checkout_hits: 4,
-  first_nine_legs: 8, recorded_wins: 4, darts_per_leg_won: 24,
+  first_nine_legs: 8, recorded_wins: 4, opp_legs: 0, opp_three_dart_avg: null, avg_vs_opp: null, darts_per_leg_won: 24,
   total_darts: 200, scoring_visits: 70, hundred_plus: 14,
   hundred_forty_plus: 2, sixty_plus: 30, twenty_six: 1,
   one_eighty: 0, high_finish: 100, ...overrides

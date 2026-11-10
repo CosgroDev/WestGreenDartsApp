@@ -18,6 +18,7 @@ export type Fixture = {
 export type FixtureDetail = {
   id: string;
   season: string;
+  seasonId: string | null;
   starts_at: string;
   opponent: string;
   venue: string | null;
@@ -84,7 +85,7 @@ export async function getFixtureById(id: string): Promise<FixtureDetail | null> 
 
   const { data, error } = await supabase
     .from("fixtures")
-    .select("id, starts_at, opponent, venue, notes, home, ai_team_review, ai_team_review_at, seasons(name)")
+    .select("id, starts_at, opponent, venue, notes, home, season_id, ai_team_review, ai_team_review_at, seasons(name)")
     .eq("id", id)
     .single();
 
@@ -97,6 +98,7 @@ export async function getFixtureById(id: string): Promise<FixtureDetail | null> 
   return {
     id: data.id,
     season: seasonName,
+    seasonId: data.season_id ?? null,
     starts_at: data.starts_at,
     opponent: data.opponent,
     venue: data.venue,

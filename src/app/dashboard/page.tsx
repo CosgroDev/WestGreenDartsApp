@@ -16,6 +16,7 @@ import { HonoursBoard } from "./HonoursBoard";
 import { LeagueSnapshot } from "./LeagueSnapshot";
 import { SeasonAiSummary } from "./SeasonAiSummary";
 import { getSeasons } from "@/data/seasons";
+import { fieldAverage, signed } from "@/lib/opposition";
 import { getFixtures } from "@/data/fixtures";
 import { getStoredSeasonSummary } from "@/data/seasonSummary";
 
@@ -124,6 +125,12 @@ export default async function DashboardPage() {
             <SnapshotStat label="Checkout" value={team.checkout_pct !== null ? team.checkout_pct.toFixed(0) + "%" : "–"} />
             <SnapshotStat label="Darts per leg won" value={team.darts_per_leg_won !== null ? team.darts_per_leg_won.toFixed(1) : "–"} />
             <SnapshotStat label="High finish" value={team.high_finish ?? "–"} highlight />
+            <SnapshotStat label="Opposition avg" value={team.opp_three_dart_avg !== null ? team.opp_three_dart_avg.toFixed(1) : "–"} />
+            <SnapshotStat
+              label="Avg vs opposition"
+              value={signed(team.avg_vs_opp)}
+              tone={team.avg_vs_opp === null ? undefined : team.avg_vs_opp >= 0 ? "text-emerald-700" : "text-red-600"}
+            />
           </div>
         </div>
 
@@ -188,6 +195,7 @@ export default async function DashboardPage() {
           auras={auras}
           formByPlayer={Object.fromEntries(formById)}
           seasonId={currentSeasonId}
+          fieldAvg={fieldAverage(team)}
         />
       </section>
 

@@ -6,6 +6,8 @@ import { notFound } from "next/navigation";
 import { getFixtureById } from "@/data/fixtures";
 import { getPlayers } from "@/data/players";
 import { getGamesForFixture, type Game } from "@/data/games";
+import { getSeasonOpposition } from "@/data/stats";
+import { DIFFICULTY_LABEL, DIFFICULTY_TONE, fieldAverage, gameDifficulty, signed, type Difficulty } from "@/lib/opposition";
 import { deleteMatchAction } from "./actions";
 import { CreateGameForm } from "./CreateGameClient";
 import { TeamAiReview } from "./TeamAiReview";
@@ -28,6 +30,9 @@ type MatchGroup = {
   threeDA: number | null;
   firstNine: number | null;
   twentySix: number;
+  /** The opponent's average over the match; null when their visits weren't recorded. */
+  oppThreeDA: number | null;
+  difficulty: Difficulty | null;
 };
 
 export default async function FixtureDetailPage({ params: paramsPromise }: Props) {
@@ -39,6 +44,8 @@ export default async function FixtureDetailPage({ params: paramsPromise }: Props
   ]);
 
   if (!fixture) return notFound();
+  // The season's typical opponent is the yardstick for a hard or an easy game.
+  const fieldAvg = fieldAverage(await getSeasonOpposition(fixture.seasonId));
 
   const grouped: MatchGroup[] = Array.from(
     games.reduce((map, g) => {
@@ -94,6 +101,9 @@ export default async function FixtureDetailPage({ params: paramsPromise }: Props
     const threeDA = darts > 0 ? points / darts * 3 : null;
     const firstNine = agg.first9Count > 0 ? agg.first9Total / agg.first9Count : null;
     const twentySix = agg.t26;
+    const oppPoints = sorted.reduce((n, g) => n + g.opp_points, 0);
+    const oppDarts = sorted.reduce((n, g) => n + g.opp_darts, 0);
+    const oppThreeDA = oppDarts > 0 ? (oppPoints / oppDarts) * 3 : null;
 
     const resultLabel =
       isDrawMatch || displayWestWins === displayOppWins
@@ -117,7 +127,9 @@ export default async function FixtureDetailPage({ params: paramsPromise }: Props
       highFinish,
       threeDA,
       firstNine,
-      twentySix
+      twentySix,
+      oppThreeDA,
+      difficulty: gameDifficulty(oppThreeDA, fieldAvg)
     };
   });
 
@@ -148,6 +160,13 @@ export default async function FixtureDetailPage({ params: paramsPromise }: Props
     return Math.max(max, g.high_finish);
   }, null);
   const totalTwentySix = games.reduce<number>((sum, g) => sum + (g.twenty_six ?? 0), 0);
+
+  // Team against opposition over the legs where the opponent's visits exist.
+  const scoredBoth = games.filter((g) => g.opp_darts > 0 && g.total_darts > 0);
+  const avgOf = (points: number, darts: number) => (darts > 0 ? (points / darts) * 3 : null);
+  const teamAvg = avgOf(scoredBoth.reduce((n, g) => n + g.total_points, 0), scoredBoth.reduce((n, g) => n + g.total_darts, 0));
+  const oppositionAvg = avgOf(scoredBoth.reduce((n, g) => n + g.opp_points, 0), scoredBoth.reduce((n, g) => n + g.opp_darts, 0));
+  const nightDifficulty = gameDifficulty(oppositionAvg, fieldAvg);
 
   return (
     <main className="flex flex-col gap-4">
@@ -226,6 +245,27 @@ export default async function FixtureDetailPage({ params: paramsPromise }: Props
 
       <section className="card">
         <h3 className="text-lg font-semibold mb-3">Fixture summary</h3>
+        {oppositionAvg !== null && teamAvg !== null && (
+          <div className="mb-3 rounded-lg border border-slate-200 bg-white px-4 py-3 shadow-sm">
+            <div className="flex items-center justify-between gap-2">
+              <p className="text-xs uppercase tracking-wide text-slate-500">Averages</p>
+              {nightDifficulty && (
+                <span className={`chip border ${DIFFICULTY_TONE[nightDifficulty]}`}>
+                  {DIFFICULTY_LABEL[nightDifficulty].replace("game", "night")}
+                </span>
+              )}
+            </div>
+            <p className="mt-1 text-xl font-semibold text-slate-900">
+              {teamAvg.toFixed(1)} <span className="text-sm font-normal text-slate-500">West Green</span>
+              <span className="mx-2 text-slate-400">·</span>
+              {oppositionAvg.toFixed(1)} <span className="text-sm font-normal text-slate-500">{fixture.opponent}</span>
+            </p>
+            <p className="text-xs text-slate-500">
+              {signed(teamAvg - oppositionAvg)} against the opposition
+              {fieldAvg !== null ? ` · a typical opponent this season averages ${fieldAvg.toFixed(1)}` : ""}
+            </p>
+          </div>
+        )}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           <div className="rounded-lg border border-slate-200 bg-white px-4 py-3 shadow-sm">
             <p className="text-xs uppercase tracking-wide text-slate-500">Games played</p>
@@ -374,6 +414,11 @@ export default async function FixtureDetailPage({ params: paramsPromise }: Props
                             <span className="text-sm text-slate-700">
                               {match.resultLabel} ({match.westWins}-{match.oppWins})
                             </span>
+                            {match.difficulty && (
+                              <span className={`chip border ${DIFFICULTY_TONE[match.difficulty]}`}>
+                                {DIFFICULTY_LABEL[match.difficulty]}
+                              </span>
+                            )}
                           </div>
                           <div className="text-xs text-slate-600 space-x-3 mt-1">
                             {match.leastDarts != null && <span>Least darts: {match.leastDarts}</span>}
@@ -383,6 +428,7 @@ export default async function FixtureDetailPage({ params: paramsPromise }: Props
                           </div>
                           <div className="text-xs text-slate-600 space-x-3">
                             <span>3DA: {match.threeDA != null ? match.threeDA.toFixed(1) : "—"}</span>
+                            <span>Opp 3DA: {match.oppThreeDA != null ? match.oppThreeDA.toFixed(1) : "—"}</span>
                             <span>First9: {match.firstNine != null ? match.firstNine.toFixed(1) : "—"}</span>
                             <span>26s: {match.twentySix}</span>
                           </div>

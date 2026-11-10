@@ -1,7 +1,7 @@
 import { supabaseServer } from "@/lib/supabaseServer";
 import { getDashboardStatistics } from "@/data/dashboard";
 import { getGamesForFixture } from "@/data/games";
-import { getPlayerCards } from "@/data/stats";
+import { getPlayerCards, getPlayerGameLog, getSeasonOpposition } from "@/data/stats";
 import { get121PlayerStats } from "@/data/game121";
 import { getPlayerForm } from "@/data/form";
 import { getSeasonToDate } from "@/data/seasonSummary";
@@ -41,6 +41,29 @@ it("aggregates real player cards without awarding bust points or opponent visits
   expect(card.checkout_hits).toBe(1);
   expect(card.first_nine_legs).toBe(1);
   expect(card.recorded_wins).toBe(0);
+  // The opponent's 180 is theirs: it feeds the opposition figures only.
+  expect(card.opp_legs).toBe(1);
+  expect(card.opp_three_dart_avg).toBe(180);
+  expect(card.avg_vs_opp).toBe(125.25 - 180);
+});
+it("game log and season opposition report what the opponent threw", async () => {
+  const fixtures={id:'f',season_id:'s',opponent:'Visitors',home:true,starts_at:'2026-09-08T19:00:00Z'};
+  database({players:[{id:'p',name:'Player',active:true}],games:[
+    {id:'won',fixture_id:'f',west_green_player_id:'p',opponent_player:'A',status:'completed',deleted:false,winner:'west_green',completed_at:'2026-09-08T20:00:00Z',fixtures},
+    {id:'lost',fixture_id:'f',west_green_player_id:'p',opponent_player:'A',status:'completed',deleted:false,winner:'opponent',completed_at:'2026-09-08T20:10:00Z',fixtures},
+    {id:'old',fixture_id:'f',west_green_player_id:'p',opponent_player:'B',status:'completed',deleted:false,winner:'west_green',completed_at:'2026-09-01T20:00:00Z',fixtures}],
+    scoring_events:[
+      {id:1,game_id:'won',throw_index:1,thrower:'west_green',score:100,darts:3,remaining_after:401,is_bust:false,is_deleted:false},
+      {id:2,game_id:'won',throw_index:2,thrower:'opponent',score:60,darts:3,remaining_after:441,is_bust:false,is_deleted:false},
+      {id:3,game_id:'lost',throw_index:1,thrower:'opponent',score:140,darts:3,remaining_after:361,is_bust:false,is_deleted:false},
+      {id:4,game_id:'lost',throw_index:2,thrower:'west_green',score:45,darts:3,remaining_after:456,is_bust:false,is_deleted:false},
+      {id:5,game_id:'old',throw_index:1,thrower:'west_green',score:180,darts:3,remaining_after:321,is_bust:false,is_deleted:false}]});
+  const log=Object.fromEntries((await getPlayerGameLog('p','s')).map(g=>[g.game_id,g]));
+  expect(log.won).toMatchObject({three_dart_avg:100,opp_three_dart_avg:60,loser_left:441});
+  expect(log.lost).toMatchObject({three_dart_avg:45,opp_three_dart_avg:140,loser_left:456});
+  expect(log.old).toMatchObject({three_dart_avg:180,opp_three_dart_avg:null,loser_left:null});
+  expect(await getSeasonOpposition('s')).toEqual({opp_legs:2,opp_three_dart_avg:100,avg_vs_opp:-27.5});
+  expect(await getSeasonOpposition(null)).toMatchObject({opp_legs:0,opp_three_dart_avg:null});
 });
 it("reports achieved 121 targets and leaves best checkout empty for a session with no finishes", async () => {
   database({game_121_sessions:[
