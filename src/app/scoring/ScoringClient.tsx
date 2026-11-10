@@ -68,7 +68,6 @@ export default function ScoringPage() {
   const [finishPrompt, setFinishPrompt] = useState<{ score: number; side: "west" | "opponent" } | null>(null);
   const [legSummaries, setLegSummaries] = useState<LegSummary[]>([]);
   const [matchComplete, setMatchComplete] = useState(false);
-  const [throwLog, setThrowLog] = useState<("west" | "opponent")[]>([]);
   const remaining = visits.length ? visits[visits.length - 1].remainingAfter : START_SCORE;
   const wgdName = gameMeta?.players?.name ?? "West Green";
   const oppName = gameMeta?.opponent_player ?? "Opponent";
@@ -94,7 +93,6 @@ export default function ScoringPage() {
     setGameMeta(res.meta);
     setOppRemaining(res.meta?.opponentRemaining ?? 501);
     setActiveSide(res.meta?.activeSide ?? "west");
-    setThrowLog(res.meta?.throwLog ?? []);
     setWgdLegs(res.meta?.legs?.west ?? 0);
     setOppLegs(res.meta?.legs?.opp ?? 0);
     setMatchComplete((res.meta?.legs?.west ?? 0) + (res.meta?.legs?.opp ?? 0) >= 2);

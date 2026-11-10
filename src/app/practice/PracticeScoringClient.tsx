@@ -127,7 +127,6 @@ export default function PracticeScoringClient() {
   const legIndex = meta?.leg_index ?? 1;
   const legsToPlay = meta?.practice_sessions?.legs_to_play ?? 1;
   const sessionStatus = meta?.practice_sessions?.status ?? "in_progress";
-  const activeFinishHint = activeSide === "a" ? finishHintA : finishHintB;
 
   const handleKey = (n: number) => {
     if (pending || saveError) return;

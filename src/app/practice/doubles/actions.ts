@@ -2,7 +2,6 @@
 import { allRows } from "@/lib/database";
 import { stableRead } from "@/lib/stableRead";
 import { drillCommand, endDrill } from "@/lib/drillCommand";
-import { canFinishFrom } from "@/lib/scoringUtils";
 
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";

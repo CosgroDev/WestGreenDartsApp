@@ -1,5 +1,4 @@
 ﻿import Link from "next/link";
-import { notFound } from "next/navigation";
 import { getPracticeSessions, getPracticePlayerStats } from "@/data/practice";
 import { getPlayers } from "@/data/players";
 import { StatBar } from "@/components/StatBar";

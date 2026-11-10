@@ -6,9 +6,7 @@ import { revalidatePath } from "next/cache";
 import { scoringCommand } from "@/lib/scoringCommand";
 import { supabaseServer } from "@/lib/supabaseServer";
 import { finishRoutes } from "@/lib/finishRoutes";
-import { canFinishFrom } from "@/lib/scoringUtils";
 
-const TEAM_ID = process.env.TEAM_ID;
 const revalidateAllDashboards = () => {
   revalidatePath("/dashboard");
   revalidatePath("/fixtures");

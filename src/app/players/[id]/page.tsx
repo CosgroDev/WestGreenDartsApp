@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { getPlayers } from "@/data/players";
 import { updatePlayerAction, deletePlayerAction } from "../actions";
 import { notFound } from "next/navigation";
@@ -13,14 +14,14 @@ export default async function PlayerEditPage({ params: paramsPromise }: Props) {
   return (
     <main className="flex flex-col gap-4">
       <header className="card flex items-center gap-2">
-        <a
+        <Link
           href="/players"
           className="inline-flex items-center justify-center rounded-full bg-slate-100 px-3 py-2 text-sm font-semibold text-slate-800 hover:bg-slate-200"
           aria-label="Back to players"
           title="Back to players"
         >
           ←
-        </a>
+        </Link>
         <div>
           <p className="text-sm text-slate-600">Edit player</p>
           <h1 className="text-2xl font-semibold">{player.name}</h1>
@@ -87,12 +88,12 @@ export default async function PlayerEditPage({ params: paramsPromise }: Props) {
             >
               Save
             </button>
-            <a
+            <Link
               href="/players"
               className="inline-flex items-center justify-center rounded-md border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 hover:border-emerald-200"
             >
               Cancel
-            </a>
+            </Link>
           </div>
         </form>
       </section>
