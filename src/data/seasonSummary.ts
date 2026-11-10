@@ -1,3 +1,4 @@
+import { fixtureOf, type GameRow } from "@/lib/dbRows";
 import { allRows } from "@/lib/database";
 import { matchKey } from "@/lib/matchKey";
 import { supabaseServer } from "@/lib/supabaseServer";
@@ -49,7 +50,7 @@ export type SeasonToDate = {
  * leg count, most recent last. `completedFixtures` is the fingerprint the
  * dashboard uses to decide when the AI season summary needs regenerating.
  */
-export async function getSeasonToDate(seasonId: string, sharedGames?: any[]): Promise<SeasonToDate | null> {
+export async function getSeasonToDate(seasonId: string, sharedGames?: GameRow[]): Promise<SeasonToDate | null> {
   const supabase = sharedGames ? null : await supabaseServer();
   if ((!supabase && !sharedGames) || !seasonId) return null;
 
@@ -63,8 +64,8 @@ export async function getSeasonToDate(seasonId: string, sharedGames?: any[]): Pr
   if (error || !games) return null;
 
   // Group games -> fixtures -> matches (player + opponent), like the fixture page.
-  const byFixture = new Map<string, any[]>();
-  games.forEach((g: any) => {
+  const byFixture = new Map<string, GameRow[]>();
+  games.forEach((g: GameRow) => {
     const list = byFixture.get(g.fixture_id) ?? [];
     list.push(g);
     byFixture.set(g.fixture_id, list);
@@ -73,19 +74,19 @@ export async function getSeasonToDate(seasonId: string, sharedGames?: any[]): Pr
   const fixtures: SeasonFixtureResult[] = [];
   const anomalies: SeasonFixtureAnomaly[] = [];
   for (const list of byFixture.values()) {
-    const matches = new Map<string, any[]>();
-    list.forEach((g: any) => {
+    const matches = new Map<string, GameRow[]>();
+    list.forEach((g: GameRow) => {
       const key = matchKey(g);
       const arr = matches.get(key) ?? [];
       arr.push(g);
       matches.set(key, arr);
     });
 
-    const anyInProgress = list.some((g: any) => g.status === "in_progress");
+    const anyInProgress = list.some((g: GameRow) => g.status === "in_progress");
     if (matches.size !== MATCHES_PER_FIXTURE && !anyInProgress) {
       // Every live game is settled but the matchup count is off — a match
       // was likely deleted rather than the night being genuinely unfinished.
-      const f = list[0].fixtures;
+      const f = fixtureOf(list[0]);
       anomalies.push({ fixtureId: f.id, opponent: f.opponent, startsAt: f.starts_at, matchesFound: matches.size });
     }
     // Only count a fixture once it is fully played out.
@@ -97,9 +98,9 @@ export async function getSeasonToDate(seasonId: string, sharedGames?: any[]): Pr
     let legsFor = 0;
     let legsAgainst = 0;
     for (const arr of matches.values()) {
-      const completed = arr.filter((g: any) => g.status === "completed");
-      const westWins = completed.filter((g: any) => g.winner === "west_green").length;
-      const oppWins = completed.filter((g: any) => g.winner === "opponent").length;
+      const completed = arr.filter((g: GameRow) => g.status === "completed");
+      const westWins = completed.filter((g: GameRow) => g.winner === "west_green").length;
+      const oppWins = completed.filter((g: GameRow) => g.winner === "opponent").length;
       legsFor += westWins;
       legsAgainst += oppWins;
       if (westWins > oppWins) matchWins += 1;
@@ -107,7 +108,7 @@ export async function getSeasonToDate(seasonId: string, sharedGames?: any[]): Pr
       else matchDraws += 1;
     }
 
-    const f = list[0].fixtures;
+    const f = fixtureOf(list[0]);
     fixtures.push({
       fixtureId: f.id,
       opponent: f.opponent,
@@ -151,8 +152,8 @@ export async function getStoredSeasonSummary(
   if (error || !data) return { summary: null, at: null, fixtures: null };
 
   return {
-    summary: (data as any).ai_season_summary ?? null,
-    at: (data as any).ai_season_summary_at ?? null,
-    fixtures: (data as any).ai_season_summary_fixtures ?? null
+    summary: data.ai_season_summary ?? null,
+    at: data.ai_season_summary_at ?? null,
+    fixtures: data.ai_season_summary_fixtures ?? null
   };
 }

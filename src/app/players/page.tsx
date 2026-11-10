@@ -1,3 +1,4 @@
+import { ActionError } from "@/components/ActionError";
 import Link from "next/link";
 import { getPlayers } from "@/data/players";
 import { createPlayerAction, setPlayerActiveAction } from "./actions";
@@ -13,11 +14,9 @@ export default async function PlayersPage({ searchParams: paramsPromise }: { sea
       <header>
         <p className="text-xs font-semibold uppercase tracking-[0.2em] text-emerald-700">Team roster</p>
         <h1 className="text-2xl font-bold">Players</h1>
-        {error === "duplicate" && (
-          <p className="text-sm text-red-700 mt-1">That player name already exists.</p>
-        )}
-        {success && <p className="text-sm text-emerald-700 mt-1">Player added.</p>}
+        {success && <p className="text-sm text-emerald-700 mt-1" role="status">Player added.</p>}
       </header>
+      <ActionError code={error} />
 
       <section className="card">
         <h2 className="text-lg font-semibold mb-3">Add player</h2>

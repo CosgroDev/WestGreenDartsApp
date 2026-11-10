@@ -1,6 +1,7 @@
 "use client";
 import { useScoreTask } from "@/lib/useScoreTask";
 import { ScoreSaveStatus } from "@/components/ScoreSaveStatus";
+import { ConnectionBanner } from "@/components/ConnectionBanner";
 import { canFinishFrom } from "@/lib/scoringUtils";
 
 import { useEffect, useState } from "react";
@@ -127,7 +128,6 @@ export default function PracticeScoringClient() {
   const legIndex = meta?.leg_index ?? 1;
   const legsToPlay = meta?.practice_sessions?.legs_to_play ?? 1;
   const sessionStatus = meta?.practice_sessions?.status ?? "in_progress";
-  const activeFinishHint = activeSide === "a" ? finishHintA : finishHintB;
 
   const handleKey = (n: number) => {
     if (pending || saveError) return;
@@ -373,6 +373,7 @@ export default function PracticeScoringClient() {
       </div>
 
       {alert && <div role="alert" className="text-sm text-red-800 rounded-md bg-red-50 px-3 py-2">{alert}</div>}
+      <ConnectionBanner />
       <ScoreSaveStatus pending={pending} saved={saved} error={saveError} retry={retrySave} reload={reloadLatest} />
 
       {finishScore !== null && <div className="rounded-md bg-emerald-50 p-3">

@@ -1,5 +1,5 @@
-﻿import Link from "next/link";
-import { notFound } from "next/navigation";
+import { ActionError } from "@/components/ActionError";
+import Link from "next/link";
 import { getPracticeSessions, getPracticePlayerStats } from "@/data/practice";
 import { getPlayers } from "@/data/players";
 import { StatBar } from "@/components/StatBar";
@@ -8,7 +8,8 @@ import { createPracticeSessionAction } from "./actions";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
-export default async function PracticePage() {
+export default async function PracticePage({ searchParams }: { searchParams?: Promise<{ error?: string }> }) {
+  const actionError = (await searchParams)?.error;
   const [sessions, players, practiceStats] = await Promise.all([
     getPracticeSessions(),
     getPlayers(),
@@ -21,6 +22,7 @@ export default async function PracticePage() {
         <p className="text-xs font-semibold uppercase tracking-[0.2em] text-emerald-700">Practice arena</p>
         <h1 className="text-2xl font-bold">Practice sessions</h1>
       </header>
+      <ActionError code={actionError} />
 
       {/* Quick links to other practice games */}
       <section className="card">

@@ -1,8 +1,10 @@
 
 "use server";
+import { isUuid } from "@/lib/validation";
+import { invalidateSeasonStats } from "@/lib/seasonCache";
 
 import { randomUUID } from "crypto";
-import Anthropic from "@anthropic-ai/sdk";
+import { generateOnce, requestReview } from "@/lib/aiReview";
 import { revalidatePath } from "next/cache";
 import { supabaseServer } from "@/lib/supabaseServer";
 import { getFixtureTeamSummary } from "@/data/matchSummary";
@@ -10,8 +12,6 @@ import { getPlayerCards, getPlayerGameLog } from "@/data/stats";
 import {
   FIXTURE_SYSTEM_PROMPT,
   REVIEW_EFFORT,
-  REVIEW_FALLBACK_MODEL,
-  REVIEW_MODEL,
   buildSeasonBaseline,
   compareToBaseline,
   deriveMatch,
@@ -119,43 +119,34 @@ export async function generateTeamAiReviewAction(fixtureId: string): Promise<Tea
     }))
   };
 
-  try {
-    const client = new Anthropic();
-    const response = await client.beta.messages.create({
-      model: REVIEW_MODEL,
-      max_tokens: 16000,
-      thinking: { type: "adaptive" },
-      output_config: { effort: REVIEW_EFFORT },
-      betas: ["server-side-fallback-2026-06-01"],
-      fallbacks: [{ model: REVIEW_FALLBACK_MODEL }],
-      system: FIXTURE_SYSTEM_PROMPT,
-      messages: [{ role: "user", content: JSON.stringify(payload) }]
-    });
+  return generateOnce<TeamAiReviewResult>({
+    db: supabase,
+    key: `fixture:${fixtureId}`,
+    readStored: async () => {
+      const { data } = await supabase.from("fixtures").select("ai_team_review").eq("id", fixtureId).single();
+      return data?.ai_team_review ? { ok: true, review: data.ai_team_review } : null;
+    },
+    busy: { ok: false, reason: "error", message: "This review is already being written on another device. Try again in a minute." },
+    generate: async () => {
+      const result = await requestReview({
+        system: FIXTURE_SYSTEM_PROMPT,
+        payload,
+        effort: REVIEW_EFFORT,
+        subject: "fixture"
+      });
+      if (!result.ok) return { ok: false, reason: "error", message: result.message };
+      const text = result.text;
 
-    if (response.stop_reason === "refusal") {
-      return { ok: false, reason: "error", message: "The AI declined to review this fixture." };
+      // Persist so the review only runs once and becomes the stored summary.
+      await supabase
+        .from("fixtures")
+        .update({ ai_team_review: text, ai_team_review_at: new Date().toISOString() })
+        .eq("id", fixtureId);
+      revalidatePath(`/fixtures/${fixtureId}`);
+
+      return { ok: true, review: text };
     }
-    const text = response.content
-      .filter((b): b is Anthropic.Beta.BetaTextBlock => b.type === "text")
-      .map((b) => b.text)
-      .join("")
-      .trim();
-    if (!text) return { ok: false, reason: "error", message: "Empty response from the AI." };
-
-    // Persist so the review only runs once and becomes the stored summary.
-    await supabase
-      .from("fixtures")
-      .update({ ai_team_review: text, ai_team_review_at: new Date().toISOString() })
-      .eq("id", fixtureId);
-    revalidatePath(`/fixtures/${fixtureId}`);
-
-    return { ok: true, review: text };
-  } catch (err) {
-    if (err instanceof Anthropic.APIError) {
-      return { ok: false, reason: "error", message: `AI request failed (${err.status}).` };
-    }
-    return { ok: false, reason: "error", message: "AI request failed." };
-  }
+  });
 }
 
 export async function createGameAction(prevState: any, formData: FormData) {
@@ -182,6 +173,7 @@ export async function createGameAction(prevState: any, formData: FormData) {
 
   if (error) return { ok: false, message: error.message };
 
+  invalidateSeasonStats();
   revalidatePath(`/fixtures/${fixtureId}`);
   return { ok: true };
 }
@@ -192,10 +184,12 @@ export async function deleteMatchAction(formData: FormData): Promise<void> {
   const opponent = formData.get("opponent") as string | null;
   const westId = (formData.get("westId") as string | null) || null;
 
-  if (!fixtureId || (!matchId && !opponent)) return;
+  if (!isUuid(fixtureId) || (matchId && !isUuid(matchId)) || (westId && !isUuid(westId)) || (!matchId && !opponent)) {
+    throw new Error("Match delete was called with invalid identifiers");
+  }
 
   const supabase = await supabaseServer();
-  if (!supabase) return;
+  if (!supabase) throw new Error("Database is not configured");
 
   // Find leg IDs for this match. Prefer the stable match_id; fall back to the
   // fixture page's legacy grouping (case-insensitive opponent name, null-safe
@@ -205,7 +199,8 @@ export async function deleteMatchAction(formData: FormData): Promise<void> {
     .select("id, match_id, opponent_player, west_green_player_id")
     .eq("fixture_id", fixtureId)
     .eq("deleted", false);
-  if (fetchErr || !games || games.length === 0) return;
+  if (fetchErr) throw new Error(`Match lookup failed: ${fetchErr.message}`);
+  if (!games || games.length === 0) return;
 
   const targetOpponent = (opponent || "").trim().toLowerCase();
   const gameIds = games
@@ -219,11 +214,15 @@ export async function deleteMatchAction(formData: FormData): Promise<void> {
   if (gameIds.length === 0) return;
 
   // Soft-delete scoring events for those legs
-  await supabase.from("scoring_events").update({ is_deleted: true }).in("game_id", gameIds);
-
+  // Hide the legs first: a leg is what every reader filters on, so a failure
+  // after this point leaves stray events on hidden legs rather than a visible half-deleted match.
   const { error } = await supabase.from("games").update({ deleted: true }).in("id", gameIds);
+  if (error) throw new Error(`Match delete failed: ${error.message}`);
+  const { error: eventsError } = await supabase.from("scoring_events").update({ is_deleted: true }).in("game_id", gameIds);
+  if (eventsError) throw new Error(`Match delete failed: ${eventsError.message}`);
 
-  if (error) return;
+  invalidateSeasonStats();
+  revalidatePath("/dashboard");
 
   revalidatePath(`/fixtures/${fixtureId}`);
 }

@@ -93,8 +93,8 @@ export default async function DashboardPage() {
           <h2 className="text-sm font-semibold text-red-800">⚠️ Fixture data needs a look</h2>
           <p className="mt-1 text-sm text-red-700">
             {seasonToDate.anomalies.length === 1 ? "This fixture has" : "These fixtures have"} every match settled
-            but not 6 results — a match was likely deleted and never re-entered, so it's left out of the season
-            record and AI summary until it's fixed:
+            but not 6 results — a match was likely deleted and never re-entered, so it&apos;s left out of the season
+            record and AI summary until it&apos;s fixed:
           </p>
           <ul className="mt-2 space-y-1 text-sm text-red-700">
             {seasonToDate.anomalies.map((a) => (

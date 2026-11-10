@@ -1,11 +1,14 @@
+import { ActionError } from "@/components/ActionError";
 import Link from "next/link";
 import { getSeasons } from "@/data/seasons";
 import { setCurrentSeasonAction } from "@/app/seasons/actions";
+import { signOutAction } from "@/app/pin/actions";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
-export default async function SettingsPage() {
+export default async function SettingsPage({ searchParams }: { searchParams?: Promise<{ error?: string }> }) {
+  const actionError = (await searchParams)?.error;
   const seasons = await getSeasons();
   const uniqueSeasons = seasons.filter(
     (s, idx, arr) => arr.findIndex((t) => t.name.toLowerCase() === s.name.toLowerCase()) === idx
@@ -17,6 +20,7 @@ export default async function SettingsPage() {
         <p className="text-xs font-semibold uppercase tracking-[0.2em] text-emerald-700">App</p>
         <h1 className="text-2xl font-bold">Settings</h1>
       </header>
+      <ActionError code={actionError} />
 
       <section className="card">
         <h2 className="text-lg font-semibold mb-1">Active season</h2>
@@ -75,6 +79,21 @@ export default async function SettingsPage() {
             </div>
           </div>
         )}
+      </section>
+
+      <section className="card">
+        <h2 className="text-lg font-semibold mb-1">This device</h2>
+        <p className="text-sm text-slate-600 mb-4">
+          Locking asks for the team PIN again on this device only. Other devices stay unlocked.
+        </p>
+        <form action={signOutAction}>
+          <button
+            type="submit"
+            className="rounded-md border border-slate-300 px-3 py-1.5 text-sm font-semibold text-slate-700 hover:border-red-300 hover:bg-red-50 hover:text-red-800"
+          >
+            Lock this device
+          </button>
+        </form>
       </section>
     </main>
   );

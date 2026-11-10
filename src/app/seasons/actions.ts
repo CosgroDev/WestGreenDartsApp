@@ -1,50 +1,45 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { supabaseServer } from "@/lib/supabaseServer";
+import { backWithError, must, teamDb } from "@/lib/actionResult";
+import { invalidateSeasonStats } from "@/lib/seasonCache";
+import { isSeasonName, isUuid, textField } from "@/lib/validation";
 
-const TEAM_ID = process.env.TEAM_ID;
-
-export async function createSeasonAction(formData: FormData): Promise<void> {
-  const name = (formData.get("name") as string | null)?.trim();
-  const isCurrent = (formData.get("is_current") as string | null) === "on";
-  if (!name) return;
-
-  const supabase = await supabaseServer();
-  if (!supabase) return;
-
-  // Prevent duplicate season name for the same team (case-insensitive)
-  const { data: existing, error: existsErr } = await supabase
-    .from("seasons")
-    .select("id")
-    .eq("team_id", TEAM_ID)
-    .ilike("name", name)
-    .limit(1);
-  if (!existsErr && existing && existing.length) return;
-
-  if (isCurrent) {
-    await supabase.from("seasons").update({ is_current: false }).eq("team_id", TEAM_ID);
-  }
-
-  const { error } = await supabase.from("seasons").insert({
-    team_id: TEAM_ID,
-    name,
-    is_current: isCurrent
-  });
-  if (error) return;
-
-  revalidatePath("/seasons");
-}
-
-export async function setCurrentSeasonAction(seasonId: string): Promise<void> {
-  const supabase = await supabaseServer();
-  if (!supabase) return;
-
-  await supabase.from("seasons").update({ is_current: false }).eq("team_id", TEAM_ID);
-  const { error } = await supabase.from("seasons").update({ is_current: true }).eq("id", seasonId);
-  if (error) return;
-
+const revalidateSeasons = () => {
+  invalidateSeasonStats();
   revalidatePath("/seasons");
   revalidatePath("/settings");
   revalidatePath("/dashboard");
+  revalidatePath("/fixtures");
+};
+
+export async function createSeasonAction(formData: FormData): Promise<void> {
+  const name = textField(formData, "name", 5);
+  const isCurrent = formData.get("is_current") === "on";
+  if (!name || !isSeasonName(name)) backWithError("/seasons", "season_format");
+
+  const { db, teamId } = await teamDb();
+  const existing = must(
+    await db.from("seasons").select("id").eq("team_id", teamId).eq("name", name).limit(1),
+    "Season lookup"
+  );
+  if (existing?.length) backWithError("/seasons", "duplicate");
+
+  // Insert as not-current, then switch atomically so there is never zero or two current seasons.
+  const created = must(
+    await db.from("seasons").insert({ team_id: teamId, name, is_current: false }).select("id").single(),
+    "Season create"
+  );
+  if (!created) throw new Error("Season create returned no row");
+  if (isCurrent) must(await db.rpc("wgd_set_current_season", { p_team: teamId, p_season: created.id }), "Season switch");
+
+  revalidateSeasons();
+}
+
+export async function setCurrentSeasonAction(seasonId: string): Promise<void> {
+  if (!isUuid(seasonId)) backWithError("/settings", "invalid");
+  const { db, teamId } = await teamDb();
+  const ok = must(await db.rpc("wgd_set_current_season", { p_team: teamId, p_season: seasonId }), "Season switch");
+  if (!ok) backWithError("/settings", "not_found");
+  revalidateSeasons();
 }

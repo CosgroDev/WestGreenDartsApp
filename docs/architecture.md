@@ -1,60 +1,74 @@
-# West Green Darts — Technical Architecture (v0.1)
+# West Green Darts — technical architecture
 
-## Goals
-- Mobile-first Next.js (App Router) app deployed to Vercel.
-- Supabase (Postgres + Storage + Auth) as the single backend.
-- Shared PIN gate for one team; no per-user accounts.
-- Event-based scoring to enable undo, fast stats, and multi-device concurrency.
+## Overview
 
-## High-Level System
-- **Frontend**: Next.js 14 (app directory), React Server Components where possible, Tailwind for layout + mobile touch UI, client components for scoring UI and charts (e.g., `@tanstack/react-query` for data fetching, `recharts` for charts).
-- **Backend**: Supabase hosted Postgres with row-level security (RLS) keyed to a single `team_id`. REST + Realtime via Supabase client; server actions for sensitive operations.
-- **Auth/Access**: PIN hashed and stored in Supabase. A successful PIN exchange issues a signed JWT (Supabase auth) stored in httpOnly cookie for 30 days.
-- **Data Sync**: All writes go to Supabase. Live scoring uses optimistic UI; optional Supabase Realtime subscription keeps fixtures/game state fresh on multiple devices.
-- **Deploy/Dev**: Vercel for frontend. Supabase migrations via SQL in `supabase/schema.sql` and `supabase/policies.sql`. Local dev uses `supabase` CLI if available; otherwise connect to hosted instance.
+- **Frontend and server**: Next.js 15 (App Router) on React 19, deployed to Vercel. Pages are server components; scoring screens, charts and forms are client components. Tailwind for styling, `recharts` for charts.
+- **Database**: Supabase-hosted Postgres. The app talks to it only from the server, through PostgREST with the service-role key.
+- **Access**: one shared team PIN. No per-user accounts.
+- **AI**: match, fixture-night, season and player reviews are generated with the Anthropic API and stored in the database.
+- **League table**: standings are read from the league's public site and cached.
 
-## Core Data Model (entities)
-- `teams` (one row for West Green)
-- `pins` (hashed pin, rotation history)
-- `players` (no photo/avatar field needed)
-- `seasons`
-- `fixtures`
-- `games` (one leg = one game in v1)
-- `scoring_events` (visit-level entries)
-- `exports` (logged export actions for auditing)
+## Directory map
 
-See `supabase/schema.sql` for columns and keys.
+| Path | Contents |
+| --- | --- |
+| `src/app/` | Routes. Each feature folder holds its page, client components and an `actions.ts` of server actions. |
+| `src/app/api/` | Route handlers: CSV/JSON exports and the league snapshot/insights endpoints. |
+| `src/data/` | Database reads. One module per feature; all go through `supabaseServer()`. |
+| `src/lib/` | Pure logic (scoring rules, finish routes, statistics, AI prompt building) plus the session, validation and database helpers. |
+| `src/components/` | Shared UI. |
+| `supabase/migrations/` | Timestamped SQL migrations. The chain builds the full schema from an empty database. |
+| `__tests__/` | Jest unit tests. |
+| `scripts/test-database.mjs` | Applies the migrations to an in-memory Postgres (PGlite) and exercises the scoring RPCs. |
 
-## RLS / Security
-- All tables scoped to `team_id`.
-- Policies: allow read/write only when `auth.jwt()` contains matching `team_id`; `pins` verified via RPC `auth_pin`.
-- HTTPS enforced at Vercel; Supabase anon key used only server-side; client uses service role via server actions only where needed.
+## Access and sessions
 
-## API Surface
-- **Server Actions** (preferred): `loginWithPin`, `createPlayer`, `updatePlayer`, `createSeason`, `createFixture`, `createGame`, `recordVisit`, `undoLastVisit`, `exportCsv`.
-- **Client Data**: use `react-query` with Supabase JS client for reads; writes go through server actions to keep keys secret and enforce validation.
+1. `/pin` posts the PIN to `enterPinAction` (`src/app/pin/actions.ts`). Failed attempts are counted per client in the `pin_attempts` table and locked out after repeated failures.
+2. The PIN is checked against `PIN_HASH` (SHA-256 of `PIN_SALT:pin`).
+3. On success the server sets `wgd_session`: an httpOnly cookie holding an expiry, a random ID and an HMAC-SHA-256 signature keyed by `SESSION_SECRET` (`src/lib/session.ts`). It lasts 30 days. Changing the secret, the team ID or the PIN hash invalidates every session.
+4. `src/middleware.ts` verifies the cookie on every non-public route. Pages redirect to `/pin`; `/api/*` returns 401.
+5. `supabaseServer()` verifies the session again before creating a database client, so a server action or route handler cannot reach the database without one.
 
-## Scoring Logic (501 double-out)
-- Game starts at 501. Each `scoring_event` stores: `game_id`, `throw_index`, `score`, `remaining_after`, `is_bust`, `is_checkout`, `darts_thrown` (1–3), `created_at`.
-- Finish guidance: lookup table for 2–170. Implement as static map in frontend.
-- Undo: delete latest `scoring_event` for game (or mark `is_deleted` soft flag for audit).
+There is no browser Supabase client and no anon-key access. Row-level security is enabled on every table with all grants revoked from `anon` and `authenticated`; only `service_role` can read or write.
 
-## Stats Calculation Strategy
-- Derived on-demand in SQL views / materialized views:
-  - `player_leg_stats_view`: legs played/won, 3DA, first 9, keep/break, checkout%.
-  - `score_buckets_view`: counts of 60+, 80+, 100+, 120+, 140+, 170+, 180.
-  - `team_season_summary_view`: aggregate legs won/lost, averages by season.
-- Keep compute in SQL to reuse across dashboards and exports.
+## Data model
 
-## UX Notes
-- First screen: PIN gate. Persist session cookie 30 days.
-- Navigation tabs: Dashboard, Fixtures, Players, Exports.
-- Live scoring UI: numeric pad, large buttons, quick undo, finish suggestions chip.
-- Dashboards: minimal charts first (3DA trend, checkout trend, score distribution).
+Core tables: `teams`, `players`, `seasons`, `fixtures`, `games` (one row per leg; legs of one match share `match_id`), `scoring_events` (one row per visit, for both sides).
 
-## Milestone Mapping
-- Phase 1: scaffold + PIN gate + players CRUD.
-- Phase 2: seasons/fixtures/games CRUD.
-- Phase 3: scoring + undo + finish helper.
-- Phase 4: stats views + dashboards + exports.
-- Phase 5: polish + optional offline guardrails (retain scoring screen state if offline).
+Practice and drills: `practice_sessions`/`practice_games`/`practice_events`, `game_121_*`, `checkout_practice_*`, `doubles_practice_*`.
+
+Stored AI output: `games.ai_review`, `fixtures.ai_team_review`, `seasons.ai_summary`, `player_ai_insights`.
+
+Every table carries `team_id`. The app serves one team, set by the `TEAM_ID` environment variable.
+
+## Scoring
+
+Scoring is event-based: each visit is a `scoring_events` row, and state is rebuilt from the rows.
+
+- Writes go through one transactional RPC, `wgd_score_command` (record, undo, new leg), or `wgd_score_command_state`, which also returns the new state. The function locks the parent row, checks the caller's `revision` against the stored one and rejects stale requests, so two devices cannot interleave.
+- Each request carries a client-generated request ID. Replaying the same ID is a no-op, which makes retry after a lost response safe.
+- `wgd_score_snapshot` returns a consistent view of a game in one call. `src/lib/stableRead.ts` is the fallback when the RPC is absent.
+- Double-out rules, bust handling and checkout validation live in `src/lib/scoringUtils.ts` and are mirrored in the RPC.
+
+- The league scoring screen keeps the one unconfirmed visit in local storage (`src/lib/pendingVisit.ts`) and resends it, with the same request ID, if the page reloads before the server answers.
+
+Do not change these RPC signatures without a plan for old and new app instances running side by side during a deploy.
+
+## Statistics
+
+Statistics are computed in TypeScript from the season's games and events (`src/data/stats.ts`, `src/data/form.ts`, `src/data/seasonSummary.ts`). The loaded season is cached per season and invalidated whenever a score, undo or deletion changes it. Busts count darts but not points; averages are points over darts across legs, not a mean of leg averages.
+
+## AI reviews
+
+`src/lib/aiCoaching.ts` holds the prompts and the derived numbers fed to the model. `src/lib/aiReview.ts` owns the API call. Each review is generated once and stored; the season summary and player insight regenerate when new results arrive.
+
+## Caching
+
+- Pages are dynamic. Season statistics are cached with `unstable_cache` under a per-season tag.
+- The league source is cached and refreshed on a schedule around match night (`src/data/liveLeague.ts`, `src/lib/leagueRefresh.ts`).
+
+## Testing
+
+- `npm test` — Jest unit tests for the pure logic and data aggregators.
+- `npm run test:database` — migrations and scoring RPCs against a real Postgres engine (PGlite).
+- `scripts/verify-performance.mjs` — browser check of the scoring screens against a local adapter, run manually.

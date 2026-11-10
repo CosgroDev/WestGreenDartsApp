@@ -4,36 +4,20 @@ import { stableRead } from "@/lib/stableRead";
 
 import { revalidatePath } from "next/cache";
 import { scoringCommand } from "@/lib/scoringCommand";
+import { invalidateSeasonStats } from "@/lib/seasonCache";
 import { supabaseServer } from "@/lib/supabaseServer";
+import { embedded, type Embedded } from "@/lib/dbRows";
+import type { LeagueGameMeta, LeagueResult, LeagueState, LegSummaryWire, RawGameMeta, RawSnapshot, ScoreEvent, ScoringSide } from "@/lib/scoreTypes";
 import { finishRoutes } from "@/lib/finishRoutes";
-import { canFinishFrom } from "@/lib/scoringUtils";
 
-const TEAM_ID = process.env.TEAM_ID;
 const revalidateAllDashboards = () => {
   revalidatePath("/dashboard");
   revalidatePath("/fixtures");
   revalidatePath("/players");
 };
 
-type Visit = {
-  id: number;
-  score: number;
-  darts: number;
-  remaining_after: number;
-  is_bust: boolean;
-  is_checkout: boolean;
-};
-
-export type LegSummaryWire = {
-  winner: "west" | "opponent";
-  dartsTotal: number;
-  pointsTotal: number;
-  firstNine: number | null;
-  firstNinePoints: number | null;
-  firstNineDarts: number | null;
-  buckets: Record<string, number>;
-  gameId: string;
-};
+type Visit = ScoreEvent;
+export type { LegSummaryWire };
 
 async function fetchVisits(gameId: string) {
   const supabase = await supabaseServer();
@@ -120,31 +104,40 @@ export async function getLegSummariesAction(gameId: string) {
 
   if (legsErr || !legs) return { ok: false, summaries: [] as LegSummaryWire[] };
 
-  const summaries: LegSummaryWire[] = [];
-  for (const leg of legs) {
-    const visits = await fetchVisits(leg.id);
-    const summary = buildLegSummary(leg.winner === "west_green" ? "west" : "opponent", visits);
-    summary.gameId = leg.id;
-    summaries.push(summary);
-  }
+  // One query for every leg's visits rather than one per leg.
+  const { data: events, error: eventsErr } = legs.length
+    ? await supabase
+        .from("scoring_events")
+        .select("id, game_id, score, darts, remaining_after, is_bust, is_checkout")
+        .in("game_id", legs.map((leg) => leg.id))
+        .eq("thrower", "west_green")
+        .eq("is_deleted", false)
+        .order("throw_index", { ascending: true })
+    : { data: [], error: null };
+  if (eventsErr) return { ok: false, summaries: [] as LegSummaryWire[] };
+
+  const summaries = legs.map((leg) => {
+    const visits = (events ?? []).filter((e) => e.game_id === leg.id) as Visit[];
+    return { ...buildLegSummary(leg.winner === "west_green" ? "west" : "opponent", visits), gameId: leg.id };
+  });
   return { ok: true, summaries };
 }
 
-export async function loadGameStateAction(gameId: string): Promise<any> {
+export async function loadGameStateAction(gameId: string): Promise<LeagueResult> {
   const db = await supabaseServer();
   if (!db) return { ok: false, message: "Database not configured" };
   const { data, error } = await db.rpc("wgd_score_snapshot", { p_game: gameId, p_team: process.env.TEAM_ID, p_practice: false });
-  if (!error) return withSummaries(leagueScoreSnapshot(data));
+  if (!error) return withSummaries(leagueScoreSnapshot(data as RawSnapshot));
   if (!missingSnapshotRPC(error, "wgd_score_snapshot")) return { ok: false, message: error.message };
   return stableRead("games", gameId, () => readState(gameId));
 }
 
-async function readState(gameId: string) {
+async function readState(gameId: string): Promise<LeagueState> {
   const visits = await fetchVisits(gameId);
   const remaining = computeRemaining(visits);
   const finishHint = remaining >= 2 && remaining <= 170 ? finishRoutes[remaining] ?? null : null;
   const supabase = await supabaseServer();
-  let meta: any = null;
+  let meta: LeagueGameMeta | null = null;
   if (supabase) {
     const { data: game } = await supabase
       .from("games")
@@ -154,17 +147,22 @@ async function readState(gameId: string) {
       .eq("id", gameId)
       .single();
     if (game) {
-      meta = game;
+      const built: LeagueGameMeta = {
+        ...(game as unknown as RawGameMeta),
+        players: embedded(game.players as Embedded<{ name: string }>),
+        opponentRemaining: 501, activeSide: "west", throwLog: []
+      };
+      meta = built;
       const { data: events, error: eventsError } = await supabase.from("scoring_events")
         .select("id, thrower, remaining_after").eq("game_id", gameId).eq("is_deleted", false).order("throw_index");
       if (eventsError) throw new Error(eventsError.message);
-      meta.throwLog = (events || []).map(e => e.thrower === "opponent" ? "opponent" : "west");
+      built.throwLog = (events || []).map((e): ScoringSide => e.thrower === "opponent" ? "opponent" : "west");
       const opponentEvents = (events || []).filter(e => e.thrower === "opponent");
-      meta.opponentRemaining = opponentEvents.length ? opponentEvents[opponentEvents.length - 1].remaining_after : 501;
-      meta.activeSide = events?.length ? (events[events.length - 1].thrower === "opponent" ? "west" : "opponent") : (game.west_green_starts ? "west" : "opponent");
+      built.opponentRemaining = opponentEvents.length ? opponentEvents[opponentEvents.length - 1].remaining_after : 501;
+      built.activeSide = events?.length ? (events[events.length - 1].thrower === "opponent" ? "west" : "opponent") : (game.west_green_starts ? "west" : "opponent");
       if (game.status === "completed") {
         const { data: next } = await supabase.from("games").select("id").eq("match_id", game.match_id).eq("deleted", false).eq("status", "in_progress").limit(1).maybeSingle();
-        meta.nextGameId = next?.id;
+        built.nextGameId = next?.id;
       }
       // Count legs for this match within the fixture
       const matchQuery = supabase
@@ -185,43 +183,50 @@ async function readState(gameId: string) {
             .eq("west_green_player_id", game.west_green_player_id);
 
       if (!legsData.error && legsData.data) {
-        const westLegs = legsData.data.filter((g: any) => g.winner === "west_green").length;
-        const oppLegs = legsData.data.filter((g: any) => g.winner === "opponent").length;
-        meta.legs = { west: westLegs, opp: oppLegs };
+        const westLegs = legsData.data.filter((g) => g.winner === "west_green").length;
+        const oppLegs = legsData.data.filter((g) => g.winner === "opponent").length;
+        built.legs = { west: westLegs, opp: oppLegs };
       }
     }
   }
   return { ok: true, visits, remaining, finishHint, meta };
 }
 
-function withSummaries(state: any) {
-  const summaries = (state.completedLegs ?? []).map((leg: any) => ({
+function withSummaries(state: LeagueState): LeagueState {
+  const summaries = (state.completedLegs ?? []).map((leg) => ({
     ...buildLegSummary(leg.winner === "west_green" ? "west" : "opponent", leg.events), gameId: leg.id
   }));
   return { ...state, summaries };
 }
 
-export async function recordVisitAction(gameId: string, score: number, dartsOverride = 3, side: "west_green" | "opponent" = "west_green", revision?: number, requestId?: string): Promise<any> {
+export async function recordVisitAction(gameId: string, score: number, dartsOverride = 3, side: "west_green" | "opponent" = "west_green", revision?: number, requestId?: string): Promise<LeagueResult> {
   if (!Number.isInteger(score) || score < 0 || score > 180 || !Number.isInteger(dartsOverride) || dartsOverride < 1 || dartsOverride > 3) return { ok: false, message: "Invalid score or dart count" };
   const result = await scoringCommand(gameId, false, "record", { side, score, darts: dartsOverride, revision, requestId, returnState: true });
   if (!result.ok) return result;
   revalidateAllDashboards();
   const state = result.state ? withSummaries(leagueScoreSnapshot(result.state)) : await loadGameStateAction(gameId);
+  // Season statistics only count completed legs, so a mid-leg visit leaves them valid.
+  if (!state.ok) return state;
+  if (state.meta?.status === "completed") invalidateSeasonStats();
   if (state.meta?.fixture_id) revalidatePath(`/fixtures/${state.meta.fixture_id}`);
   return state;
 }
 
-export async function newLegAction(gameId: string): Promise<any> {
+export async function newLegAction(gameId: string): Promise<{ ok: true; gameId: string } | { ok: false; message: string }> {
   const result = await scoringCommand(gameId, false, "new_leg");
   if (!result.ok) return result;
+  invalidateSeasonStats();
+  if (!result.next_game_id) return { ok: false, message: "The next leg could not be started." };
   return { ok: true, gameId: result.next_game_id };
 }
 
-export async function undoLastVisitAction(gameId: string, revision?: number, requestId?: string): Promise<any> {
+export async function undoLastVisitAction(gameId: string, revision?: number, requestId?: string): Promise<LeagueResult> {
   const result = await scoringCommand(gameId, false, "undo", { revision, requestId, returnState: true });
   if (!result.ok) return result;
+  // Undo can reopen a completed leg.
+  invalidateSeasonStats();
   revalidateAllDashboards();
   const state = await loadGameStateAction(gameId);
-  if (state.meta?.fixture_id) revalidatePath(`/fixtures/${state.meta.fixture_id}`);
+  if (state.ok && state.meta?.fixture_id) revalidatePath(`/fixtures/${state.meta.fixture_id}`);
   return state;
 }

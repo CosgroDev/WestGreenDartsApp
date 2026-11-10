@@ -6,7 +6,7 @@ import { readFile, writeFile, mkdir } from "node:fs/promises";
 await mkdir("league-investigation",{recursive:true});
 const code=ts.transpileModule(await readFile("src/lib/liveLeague.ts","utf8"),{compilerOptions:{target:ts.ScriptTarget.ES2022,module:ts.ModuleKind.ES2022}}).outputText;
 await writeFile("league-investigation/liveLeague.mjs",code);
-const {getWestGreenLeagueContext,calculateLeagueStandings,BASE44_API,TARGET_LEAGUE}=await import("../league-investigation/liveLeague.mjs");
+const {getWestGreenLeagueContext,calculateLeagueStandings,TARGET_LEAGUE}=await import("../league-investigation/liveLeague.mjs");
 const insightCode=ts.transpileModule(await readFile("src/lib/leagueInsights.ts","utf8"),{compilerOptions:{target:ts.ScriptTarget.ES2022,module:ts.ModuleKind.ES2022}}).outputText.replace('"./liveLeague"','"./liveLeague.mjs"');
 await writeFile("league-investigation/leagueInsights.mjs",insightCode);
 const {getLeagueInsights,buildLeagueInsights}=await import("../league-investigation/leagueInsights.mjs");

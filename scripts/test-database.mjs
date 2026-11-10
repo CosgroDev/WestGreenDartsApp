@@ -9,18 +9,18 @@ process.on('uncaughtException', error => {
 
 const db = new PGlite();
 await db.exec('create role anon; create role authenticated; create role service_role bypassrls;');
-await db.exec(readFileSync('supabase/schema.sql', 'utf8'));
-for (const folder of readdirSync('supabase/migrations', {withFileTypes: true}).filter(x => x.isDirectory())) {
-  for (const file of readdirSync(`supabase/migrations/${folder.name}`).sort()) {
-    if (file.endsWith('.sql')) await db.exec(readFileSync(`supabase/migrations/${folder.name}/${file}`, 'utf8'));
-  }
-}
-const migration = readFileSync('supabase/migrations/20260908193204_audit_scoring_and_access_fixes.sql', 'utf8');
-await db.exec(migration);
-await db.exec(migration);
-const snapshots=readFileSync('supabase/migrations/20261001090000_scoring_snapshots.sql','utf8');
-await db.exec(snapshots); await db.exec(snapshots);
-console.log('Schema and both migrations apply successfully, including repeat applications.');
+// The timestamped chain alone must build the whole schema from an empty database.
+const chain = readdirSync('supabase/migrations').filter(f => f.endsWith('.sql')).sort();
+for (const file of chain) await db.exec(readFileSync(`supabase/migrations/${file}`, 'utf8'));
+// Every migration is written to be safely re-applied.
+for (const file of chain) await db.exec(readFileSync(`supabase/migrations/${file}`, 'utf8'));
+const open = (await db.query(`select c.relname from pg_class c join pg_namespace n on n.oid=c.relnamespace
+ where n.nspname='public' and c.relkind='r' and not c.relrowsecurity`)).rows.map(r => r.relname);
+assert.deepEqual(open, [], `tables without row level security: ${open}`);
+const granted = (await db.query(`select distinct table_name from information_schema.role_table_grants
+ where table_schema='public' and grantee in ('anon','authenticated')`)).rows.map(r => r.table_name);
+assert.deepEqual(granted, [], `tables or views granted to anon/authenticated: ${granted}`);
+console.log('The migration chain builds the schema from empty, re-applies cleanly, and leaves every table server-only.');
 const team = randomUUID(), player = randomUUID(), fixture = randomUUID(), match = randomUUID();
 await db.query('insert into teams(id,name) values($1,$2)', [team,'Test team']);
 await db.query('insert into players(id,team_id,name) values($1,$2,$3)', [player,team,'Test player']);
@@ -118,10 +118,54 @@ const practiceState=(await db.query('select wgd_score_snapshot($1,$2,true) resul
 assert.equal(practiceState.meta.practice_sessions.start_score,40);
 assert.equal(practiceState.meta.revision,2);
 console.log('Single-call score snapshots: coherent revisions, player metadata, retry deduplication and team isolation pass.');
+// PIN attempt limiting.
+for (let i = 0; i < 4; i++) assert.equal((await db.query("select wgd_pin_failed('c1') w")).rows[0].w, 0);
+assert.equal((await db.query("select wgd_pin_failed('c1') w")).rows[0].w, 30);
+assert.equal((await db.query("select wgd_pin_failed('c1') w")).rows[0].w, 60);
+assert.ok((await db.query("select wgd_pin_locked('c1') w")).rows[0].w > 50);
+assert.equal((await db.query("select wgd_pin_locked('other') w")).rows[0].w, 0);
+await db.query("update pin_attempts set locked_until = now() - interval '1 second' where client_key='c1'");
+assert.equal((await db.query("select wgd_pin_locked('c1') w")).rows[0].w, 0);
+await db.query("update pin_attempts set updated_at = now() - interval '2 hours' where client_key='c1'");
+assert.equal((await db.query("select wgd_pin_failed('c1') w")).rows[0].w, 0);
+await db.query("select wgd_pin_succeeded('c1')");
+assert.equal((await db.query('select count(*)::int n from pin_attempts')).rows[0].n, 0);
+console.log('PIN attempts: free tries, doubling lockout, expiry, reset after an hour and on success pass.');
+// One current season per team, switched atomically.
+const s1=randomUUID(), s2=randomUUID();
+await db.query('insert into seasons(id,team_id,name,is_current) values($1,$3,$4,true),($2,$3,$5,false)',[s1,s2,team,'24/25','25/26']);
+await assert.rejects(db.query('update seasons set is_current=true where id=$1',[s2]), /seasons_one_current/);
+assert.equal((await db.query('select wgd_set_current_season($1,$2) ok',[team,s2])).rows[0].ok, true);
+assert.deepEqual((await db.query('select id from seasons where is_current')).rows.map(r=>r.id), [s2]);
+assert.equal((await db.query('select wgd_set_current_season($1,$2) ok',[randomUUID(),s1])).rows[0].ok, false);
+assert.deepEqual((await db.query('select id from seasons where is_current')).rows.map(r=>r.id), [s2]);
+// Fixture delete: refused with live games, team-scoped, removes games and events together.
+const doomed=randomUUID(), dg=randomUUID();
+await db.query('insert into fixtures(id,team_id,starts_at,home,opponent) values($1,$2,now(),true,$3)',[doomed,team,'Doomed']);
+await db.query('insert into games(id,team_id,fixture_id,match_id,west_green_player_id,opponent_player,west_green_starts) values($1,$2,$3,$4,$5,$6,true)',[dg,team,doomed,randomUUID(),player,'X']);
+await db.query('insert into scoring_events(team_id,game_id,throw_index,score,darts,remaining_after) values($1,$2,1,60,3,441)',[team,dg]);
+assert.equal((await db.query('select wgd_delete_fixture($1,$2) r',[team,doomed])).rows[0].r, 'has_games');
+assert.equal((await db.query('select wgd_delete_fixture($1,$2) r',[randomUUID(),doomed])).rows[0].r, 'not_found');
+await db.query('update games set deleted=true where id=$1',[dg]);
+assert.equal((await db.query('select wgd_delete_fixture($1,$2) r',[team,doomed])).rows[0].r, 'deleted');
+assert.equal((await db.query('select count(*)::int n from scoring_events where game_id=$1',[dg])).rows[0].n, 0);
+assert.equal((await db.query('select count(*)::int n from fixtures where id=$1',[doomed])).rows[0].n, 0);
+console.log('Season switch and fixture delete: atomic, team-scoped and constraint-backed pass.');
+// AI generation claims: one holder at a time, takeover only after expiry.
+assert.equal((await db.query("select wgd_claim_ai('match:1') ok")).rows[0].ok, true);
+assert.equal((await db.query("select wgd_claim_ai('match:1') ok")).rows[0].ok, false);
+assert.equal((await db.query("select wgd_claim_ai('match:2') ok")).rows[0].ok, true);
+await db.query("update ai_generation_claims set claimed_at = now() - interval '10 minutes' where claim_key='match:1'");
+assert.equal((await db.query("select wgd_claim_ai('match:1') ok")).rows[0].ok, true);
+await db.query("select wgd_release_ai('match:1')");
+assert.equal((await db.query("select wgd_claim_ai('match:1') ok")).rows[0].ok, true);
+console.log('AI generation claims: exclusive, released and taken over after expiry pass.');
 await db.exec('set role anon');
 await assert.rejects(db.query('select * from games'), /permission denied/);
 await assert.rejects(command(id,9,'west_green',0), /permission denied/);
 await assert.rejects(db.query('select wgd_score_snapshot($1,$2,false)',[fresh,team]),/permission denied/);
+await assert.rejects(db.query("select wgd_pin_succeeded('c1')"),/permission denied/);
+await assert.rejects(db.query('select * from pin_attempts'),/permission denied/);
 await db.exec('reset role');
 console.log('Anonymous table access and scoring RPC access are denied.');
 await db.close();

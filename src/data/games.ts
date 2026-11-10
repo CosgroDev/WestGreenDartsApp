@@ -1,3 +1,4 @@
+import { type EventRow, type GameRow, embedded } from "@/lib/dbRows";
 import { allRows, rowsForIds } from "@/lib/database";
 import { supabaseServer } from "@/lib/supabaseServer";
 
@@ -39,16 +40,16 @@ export async function getGamesForFixture(fixtureId: string): Promise<Game[]> {
     return [];
   }
 
-  const events = await rowsForIds(gamesRaw.map((g: any) => g.id), ids => supabase
+  const events = await rowsForIds(gamesRaw.map((g: GameRow) => g.id), ids => supabase
     .from("scoring_events").select("game_id, score, remaining_after, is_checkout, is_bust, darts")
     .in("game_id", ids).eq("thrower", "west_green").eq("is_deleted", false)
     .order("throw_index", { ascending: true }).order("id", { ascending: true }));
-  const byGame = new Map<string, any[]>();
+  const byGame = new Map<string, EventRow[]>();
   for (const event of events) {
     const list = byGame.get(event.game_id) ?? [];
     list.push(event); byGame.set(event.game_id, list);
   }
-  const gamesWithStats = gamesRaw.map((g: any) => {
+  const gamesWithStats = gamesRaw.map((g: GameRow) => {
     const activeEvents = byGame.get(g.id) ?? [];
 
     const buckets = {
@@ -109,7 +110,7 @@ export async function getGamesForFixture(fixtureId: string): Promise<Game[]> {
         ...g,
         total_points: totalScore,
         total_darts: totalDarts,
-        west_green_player_name: g.players?.name,
+        west_green_player_name: embedded(g.players)?.name,
         high_finish: highFinish,
         twenty_six: buckets.twenty_six,
         three_dart_avg,

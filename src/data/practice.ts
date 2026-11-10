@@ -1,5 +1,4 @@
 import { allRows, rowsForIds } from "@/lib/database";
-import { canFinishFrom } from "@/lib/scoringUtils";
 import { supabaseServer } from "@/lib/supabaseServer";
 
 export type PracticeSession = {

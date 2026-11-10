@@ -1,24 +1,29 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { backWithError, must, teamDb } from "@/lib/actionResult";
+import { invalidateSeasonStats } from "@/lib/seasonCache";
 import { supabaseServer } from "@/lib/supabaseServer";
+import { dateField, textField, uuidField } from "@/lib/validation";
 
 const TEAM_ID = process.env.TEAM_ID;
 
-export async function createFixtureAction(_prevState: any, formData: FormData) {
-  const seasonId = formData.get("seasonId") as string | null;
-  const startsAt = formData.get("startsAt") as string | null;
-  const home = (formData.get("home") as string | null) === "on";
-  const opponent = (formData.get("opponent") as string | null)?.trim();
-  const venue = (formData.get("venue") as string | null)?.trim();
-  const notes = (formData.get("notes") as string | null)?.trim();
+export type FixtureFormState = { ok: boolean; message?: string } | null;
+
+export async function createFixtureAction(_prevState: FixtureFormState, formData: FormData): Promise<FixtureFormState> {
+  const seasonId = uuidField(formData, "seasonId");
+  const startsAt = dateField(formData, "startsAt");
+  const home = formData.get("home") === "on";
+  const opponent = textField(formData, "opponent", 80);
+  const venue = textField(formData, "venue", 120);
+  const notes = textField(formData, "notes", 500);
 
   if (!seasonId || !startsAt || !opponent) {
     return { ok: false, message: "Season, date/time, and opponent are required" };
   }
 
   const supabase = await supabaseServer();
-  if (!supabase) return { ok: false, message: "Supabase not configured" };
+  if (!supabase || !TEAM_ID) return { ok: false, message: "Database is not configured" };
 
   const { error } = await supabase.from("fixtures").insert({
     team_id: TEAM_ID,
@@ -26,45 +31,29 @@ export async function createFixtureAction(_prevState: any, formData: FormData) {
     starts_at: startsAt,
     home,
     opponent,
-    venue: venue || null,
-    notes: notes || null
+    venue,
+    notes
   });
 
   if (error) return { ok: false, message: error.message };
 
+  invalidateSeasonStats();
   revalidatePath("/fixtures");
   return { ok: true };
 }
 
 export async function deleteFixtureAction(formData: FormData): Promise<void> {
-  const fixtureId = formData.get("fixtureId") as string | null;
-  if (!fixtureId) return;
-  const supabase = await supabaseServer();
-  if (!supabase) return;
+  const fixtureId = uuidField(formData, "fixtureId");
+  if (!fixtureId) backWithError("/fixtures", "invalid");
 
-  // Fetch all games (deleted or not) for this fixture
-  const { data: games, error: gamesErr } = await supabase
-    .from("games")
-    .select("id, deleted")
-    .eq("fixture_id", fixtureId);
+  // One transaction: refuses while live games remain, otherwise removes the
+  // fixture with its already-deleted games and their events.
+  const { db, teamId } = await teamDb();
+  const outcome = must(await db.rpc("wgd_delete_fixture", { p_team: teamId, p_fixture: fixtureId }), "Fixture delete");
+  if (outcome === "has_games") backWithError("/fixtures", "fixture_has_games");
+  if (outcome === "not_found") backWithError("/fixtures", "not_found");
 
-  if (gamesErr) return;
-
-  const gameIds = (games ?? []).map((g: any) => g.id);
-  const activeGames = (games ?? []).filter((g: any) => g.deleted === false);
-
-  // If any active (non-deleted) games remain, block deletion
-  if (activeGames.length > 0) return;
-
-  if (gameIds.length > 0) {
-    // Soft-delete scoring events for all games in this fixture
-    await supabase.from("scoring_events").update({ is_deleted: true }).in("game_id", gameIds);
-    // Hard-delete the games themselves
-    await supabase.from("games").delete().in("id", gameIds);
-  }
-
-  const { error } = await supabase.from("fixtures").delete().eq("id", fixtureId);
-  if (error) return;
-
+  invalidateSeasonStats();
   revalidatePath("/fixtures");
+  revalidatePath("/dashboard");
 }

@@ -1,3 +1,4 @@
+import { type FixtureRow, type GameStatusRow, type SeasonRef } from "@/lib/dbRows";
 import { allRows } from "@/lib/database";
 import { supabaseServer } from "@/lib/supabaseServer";
 
@@ -45,9 +46,9 @@ export async function getFixtures(seasonId?: string, includeGames = true): Promi
 
   if (error || !data) return [];
 
-  return data.map((f: any) => {
+  return data.map((f: FixtureRow) => {
     const seasonName = Array.isArray(f.seasons) ? f.seasons[0]?.name ?? "" : f.seasons?.name ?? "";
-    const activeGames = (f.games || []).filter((g: any) => g.deleted === false || g.deleted == null);
+    const activeGames = (f.games || []).filter((g: GameStatusRow) => g.deleted === false || g.deleted == null);
     return {
       id: f.id,
       season: seasonName,
@@ -63,12 +64,12 @@ export async function getFixtures(seasonId?: string, includeGames = true): Promi
         if (activeGames.length === 0) return "scheduled";
         // Any game still being played → the fixture is actively in progress,
         // even if some games have already been completed.
-        const hasInProgress = activeGames.some((g: any) => g.status !== "completed");
+        const hasInProgress = activeGames.some((g: GameStatusRow) => g.status !== "completed");
         if (hasInProgress) return "in_progress";
         // All games completed → settle the fixture result.
-        const completed = activeGames.filter((g: any) => g.status === "completed");
-        const wins = completed.filter((g: any) => g.winner === "west_green").length;
-        const losses = completed.filter((g: any) => g.winner === "opponent").length;
+        const completed = activeGames.filter((g: GameStatusRow) => g.status === "completed");
+        const wins = completed.filter((g: GameStatusRow) => g.winner === "west_green").length;
+        const losses = completed.filter((g: GameStatusRow) => g.winner === "opponent").length;
         if (wins > losses) return "win";
         if (losses > wins) return "loss";
         return "draw";
@@ -90,8 +91,8 @@ export async function getFixtureById(id: string): Promise<FixtureDetail | null> 
   if (error || !data) return null;
 
   const seasonName = Array.isArray(data.seasons)
-    ? (data.seasons[0] as any)?.name ?? ""
-    : (data.seasons as any)?.name ?? "";
+    ? data.seasons[0]?.name ?? ""
+    : (data.seasons as SeasonRef | null)?.name ?? "";
 
   return {
     id: data.id,
@@ -101,8 +102,8 @@ export async function getFixtureById(id: string): Promise<FixtureDetail | null> 
     venue: data.venue,
     notes: data.notes,
     home: data.home,
-    aiTeamReview: (data as any).ai_team_review ?? null,
-    aiTeamReviewAt: (data as any).ai_team_review_at ?? null
+    aiTeamReview: data.ai_team_review ?? null,
+    aiTeamReviewAt: data.ai_team_review_at ?? null
   };
 }
 
@@ -133,9 +134,9 @@ export async function getTeamRecord(seasonIds?: string[]): Promise<{
   if (error || !data)
     return { legWins: 0, legLosses: 0, legDraws: 0, legsFor: 0, legsAgainst: 0 };
 
-  const legWins = data.filter((g: any) => g.winner === "west_green").length;
-  const legLosses = data.filter((g: any) => g.winner === "opponent").length;
-  const legDraws = data.filter((g: any) => g.winner === null).length;
+  const legWins = data.filter((g: GameStatusRow) => g.winner === "west_green").length;
+  const legLosses = data.filter((g: GameStatusRow) => g.winner === "opponent").length;
+  const legDraws = data.filter((g: GameStatusRow) => g.winner === null).length;
   const legsFor = legWins + legDraws;
   const legsAgainst = legLosses + legDraws;
   return { legWins, legLosses, legDraws, legsFor, legsAgainst };

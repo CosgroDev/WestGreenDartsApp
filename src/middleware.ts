@@ -2,7 +2,7 @@ import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 import { verifySession } from "./lib/session";
 
-const PUBLIC_PATHS = ["/", "/pin", "/api/health"];
+const PUBLIC_PATHS = ["/", "/pin"];
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
@@ -14,6 +14,10 @@ export async function middleware(request: NextRequest) {
 
   const hasSession = await verifySession(request.cookies.get("wgd_session")?.value);
   if (!hasSession) {
+    // API clients get a status they can act on rather than an HTML redirect.
+    if (pathname.startsWith("/api/")) {
+      return NextResponse.json({ error: "Not signed in" }, { status: 401, headers: { "Cache-Control": "no-store" } });
+    }
     const url = new URL("/pin", request.url);
     url.searchParams.set("redirect", pathname);
     return NextResponse.redirect(url);
@@ -23,5 +27,5 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/((?!_next/static|_next/image|favicon.ico|west_green_logo.png).*)"]
+  matcher: ["/((?!_next/static|_next/image|favicon.ico|west_green_logo.png|manifest.webmanifest|icon-192.png|icon-512.png|icon-maskable-512.png).*)"]
 };

@@ -1,14 +1,16 @@
+import type { RawGameMeta } from "@/lib/scoreTypes";
 import { leagueScoreSnapshot, practiceScoreSnapshot, missingSnapshotRPC } from "@/lib/scoreSnapshot";
 it("restores both sides and turn from one ordered snapshot", () => {
-  const raw = {meta:{west_green_starts:true,revision:2},events:[
-    {thrower:"west_green",score:100,darts:3,remaining_after:401},
-    {thrower:"opponent",score:60,darts:3,remaining_after:441}
+  const raw = {meta:{west_green_starts:true,revision:2} as RawGameMeta,events:[
+    // Minimal rows: only the fields the snapshot reads.
+    {thrower:"west_green",score:100,darts:3,remaining_after:401,is_bust:false,is_checkout:false},
+    {thrower:"opponent",score:60,darts:3,remaining_after:441,is_bust:false,is_checkout:false}
   ]};
   const result=leagueScoreSnapshot(raw);
   expect(result.remaining).toBe(401);
-  expect(result.meta.opponentRemaining).toBe(441);
-  expect(result.meta.activeSide).toBe("west");
-  expect(result.meta.revision).toBe(2);
+  expect(result.meta?.opponentRemaining).toBe(441);
+  expect(result.meta?.activeSide).toBe("west");
+  expect(result.meta?.revision).toBe(2);
   expect(result.visits).toHaveLength(1);
 });
 it("practice state keeps its configured start and excludes bust points", () => {
