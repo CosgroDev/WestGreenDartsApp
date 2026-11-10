@@ -35,7 +35,9 @@ jobs:
           NEXT_PUBLIC_SUPABASE_URL: http://127.0.0.1:3101
 
   smoke:
-    runs-on: ubuntu-latest
+    # Playwright 1.58.2 has no browser build for the image ubuntu-latest now
+    # points at (26.04), so the browser install fails before any test runs.
+    runs-on: ubuntu-24.04
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
