@@ -151,6 +151,15 @@ assert.equal((await db.query('select wgd_delete_fixture($1,$2) r',[team,doomed])
 assert.equal((await db.query('select count(*)::int n from scoring_events where game_id=$1',[dg])).rows[0].n, 0);
 assert.equal((await db.query('select count(*)::int n from fixtures where id=$1',[doomed])).rows[0].n, 0);
 console.log('Season switch and fixture delete: atomic, team-scoped and constraint-backed pass.');
+// AI generation claims: one holder at a time, takeover only after expiry.
+assert.equal((await db.query("select wgd_claim_ai('match:1') ok")).rows[0].ok, true);
+assert.equal((await db.query("select wgd_claim_ai('match:1') ok")).rows[0].ok, false);
+assert.equal((await db.query("select wgd_claim_ai('match:2') ok")).rows[0].ok, true);
+await db.query("update ai_generation_claims set claimed_at = now() - interval '10 minutes' where claim_key='match:1'");
+assert.equal((await db.query("select wgd_claim_ai('match:1') ok")).rows[0].ok, true);
+await db.query("select wgd_release_ai('match:1')");
+assert.equal((await db.query("select wgd_claim_ai('match:1') ok")).rows[0].ok, true);
+console.log('AI generation claims: exclusive, released and taken over after expiry pass.');
 await db.exec('set role anon');
 await assert.rejects(db.query('select * from games'), /permission denied/);
 await assert.rejects(command(id,9,'west_green',0), /permission denied/);

@@ -18,7 +18,9 @@ const RPC_PARAMETERS = {
   wgd_pin_failed: ['p_client'],
   wgd_pin_succeeded: ['p_client'],
   wgd_set_current_season: ['p_team', 'p_season'],
-  wgd_delete_fixture: ['p_team', 'p_fixture']
+  wgd_delete_fixture: ['p_team', 'p_fixture'],
+  wgd_claim_ai: ['p_key'],
+  wgd_release_ai: ['p_key']
 };
 const TABLES = new Set(['players', 'seasons', 'fixtures', 'games', 'scoring_events', 'practice_sessions', 'practice_games',
   'practice_events', 'game_121_sessions', 'game_121_turns', 'player_ai_insights']);

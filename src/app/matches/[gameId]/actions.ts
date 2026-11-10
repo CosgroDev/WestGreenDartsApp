@@ -1,6 +1,6 @@
 "use server";
 
-import Anthropic from "@anthropic-ai/sdk";
+import { generateOnce, requestReview } from "@/lib/aiReview";
 import { revalidatePath } from "next/cache";
 import { supabaseServer } from "@/lib/supabaseServer";
 import { getMatchSummary } from "@/data/matchSummary";
@@ -8,8 +8,6 @@ import { getPlayerCards, getPlayerGameLog } from "@/data/stats";
 import {
   MATCH_SYSTEM_PROMPT,
   REVIEW_EFFORT,
-  REVIEW_FALLBACK_MODEL,
-  REVIEW_MODEL,
   buildSeasonBaseline,
   compareToBaseline,
   deriveMatch,
@@ -89,43 +87,35 @@ export async function generateAiReviewAction(gameId: string): Promise<AiReviewRe
     }))
   };
 
-  try {
-    const client = new Anthropic();
-    const response = await client.beta.messages.create({
-      model: REVIEW_MODEL,
-      max_tokens: 16000,
-      thinking: { type: "adaptive" },
-      output_config: { effort: REVIEW_EFFORT },
-      betas: ["server-side-fallback-2026-06-01"],
-      fallbacks: [{ model: REVIEW_FALLBACK_MODEL }],
-      system: MATCH_SYSTEM_PROMPT,
-      messages: [{ role: "user", content: JSON.stringify(payload) }]
-    });
+  return generateOnce<AiReviewResult>({
+    db: supabase,
+    key: `match:${gameId}`,
+    readStored: async () => {
+      if (!supabase) return null;
+      const { data } = await supabase.from("games").select("ai_review").eq("id", gameId).single();
+      return data?.ai_review ? { ok: true, review: data.ai_review } : null;
+    },
+    busy: { ok: false, reason: "error", message: "This review is already being written on another device. Try again in a minute." },
+    generate: async () => {
+      const result = await requestReview({
+        system: MATCH_SYSTEM_PROMPT,
+        payload,
+        effort: REVIEW_EFFORT,
+        subject: "match"
+      });
+      if (!result.ok) return { ok: false, reason: "error", message: result.message };
+      const text = result.text;
 
-    if (response.stop_reason === "refusal") {
-      return { ok: false, reason: "error", message: "The AI declined to review this match." };
-    }
-    const text = response.content
-      .filter((b): b is Anthropic.Beta.BetaTextBlock => b.type === "text")
-      .map((b) => b.text)
-      .join("")
-      .trim();
-    if (!text) return { ok: false, reason: "error", message: "Empty response from the AI." };
+      // Persist so the review only runs once and becomes the stored match summary.
+      if (supabase) {
+        await supabase
+          .from("games")
+          .update({ ai_review: text, ai_review_at: new Date().toISOString() })
+          .eq("id", gameId);
+        revalidatePath(`/matches/${gameId}`);
+      }
 
-    // Persist so the review only runs once and becomes the stored match summary.
-    if (supabase) {
-      await supabase
-        .from("games")
-        .update({ ai_review: text, ai_review_at: new Date().toISOString() })
-        .eq("id", gameId);
-      revalidatePath(`/matches/${gameId}`);
+      return { ok: true, review: text };
     }
-
-    return { ok: true, review: text };
-  } catch (err) {
-    if (err instanceof Anthropic.APIError) {
-      return { ok: false, reason: "error", message: `AI request failed (${err.status}).` };
-    }
-    return { ok: false, reason: "error", message: "AI request failed." };
-  }
+  });
 }

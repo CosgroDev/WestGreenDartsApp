@@ -1,6 +1,6 @@
 "use server";
 
-import Anthropic from "@anthropic-ai/sdk";
+import { generateOnce, requestReview } from "@/lib/aiReview";
 import { revalidatePath } from "next/cache";
 import { getPlayerGameLog, getPlayerCards, getTeamCard } from "@/data/stats";
 import { getSeasonToDate, getStoredSeasonSummary } from "@/data/seasonSummary";
@@ -12,8 +12,6 @@ import {
   PLAYER_INSIGHT_EFFORT,
   PLAYER_SYSTEM_PROMPT,
   REVIEW_EFFORT,
-  REVIEW_FALLBACK_MODEL,
-  REVIEW_MODEL,
   SEASON_SYSTEM_PROMPT,
   playerForm,
   round1
@@ -103,47 +101,40 @@ export async function generateSeasonAiSummaryAction(seasonId: string): Promise<S
     previousSummary: stored.summary
   };
 
-  try {
-    const client = new Anthropic();
-    const response = await client.beta.messages.create({
-      model: REVIEW_MODEL,
-      max_tokens: 16000,
-      thinking: { type: "adaptive" },
-      output_config: { effort: REVIEW_EFFORT },
-      betas: ["server-side-fallback-2026-06-01"],
-      fallbacks: [{ model: REVIEW_FALLBACK_MODEL }],
-      system: SEASON_SYSTEM_PROMPT,
-      messages: [{ role: "user", content: JSON.stringify(payload) }]
-    });
+  return generateOnce<SeasonAiSummaryResult>({
+    db: supabase,
+    key: `season:${id}:${season.completedFixtures}`,
+    readStored: async () => {
+      const latest = await getStoredSeasonSummary(id);
+      return latest.summary && latest.fixtures === season.completedFixtures
+        ? { ok: true, summary: latest.summary, fixtures: season.completedFixtures, at: latest.at }
+        : null;
+    },
+    busy: { ok: false, reason: "error", message: "This review is already being written on another device. Try again in a minute." },
+    generate: async () => {
+      const result = await requestReview({
+        system: SEASON_SYSTEM_PROMPT,
+        payload,
+        effort: REVIEW_EFFORT,
+        subject: "season"
+      });
+      if (!result.ok) return { ok: false, reason: "error", message: result.message };
+      const text = result.text;
 
-    if (response.stop_reason === "refusal") {
-      return { ok: false, reason: "error", message: "The AI declined to review this season." };
+      const at = new Date().toISOString();
+      await supabase
+        .from("seasons")
+        .update({
+          ai_season_summary: text,
+          ai_season_summary_at: at,
+          ai_season_summary_fixtures: season.completedFixtures
+        })
+        .eq("id", id);
+      revalidatePath("/dashboard");
+
+      return { ok: true, summary: text, fixtures: season.completedFixtures, at };
     }
-    const text = response.content
-      .filter((b): b is Anthropic.Beta.BetaTextBlock => b.type === "text")
-      .map((b) => b.text)
-      .join("")
-      .trim();
-    if (!text) return { ok: false, reason: "error", message: "Empty response from the AI." };
-
-    const at = new Date().toISOString();
-    await supabase
-      .from("seasons")
-      .update({
-        ai_season_summary: text,
-        ai_season_summary_at: at,
-        ai_season_summary_fixtures: season.completedFixtures
-      })
-      .eq("id", id);
-    revalidatePath("/dashboard");
-
-    return { ok: true, summary: text, fixtures: season.completedFixtures, at };
-  } catch (err) {
-    if (err instanceof Anthropic.APIError) {
-      return { ok: false, reason: "error", message: `AI request failed (${err.status}).` };
-    }
-    return { ok: false, reason: "error", message: "AI request failed." };
-  }
+  });
 }
 
 export type PlayerAiInsightState = {
@@ -226,40 +217,34 @@ export async function generatePlayerAiInsightAction(
     previousInsight: stored.summary
   };
 
-  try {
-    const client = new Anthropic();
-    const response = await client.beta.messages.create({
-      model: REVIEW_MODEL,
-      max_tokens: 20000,
-      thinking: { type: "adaptive" },
-      output_config: { effort: PLAYER_INSIGHT_EFFORT },
-      betas: ["server-side-fallback-2026-06-01"],
-      fallbacks: [{ model: REVIEW_FALLBACK_MODEL }],
-      system: PLAYER_SYSTEM_PROMPT,
-      messages: [{ role: "user", content: JSON.stringify(payload) }]
-    });
+  return generateOnce<PlayerAiInsightResult>({
+    db: supabase,
+    key: `player:${playerId}:${seasonId}:${season.completedLegs}`,
+    readStored: async () => {
+      const latest = await getStoredPlayerInsight(playerId, seasonId);
+      return latest.summary && latest.legs === season.completedLegs
+        ? { ok: true, summary: latest.summary, legs: season.completedLegs, at: latest.at }
+        : null;
+    },
+    busy: { ok: false, reason: "error", message: "This review is already being written on another device. Try again in a minute." },
+    generate: async () => {
+      const result = await requestReview({
+        system: PLAYER_SYSTEM_PROMPT,
+        payload,
+        effort: PLAYER_INSIGHT_EFFORT,
+        subject: "player",
+        maxTokens: 20000
+      });
+      if (!result.ok) return { ok: false, reason: "error", message: result.message };
+      const text = result.text;
 
-    if (response.stop_reason === "refusal") {
-      return { ok: false, reason: "error", message: "The AI declined to review this player." };
+      const at = new Date().toISOString();
+      await supabase.from("player_ai_insights").upsert(
+        { player_id: playerId, season_id: seasonId, summary: text, generated_at: at, legs_covered: season.completedLegs },
+        { onConflict: "player_id,season_id" }
+      );
+
+      return { ok: true, summary: text, legs: season.completedLegs, at };
     }
-    const text = response.content
-      .filter((b): b is Anthropic.Beta.BetaTextBlock => b.type === "text")
-      .map((b) => b.text)
-      .join("")
-      .trim();
-    if (!text) return { ok: false, reason: "error", message: "Empty response from the AI." };
-
-    const at = new Date().toISOString();
-    await supabase.from("player_ai_insights").upsert(
-      { player_id: playerId, season_id: seasonId, summary: text, generated_at: at, legs_covered: season.completedLegs },
-      { onConflict: "player_id,season_id" }
-    );
-
-    return { ok: true, summary: text, legs: season.completedLegs, at };
-  } catch (err) {
-    if (err instanceof Anthropic.APIError) {
-      return { ok: false, reason: "error", message: `AI request failed (${err.status}).` };
-    }
-    return { ok: false, reason: "error", message: "AI request failed." };
-  }
+  });
 }
